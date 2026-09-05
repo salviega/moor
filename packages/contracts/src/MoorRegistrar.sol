@@ -22,6 +22,19 @@ library MoorRoles {
     /// own UserRegistry at first-time setup, so they can delegate `ROLE_REGISTRAR` to MoorRegistrar and take it back.
     uint256 internal constant HOLDER_REGISTRY_ROOT = REGISTRY_BASE_ROLES | (REGISTRY_BASE_ROLES << 128);
 
+    /// @dev The resolver's record roles (PermissionedResolverLib), without ROLE_CAN_NAME (the namer's).
+    uint256 internal constant RESOLVER_BASE_ROLES = PermissionedResolverLib.ROLE_SET_ADDR
+        | PermissionedResolverLib.ROLE_SET_TEXT | PermissionedResolverLib.ROLE_SET_CONTENTHASH
+        | PermissionedResolverLib.ROLE_SET_PUBKEY | PermissionedResolverLib.ROLE_SET_ABI
+        | PermissionedResolverLib.ROLE_SET_INTERFACE | PermissionedResolverLib.ROLE_SET_NAME
+        | PermissionedResolverLib.ROLE_SET_ALIAS | PermissionedResolverLib.ROLE_CLEAR
+        | PermissionedResolverLib.ROLE_SET_DATA | PermissionedResolverLib.ROLE_UPGRADE;
+
+    /// @dev What the holder gets on the root of their own PermissionedResolver: every record role and its admin.
+    /// The holder needs their own resolver: the one app.ens.dev creates at registration keeps its root roles on the
+    /// wallet that registered, and transferring the name does not move them.
+    uint256 internal constant HOLDER_RESOLVER_ROOT = RESOLVER_BASE_ROLES | (RESOLVER_BASE_ROLES << 128);
+
     /// @dev What MoorRegistrar needs on the holder's registry root: to create names, nothing else.
     uint256 internal constant REGISTRAR_ON_REGISTRY = RegistryRolesLib.ROLE_REGISTRAR;
 

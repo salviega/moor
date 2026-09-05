@@ -7,12 +7,14 @@ import { IPermissionedRegistry } from "@ensdomains/contracts-v2/registry/interfa
 import { IRegistry } from "@ensdomains/contracts-v2/registry/interfaces/IRegistry.sol";
 import { PermissionedResolver } from "@ensdomains/contracts-v2/resolver/PermissionedResolver.sol";
 import { LibLabel } from "@ensdomains/contracts-v2/utils/LibLabel.sol";
+import { NameCoder } from "@ens/contracts/utils/NameCoder.sol";
 
 import { MoorRegistrar, MoorRoles } from "../src/MoorRegistrar.sol";
 
 /// @notice Phase 2 (07): the first-time flow, signed by the holder (04 §4.0) — with a Ledger:
 ///   forge script script/SetupHolder.s.sol --rpc-url $SEPOLIA_RPC_URL --ledger --hd-paths "<path of the owner>" --broadcast
 /// Four transactions, each clear-signable once the ERC-7730 descriptors exist:
+///   0. ETHRegistry.setResolver(<holder label>, holderResolver) + addr  — the name resolves through the holder's resolver
 ///   1. ETHRegistry.setSubregistry(<holder label>, holderRegistry)   — the name grows a registry
 ///   2. holderRegistry.grantRootRoles(ROLE_REGISTRAR, MoorRegistrar) — Moor may create names, nothing else
 ///   3. resolver.grantRootRoles(text+addr+textAdmin, MoorRegistrar)  — Moor may write records and delegate agent keys
@@ -36,10 +38,18 @@ contract SetupHolder is Script {
         vm.startBroadcast();
         address holder = msg.sender;
         IPermissionedRegistry holderRegistry = IPermissionedRegistry(vm.parseJsonAddress(dep, ".holderRegistry"));
-        PermissionedResolver resolver = PermissionedResolver(ETH_REGISTRY.getResolver(label));
-        require(address(resolver) != address(0), "name has no resolver");
+        PermissionedResolver resolver = PermissionedResolver(vm.parseJsonAddress(dep, ".holderResolver"));
 
         uint256 anyId = LibLabel.id(label);
+        // The name resolves through the holder's own resolver (DeployResolver.s.sol), not the one app.ens.dev
+        // created: that one keeps its root on the wallet that registered the name.
+        if (ETH_REGISTRY.getResolver(label) != address(resolver)) {
+            ETH_REGISTRY.setResolver(anyId, address(resolver));
+        }
+        bytes32 parentNode = NameCoder.namehash(NameCoder.encode(parentName), 0);
+        if (resolver.addr(parentNode) != holder) {
+            resolver.setAddr(parentNode, holder);
+        }
         if (address(ETH_REGISTRY.getSubregistry(label)) != address(holderRegistry)) {
             ETH_REGISTRY.setSubregistry(anyId, IRegistry(address(holderRegistry)));
         }

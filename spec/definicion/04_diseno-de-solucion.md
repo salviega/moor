@@ -102,7 +102,7 @@ Una propuesta **no hace nada por sí misma**. Es texto que el holder lee en la L
 Antes de la primera posición, el holder necesita que su nombre pueda tener subnombres administrados por Moor. Ocurre una vez y no se repite.
 
 1. Abre Moor en Ledger Live. Moor detecta que `salviega.eth` aún no tiene registry de Moor.
-2. La Live App explica qué va a pasar: se crea un registry de subnombres bajo su nombre (su resolver actual sirve), se autoriza al registrador de Moor a crear posiciones ahí — **y a nada más** — y se registra `agent.<holder>.eth` con el único permiso del agente.
+2. La Live App explica qué va a pasar: se crea un registry de subnombres y un resolver propios bajo su nombre, se autoriza al registrador de Moor a crear posiciones ahí — **y a nada más** — y se registra `agent.<holder>.eth` con el único permiso del agente.
 3. Firma en la Ledger. Cada transacción se muestra en términos del producto.
 4. Listo. Desde ahora, crear una posición es la sesión del 4.1.
 

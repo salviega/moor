@@ -30,7 +30,8 @@
 		"ledger:screens": "pnpm --filter @moor/erc7730 screens",
 		"contracts:deploy:anvil": "pnpm --filter @moor/contracts deploy:anvil",
 		"demo:ship": "pnpm --filter @moor/contracts demo:ship",
-		"contracts:deploy:registrar": "pnpm --filter @moor/contracts deploy:registrar"
+		"contracts:deploy:registrar": "pnpm --filter @moor/contracts deploy:registrar",
+		"contracts:deploy:resolver": "pnpm --filter @moor/contracts deploy:resolver"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.12",
