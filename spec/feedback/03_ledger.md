@@ -11,6 +11,7 @@ Stack en uso: `@ledgerhq/wallet-api-client`, `@ledgerhq/wallet-api-client-react`
 
 - **La app de Ethereum viene precompilada.** Los releases de `LedgerHQ/app-ethereum` (1.22.3) traen un ELF por dispositivo (`flex`, `stax`, `nanox`, `nanos2`, `apex_p`). Otro equipo documentó en un hackathon anterior que había que compilarla con la imagen Docker de `ledger-app-builder` (~8 GB); ya no. `gh release download` y listo. Esto vuelve viable Speculos en fase 0.
 - **`erc7730 lint` es exacto y útil desde el primer intento.** Señala los límites del dispositivo (owner ≤ 22, URL ≤ 26) con el mensaje preciso, y degrada a aviso —no a error— cuando el ABI no se puede validar contra Sourcify/Etherscan porque el contrato aún no está desplegado. Es lo correcto para un flujo donde el descriptor se escribe antes que el despliegue.
+- **La Wallet API hizo lo que promete al primer intento.** Desde Ledger Live Desktop con una Flex, `transaction.signAndBroadcast` con `amount` 0 y `data` de una llamada a contrato (`TestToken.mint`) en Ethereum Sepolia firmó y transmitió sin fricción: [`0x3160e91f…`](https://sepolia.etherscan.io/tx/0x3160e91f23a196f60c8dc8092c5e062ef9d97a399cd88d9a5c918c974321f392). El único aviso fue el esperado — sin descriptor ERC-7730, `mint` se muestra como llamada genérica.
 - **`wallet-cli` se instala con un `npm i -g`** y `ring --help` explica el modelo en cinco líneas: `init` con dispositivo, `encrypt`/`decrypt` sin dispositivo y con red, `keys`, `destroy`. Salida JSON estructurada — pensada para agentes.
 
 ---
@@ -40,6 +41,18 @@ Stack en uso: `@ledgerhq/wallet-api-client`, `@ledgerhq/wallet-api-client-react`
 **Impacto en Moor:** cambia el plan de `ledger:screens` (07, fase 3): de "imposible sin el registro" a "posible con el Tester, quizá no automatizable". Se decide en la fase 3.
 
 **Reportado:** pendiente. Sugerencia: documentar el mecanismo del Tester (qué firma qué) y si expone una CLI/API para CI.
+
+### 2026-09-05 — Buscar "Sepolia" en *Add account* lleva a crear una cuenta de Arbitrum
+
+**Documentado / prometido:** para usar una Live App en Sepolia hace falta una cuenta de *Ethereum Sepolia* en Ledger Live; la moneda existe (`ethereum_sepolia`, "Ethereum Sepolia", `isTestnetFor: "ethereum"`).
+
+**Encontrado:** con el modo desarrollador de la pestaña *Developer* activo (el que permite cargar un manifest local), el selector *Select asset* de *Add account* devuelve para "SEPOLIA" **un solo resultado: "Sepolia ETH (SETH)"**, con icono genérico — un *token*, no la red. Elegirlo abre el flujo de **Arbitrum** y termina en "We couldn't add a new Arbitrum account — cannot be added before you receive assets". La red Ethereum Sepolia no aparece en esa búsqueda. El holder creó la cuenta equivocada y envió 1 ETH (por suerte por la red correcta, así que quedó en la dirección y no en Arbitrum).
+
+**Evidencia:** [`img/2026-09-05-ledger-live-select-asset-sepolia.png`](./img/2026-09-05-ledger-live-select-asset-sepolia.png), [`img/2026-09-05-ledger-live-arbitrum-account-error.png`](./img/2026-09-05-ledger-live-arbitrum-account-error.png). Verificado con `cast balance` en ambas cadenas: 1.0 ETH en Ethereum Sepolia, 0 en Arbitrum Sepolia.
+
+**Impacto en Moor:** media hora y una cuenta inútil. Sin consecuencia en el diseño, pero es exactamente la fricción que un juez de Ledger viviría al probar la demo si no está avisado.
+
+**Reportado:** pendiente. Sugerencias: (1) que las redes de testnet aparezcan en *Select asset* cuando el modo desarrollador está activo, o que la búsqueda diga "activa Developer mode en Experimental features para ver redes de prueba"; (2) distinguir visualmente token vs. red en los resultados — "Sepolia ETH (SETH)" con una S genérica se lee como la red.
 
 ### 2026-09-05 — El Key Ring en un host sin USB: el track lo pide, la documentación no lo cubre
 
