@@ -49,7 +49,7 @@ contract CreatePosition is Script {
         uint64 expiry = uint64(vm.parseJsonUint(pos, ".deadline"));
 
         vm.startBroadcast();
-        address holder = msg.sender;
+        address holder = vm.parseJsonAddress(dep, ".holder"); // not msg.sender: see SetupHolder.s.sol
         IPermissionedRegistry holderRegistry = IPermissionedRegistry(vm.parseJsonAddress(dep, ".holderRegistry"));
         PermissionedResolver resolver = PermissionedResolver(ETH_REGISTRY.getResolver(parentLabel));
         bytes32 node = registrar.createPosition(holderRegistry, resolver, parentName, label, expiry, records);
