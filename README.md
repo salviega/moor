@@ -9,7 +9,7 @@ the Ledger decides.
 Built for ETHOnline 2026 — 1inch (Aqua/SwapVM), ENS (ENSv2) and Ledger (AI
 Agents) bounties.
 
-**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phase 2 (ENSv2 names and permissions) built, tested and deployed, waiting for the holder's Ledger signature — see [`spec/`](./spec/README.md) for the full
+**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phase 2 done — `btc-dip.salviega.eth` lives on ENSv2 Sepolia, signed from the Ledger, and the agent's single permission is checkable on chain; phase 3 (the Live App) next — see [`spec/`](./spec/README.md) for the full
 specification and [`spec/definicion/07_plan-de-trabajo.md`](./spec/definicion/07_plan-de-trabajo.md)
 for the phased plan and current progress.
 
@@ -40,6 +40,8 @@ Each position is a non-transferable ENSv2 subname (`btc-dip.salviega.eth`) whose
 describe it. The agent is `agent.salviega.eth` and holds exactly one permission: `ROLE_SET_TEXT` on
 the eight `moor.agent.*` keys (`PermissionedResolver.authorizeTextRoles`) — anyone can check it with
 `hasRoles`, and the holder revokes it with one signature (`revokeAgent`).
+
+First named position: `btc-dip.salviega.eth` → `moor.strategy = 11155111:0x35a92a7d…`, owner and `addr` = the Ledger account, expiry = the program's deadline, non-transferable — `createPosition` [`0xdb7e1132…`](https://sepolia.etherscan.io/tx/0xdb7e113201bbe1913d8f497d13b327c0b6c12567ae41b3ac6aaa92e902285d2c). Agent identity: `agent.salviega.eth` → `0xf98d…4B32` (`setupAgent` [`0x4a6f7b8c…`](https://sepolia.etherscan.io/tx/0x4a6f7b8cefba42412a66d9c4f364352dd79b45d881fc1a329ed10274820388f4)).
 
 First live position (phase 1): `0x35a92a7d…` — 1,000 tUSDC buying tWBTC between 58k and 62k USDC/BTC. `ship` [`0xf5bf8022…`](https://sepolia.etherscan.io/tx/0xf5bf8022d92eb2f7442ff783d3f7805e4b8274c1c8e2b00b7150a8ad5dac8355) · fill of 0.01 tWBTC → 605.86 tUSDC [`0xe76cc5cf…`](https://sepolia.etherscan.io/tx/0xe76cc5cf16e51a611c96abe17bff7a79f487273c3de75ecbfb78180dac867501) · the reverse direction reverts with `DeadlineReached(0)`.
 
