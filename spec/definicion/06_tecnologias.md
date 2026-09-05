@@ -13,7 +13,7 @@
 | **Node.js**    | 22 LTS  | Runtime de la Live App (build) y del agente. Fijado en `.nvmrc` y en `engines`             |
 | **TypeScript** | 5.9.3   | `strict: true`. Sin `any` en `packages/core`. 7.x existe en npm pero Next 16 declara 5.x; se queda en 5.9 |
 | **pnpm**       | 12.3    | Workspaces del monorepo. Lockfile estricto, sin dependencias fantasma. Desde la 12 bloquea build scripts (`allowBuilds`) y paquetes publicados hace muy poco (`minimumReleaseAgeExclude`); ambos configurados en `pnpm-workspace.yaml` |
-| **Foundry**    | 1.3.x   | Compilar, probar y desplegar contratos. `forge`, `cast`, `anvil`. Ya instalado localmente  |
+| **Foundry**    | 1.3.2   | Compilar, probar y desplegar contratos. `forge`, `cast`, `anvil`. **Fijado también en CI** (`foundry-toolchain` `v1.3.2`): `forge fmt` cambia entre versiones y el hook de pre-commit tiene que coincidir con el CI |
 
 Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scripts de la raíz con `pnpm -r` alcanzan. Turborepo entra si el CI empieza a tardar, no antes.
 
@@ -165,7 +165,8 @@ Desde la raíz, con `pnpm`:
 | `contracts:coverage`| `forge coverage --report summary` en `packages/contracts` — se lee, no se exige un %  |
 | `contracts:deploy`  | (`deploy:sepolia` en el paquete — `deploy` es un comando reservado de pnpm) `script/Deploy.s.sol` en Sepolia (`SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`): Aqua, `AquaSwapVMRouter`, `TestWETH` si no hay `WETH_ADDRESS`, `tWBTC`, `tUSDC`; luego `write-addresses.mjs` reescribe `packages/core/src/addresses.ts` |
 | `contracts:deploy:anvil` | Lo mismo contra un Anvil local con la llave 0 de Anvil — es como se verificó el script |
-| `demo:taker`        | El taker de demo: ejecuta swaps contra una posición para mostrar fills               |
+| `demo:ship`         | `ShipDemo.s.sol`: envía una posición de prueba desde la wallet del broadcaster (`MOOR_AMOUNT`, `MOOR_PRICE_MIN/MAX`, `MOOR_FEE_BPS`, `MOOR_DAYS`); escribe `deployments/positions/<chainId>-<hash>.json` |
+| `demo:taker`        | `DemoTaker.s.sol`: llena esa posición (`MOOR_POSITION`, `MOOR_AMOUNT_IN`) o, con `MOOR_REVERSE=1`, muestra la dirección contraria revirtiendo. Infraestructura de demo, no producto |
 | `ledger:emu`        | Levanta Speculos con la app de Ethereum y una seed de prueba; la Live App en `dev:ledger` firma contra él |
 | `ledger:screens`    | Firma en Speculos cada transacción del flujo (`approve`, `ship`, `createPosition`, `dock`, `revokeRoles`) y guarda las capturas en `packages/erc7730/screens/` |
 

@@ -30,6 +30,31 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Phase 1: the program, and the rule that cannot fail — closed 2026-09-05,
+  three days early, without plan B.**
+  - `packages/contracts/src/MoorProgram.sol`: the one-directional
+    concentrated-liquidity range order as a SwapVM program —
+    `Deadline → JumpIfTokenIn(allowed, 38) → Deadline(0) → FeeFlatIn →
+    XYCConcentrateSwap` — plus the Aqua order and its hash. No balances in the
+    program: Aqua holds them. The trap is `Deadline(0)` because the official
+    `AquaSwapVMRouter` does not dispatch `Revert` (`spec/feedback/01_1inch.md`).
+  - `test/MoorProgram.t.sol` (8): fills in the allowed direction, reverts in
+    the other (`DeadlineReached(0)` in `quote` and `swap`), stays bought after
+    full conversion, honours the deadline, docks only for the maker, golden
+    vectors. `test/MoorProgramInvariants.t.sol`: SwapVM's `CoreInvariants`
+    harness passes over the program in the allowed direction.
+  - `packages/core/src/program.ts`: `buildProgram`, `buildOrder`,
+    `strategyHash`, `sqrtPriceX18`, `rangeToSqrtBounds` — byte-for-byte parity
+    with Solidity pinned by golden vectors; `fees.ts` derives the holder's fee
+    from each fill's gross `amountIn`. 44 tests, 100 % branches.
+  - `ShipDemo.s.sol` / `DemoTaker.s.sol` (`pnpm demo:ship`, `pnpm demo:taker`,
+    `MOOR_REVERSE=1`) — demo infrastructure, not product.
+  - **Sepolia:** position `0x35a92a7debbc1ba1edecc1d42e08010af7001608847186b40dc6d10b3670b477` — 1,000 tUSDC buying tWBTC between 58k
+    and 62k USDC/BTC, maker `0x5b1dC626Fa6dD9c2f5FfceA5B0ddDc74aa368258` —
+    `ship` tx `0xf5bf8022d92eb2f7442ff783d3f7805e4b8274c1c8e2b00b7150a8ad5dac8355`; fill of 0.01 tWBTC → 605.857783 tUSDC (≈ 60,586
+    USDC/BTC) tx `0xe76cc5cf16e51a611c96abe17bff7a79f487273c3de75ecbfb78180dac867501`; `deriveState()` over the live balances → `working`
+    (60.6 % converted); the reverse direction reverts with `DeadlineReached(0)`.
+
 - **Phase 0 closed (2026-09-05).** The last verification landed: from Ledger
   Live Desktop with a Ledger Flex, `/sign-test` signed and broadcast
   `TestToken.mint(0xAA1aEf44DDE610F433f271C6A8749139DD5162E1, 1,000e6)` on

@@ -30,7 +30,7 @@ Lo que sorprende de la documentación de un sponsor frente a lo que hace su cód
 | Fase | Qué                                          | Días | Fechas       |
 | ---- | -------------------------------------------- | ---- | ------------ |
 | ~~0~~ | ~~Andamiaje y Sepolia~~ cerrada el 5 sep     | 1.5  | 5–6 sep      |
-| 1    | El programa y la regla que no puede fallar   | 2    | 6–8 sep      |
+| ~~1~~ | ~~El programa y la regla que no puede fallar~~ cerrada el 5 sep | 2    | 6–8 sep      |
 | 2    | El nombre y los permisos                     | 1.5  | 8–9 sep      |
 | 3    | La Live App                                  | 2    | 9–11 sep     |
 | 4    | El agente                                    | 1    | 11–12 sep    |
@@ -62,7 +62,7 @@ Las fechas son de fin de fase. Una fase que se atrasa **no empuja a la 5**: come
 
 Cualquier sorpresa en este paso —de la Wallet API, de Speculos, del redespliegue, del Key Ring— va a [`feedback/`](../feedback/) el mismo día.
 
-**Verificación:** ~~CI en verde en el primer PR~~ (PR #2) · ~~`salviega.eth` resuelve en Sepolia desde un resolver ENSv2~~ (`UniversalResolverV2`) · el SwapVM redesplegado responde `quote()` contra una posición de prueba → **pasa a la fase 1**, donde se construye la primera posición · Speculos muestra clear-signed la pantalla de `Aqua.ship` con el descriptor local → **pasa a la fase 3** vía el ERC-7730 Tester (Speculos sí corre la app y responde APDUs) · ~~la Live App abre dentro de Ledger Live y una llamada a contrato en Sepolia se firma~~ (`mint` de tUSDC, hash arriba) — clear-signed no, porque `mint` no tiene descriptor; eso es Aqua en la fase 3.
+**Verificación:** ~~CI en verde en el primer PR~~ (PR #2) · ~~`salviega.eth` resuelve en Sepolia desde un resolver ENSv2~~ (`UniversalResolverV2`) · ~~el SwapVM redesplegado responde `quote()` contra una posición de prueba~~ (hecho en la fase 1) · Speculos muestra clear-signed la pantalla de `Aqua.ship` con el descriptor local → **pasa a la fase 3** vía el ERC-7730 Tester (Speculos sí corre la app y responde APDUs) · ~~la Live App abre dentro de Ledger Live y una llamada a contrato en Sepolia se firma~~ (`mint` de tUSDC, hash arriba) — clear-signed no, porque `mint` no tiene descriptor; eso es Aqua en la fase 3.
 
 **Fase 0 cerrada el 5 de septiembre**, un día antes del calendario, con dos ítems que se mueven de fase a propósito (`quote()` → fase 1, descriptores en el dispositivo → fase 3) y uno que espera al host: el Key Ring en el VPS.
 
@@ -74,16 +74,18 @@ Cualquier sorpresa en este paso —de la Wallet API, de Speculos, del redesplieg
 
 **Objetivo:** una posición unidireccional de liquidez concentrada que se llena onchain en Sepolia, y la prueba de que no se deshace. Es el riesgo nº 1 del [05 §10](./05_stack-y-arquitectura.md#10-riesgos-técnicos); va primero a propósito.
 
-- **Pruebas primero** (regla 3): swap en dirección correcta llena; swap en dirección contraria revierte y `quote` devuelve cero; el programa pasa `CoreInvariants` de SwapVM; `dock` desde una cuenta que no es maker revierte. Verlas fallar.
-- `MoorProgramFactory` (Solidity) con el programa del [05 §1](./05_stack-y-arquitectura.md#1-decisiones): `_dynamicBalancesXD` → `_jumpIfTokenIn` (bloquea la dirección contraria) → `_xycConcentrateGrowLiquidityXD` → fee → `_deadline`.
-- `buildProgram()` en `packages/core` (TypeScript): mismo bytecode, mismo `strategyHash`. **Prueba de paridad** Solidity ↔ TypeScript.
-- `deriveState()` y cálculo de fees en `packages/core` según [05 §6](./05_stack-y-arquitectura.md#6-el-cálculo-central-estado-y-fees-de-una-posición), con pruebas Vitest.
-- Script `demo:taker`: ejecuta swaps contra una posición en Sepolia y muestra los eventos `Pulled`/`Pushed`.
-- Descriptor ERC-7730 del `AquaSwapVMRouter` si el holder llega a firmar algo contra él (hoy no; confirmar).
+- ~~**Pruebas primero** (regla 3): swap en dirección correcta llena; swap en dirección contraria revierte y `quote` devuelve cero; el programa pasa `CoreInvariants` de SwapVM; `dock` desde una cuenta que no es maker revierte. Verlas fallar.~~ `test/MoorProgram.t.sol` (8) + `test/MoorProgramInvariants.t.sol` (1): fallaron primero por lo esperado (dos por errores míos de prueba, útiles igual) y pasan las 10. Precisión: `quote` y `swap` **revierten** en la dirección contraria — no devuelven cero.
+- ~~`MoorProgramFactory` (Solidity) con el programa del [05 §1](./05_stack-y-arquitectura.md#1-decisiones)~~ `src/MoorProgram.sol`: `Deadline` → `JumpIfTokenIn(permitido → 38)` → **`Deadline(0)`** como trampa → `FeeFlatIn` → `XYCConcentrateSwap`. Dos cosas que la lectura del código cambió respecto al 05: en modo Aqua los balances **no van en el programa** (los da Aqua, así que no hay `DynamicBalances`), y la trampa no es `Revert` porque el router oficial de Aqua **no despacha ese opcode** — `UnknownOpcode(1)` — así que la dirección prohibida revierte con `DeadlineReached(0)`: "esa dirección venció en la época 0". Anotado en [`feedback/01_1inch.md`](../feedback/01_1inch.md).
+- ~~`buildProgram()` en `packages/core` (TypeScript): mismo bytecode, mismo `strategyHash`. **Prueba de paridad** Solidity ↔ TypeScript.~~ `packages/core/src/program.ts`: `buildProgram`, `buildOrder`, `strategyHash`, `sqrtPriceX18`, `rangeToSqrtBounds`. Paridad por **golden vectors**: `test_goldenVectors` en Foundry imprime programa, traits y hash; `program.test.ts` fija los mismos bytes. Y la conversión de precios humanos (USDC/BTC, decimales distintos) a `sqrt(B/A)·1e18` vive solo en TypeScript, con pruebas.
+- ~~`deriveState()` y cálculo de fees en `packages/core` según [05 §6](./05_stack-y-arquitectura.md#6-el-cálculo-central-estado-y-fees-de-una-posición), con pruebas Vitest.~~ `deriveState()` (fase 0) y `fees.ts` (`feeEarnedFromGrossIn`, `accrue`): la fee se deriva del `amountIn` bruto de cada `Swapped` porque SwapVM la reinvierte en el balance sin separarla. 44 pruebas, ramas al 100 %.
+- ~~Script `demo:taker`: ejecuta swaps contra una posición en Sepolia~~ `script/ShipDemo.s.sol` + `script/DemoTaker.s.sol` (`pnpm demo:ship`, `pnpm demo:taker`, `MOOR_REVERSE=1` para la dirección contraria), verificados primero en Anvil.
+- ~~Descriptor ERC-7730 del `AquaSwapVMRouter` si el holder llega a firmar algo contra él (hoy no; confirmar).~~ Confirmado: el holder solo firma contra Aqua (`ship`/`dock`) y contra los contratos de ENS; contra el router firman los takers. No hace falta.
 
-**Compuerta de decisión — 7 de septiembre al mediodía.** Si la dirección no se puede cerrar con `_jumpIfTokenIn` sin romper invariantes, se cambia al **plan B** ese mismo día: `_limitSwap1D` + `_invalidateTokenOut1D`, una orden límite pura y unidireccional por construcción, y se recorta el "trabaja mientras espera" del [02](./02_solucion.md) y del [04 §6](./04_diseno-de-solucion.md#6-reglas-de-negocio) a "cobra fee al llenarse". No se deja para después: el 04 y el video dependen de saberlo.
+~~**Compuerta de decisión — 7 de septiembre al mediodía.** Si la dirección no se puede cerrar con `_jumpIfTokenIn` sin romper invariantes, se cambia al plan B.~~ **Resuelta el 5 de septiembre, dos días antes, sin plan B:** el harness `CoreInvariants` de SwapVM pasa sobre el programa en la dirección permitida (simetría exact-in/out, quote/swap, monotonía, redondeo a favor del maker, suficiencia de balance), y la dirección prohibida revierte en `quote` y en `swap`. El "trabaja mientras espera" del 02 y el 04 se mantiene tal como está escrito.
 
-**Verificación:** en Sepolia, `ship` desde una wallet de prueba; `demo:taker` llena parcialmente; `deriveState()` reporta `trabajando`; el swap inverso revierte. Hashes de transacción en el CHANGELOG.
+**Verificación:** ~~en Sepolia, `ship` desde una wallet de prueba; `demo:taker` llena parcialmente; `deriveState()` reporta `trabajando`; el swap inverso revierte.~~ **Hecho el 5 de septiembre en Sepolia:** posición `0x35a92a7d…` de 1,000 tUSDC en 58k–62k USDC/BTC, `ship` [`0xf5bf8022…`](https://sepolia.etherscan.io/tx/0xf5bf8022d92eb2f7442ff783d3f7805e4b8274c1c8e2b00b7150a8ad5dac8355); el taker trajo 0.01 tWBTC y recibió 605.857783 tUSDC (≈ 60,586 USDC/BTC, dentro del rango, fee incluida) [`0xe76cc5cf…`](https://sepolia.etherscan.io/tx/0xe76cc5cf16e51a611c96abe17bff7a79f487273c3de75ecbfb78180dac867501); `deriveState()` sobre los balances reales → `working` (60.6 % convertido); el intento inverso revierte con `DeadlineReached(0)` en `quote`. Mismos números que en Anvil: la matemática es determinista.
+
+**Fase 1 cerrada el 5 de septiembre**, tres días antes del calendario.
 
 ---
 
