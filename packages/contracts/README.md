@@ -16,6 +16,7 @@ Foundry project. Sepolia only during the hackathon (spec 05 §1).
 - **SwapVM and Aqua resolve dependencies through `node_modules`** (hybrid Hardhat/Foundry repos, and their npm packages are not actually published). We provide the same packages as submodules and remap them in `foundry.toml`.
 - **One OpenZeppelin for everybody (5.4.0).** Foundry's resolver does not honour solc context remappings, so ENSv2's own 5.3.0 cannot be scoped to its tree; the two are source-compatible.
 - **`forge coverage` needs `--ir-minimum`** under via-IR, or it fails to compile the instrumented build.
+- **Scripts never derive a value from `msg.sender`.** With `--ledger` (or `--unlocked`) and no `--sender`, forge's local simulation runs as its default sender `0x1804c8AB…`; a `setAddr(node, msg.sender)` built there is broadcast with that address (it happened once on Sepolia, tx `0xfdce5239…`, fixed by re-running). The holder is read from `deployments/<chainId>.names.json` instead.
 - **`DeployRegistrar.s.sol` runs with `--skip-simulation`.** The local run passes, but forge's on-chain simulation ("Setting up 1 EVM") reports `CreateCollision` on `VerifiableFactory.deployProxy`'s CREATE2 even when the address is free (`eth_call` of the same call succeeds). Foundry 1.3.2; not reproduced with a plain `new`.
 
 ```sh

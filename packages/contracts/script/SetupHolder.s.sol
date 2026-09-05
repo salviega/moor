@@ -36,7 +36,9 @@ contract SetupHolder is Script {
         uint64 agentExpiry = uint64(block.timestamp + vm.envOr("MOOR_AGENT_YEARS", uint256(2)) * 365 days);
 
         vm.startBroadcast();
-        address holder = msg.sender;
+        // Not msg.sender: with --ledger and no --sender, forge simulates with its default sender (0x1804…), and
+        // whatever the script derives from it — like the setAddr value below — is what gets broadcast.
+        address holder = vm.parseJsonAddress(dep, ".holder");
         IPermissionedRegistry holderRegistry = IPermissionedRegistry(vm.parseJsonAddress(dep, ".holderRegistry"));
         PermissionedResolver resolver = PermissionedResolver(vm.parseJsonAddress(dep, ".holderResolver"));
 
