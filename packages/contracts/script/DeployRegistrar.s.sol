@@ -12,7 +12,9 @@ import { MoorRegistrar, MoorRoles } from "../src/MoorRegistrar.sol";
 /// proxy through ENSv2's VerifiableFactory, with the holder as root of their own registry. Nothing here
 /// needs the holder's signature; SetupHolder.s.sol is what the holder signs.
 ///
-/// Env: MOOR_HOLDER (the name owner, e.g. salviega.eth's owner), MOOR_SALT (optional, default 1).
+/// Env: MOOR_HOLDER (the name owner, e.g. salviega.eth's owner); MOOR_REGISTRAR (optional: reuse an already
+/// deployed, verified MoorRegistrar instead of deploying a new one); MOOR_SALT (optional, default
+/// keccak256("moor", holder) so one deployer can set up several holders without a CREATE2 collision).
 /// Run with --skip-simulation: forge's on-chain simulation reports a spurious CreateCollision on the
 /// factory's CREATE2 even when the address is free (packages/contracts/README.md, toolchain notes).
 /// ENSv2 Sepolia beta addresses are the ones app.ens.dev uses (05 §11).
@@ -22,10 +24,11 @@ contract DeployRegistrar is Script {
 
     function run() external {
         address holder = vm.envAddress("MOOR_HOLDER");
-        uint256 salt = vm.envOr("MOOR_SALT", uint256(1));
+        uint256 salt = vm.envOr("MOOR_SALT", uint256(keccak256(abi.encode("moor", holder))));
+        address existing = vm.envOr("MOOR_REGISTRAR", address(0));
 
         vm.startBroadcast();
-        MoorRegistrar registrar = new MoorRegistrar();
+        MoorRegistrar registrar = existing == address(0) ? new MoorRegistrar() : MoorRegistrar(existing);
         address holderRegistry = FACTORY.deployProxy(
             USER_REGISTRY_IMPL, salt, abi.encodeCall(UserRegistry.initialize, (holder, MoorRoles.HOLDER_REGISTRY_ROOT))
         );

@@ -76,13 +76,20 @@ Two things this project's entries carry that a web app's would not:
   - **Sepolia** (deployer `0x5b1dC626Fa6dD9c2f5FfceA5B0ddDc74aa368258`):
     `MoorRegistrar` `0xe6915D2E5e8Db86661a66472e5B178d0dB419966` — tx
     `0x4de2af32609b80e9d51fd03009ceb59543c2c197e6cf69e71b3bb44e62b14de2`, Sourcify
-    `exact_match`; `salviega.eth`'s `UserRegistry` proxy
-    `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81` via `VerifiableFactory` (salt 1,
-    root = holder) — tx
-    `0x1cc1326ac4d04141a7759e0d341f1505f66f824f319d34866d2dd4e089f85941`, block
-    11642814. `packages/core/src/addresses.ts` carries `moorRegistrar`.
-    Still to sign by the holder: `setSubregistry`, the two `grantRootRoles`,
-    `setupAgent`, `createPosition`.
+    `exact_match`; `salviega.eth`'s `UserRegistry` proxy for the **Ledger
+    holder `0xAA1aEf44DDE610F433f271C6A8749139DD5162E1`**:
+    `0xE924f689Ee48B43F7D1c5Ac683E9f4648f553922` via `VerifiableFactory` (salt
+    `keccak("moor", holder)`, root = holder) — tx
+    `0x0170490fa68a22a8f0222cb8832b67356b5c831a93a2224dd156d06295ed9fa4`, block
+    11642925. A first proxy, `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81` (tx
+    `0x1cc1326ac4d04141a7759e0d341f1505f66f824f319d34866d2dd4e089f85941`), was
+    rooted at `0xd7A4…564C`, the wallet that had registered `salviega.eth` —
+    which turned out not to be on the Ledger; it is unused. The name is being
+    transferred to the Ledger account in app.ens.dev. `DeployRegistrar` learnt
+    `MOOR_REGISTRAR` (reuse the verified registrar) and a holder-derived salt.
+    `packages/core/src/addresses.ts` carries `moorRegistrar`. Still to sign by
+    the holder: `setSubregistry`, the two `grantRootRoles`, `setupAgent`,
+    `createPosition`.
 
 - **Phase 1: the program, and the rule that cannot fail — closed 2026-09-05,
   three days early, without plan B.**
