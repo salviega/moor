@@ -61,7 +61,14 @@ contract SetupHolder is Script {
         if (!resolver.hasRootRoles(MoorRoles.REGISTRAR_ON_RESOLVER, address(registrar))) {
             resolver.grantRootRoles(MoorRoles.REGISTRAR_ON_RESOLVER, address(registrar));
         }
-        bytes32 agentNode = registrar.setupAgent(holderRegistry, resolver, parentName, agent, agentExpiry);
+        // Idempotent: the agent's name is registered once per holder.
+        bytes32 agentNode;
+        if (holderRegistry.getResolver(MoorRegistrar.AGENT_LABEL) == address(0)) {
+            agentNode = registrar.setupAgent(holderRegistry, resolver, parentName, agent, agentExpiry);
+        } else {
+            agentNode = registrar.node(parentName, MoorRegistrar.AGENT_LABEL);
+            console2.log("agent name already registered; skipping setupAgent");
+        }
         vm.stopBroadcast();
 
         console2.log("holder          ", holder);
