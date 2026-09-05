@@ -30,6 +30,27 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Sepolia tooling for phase 0, verified as far as it can be without the
+  holder's wallet.** `script/Deploy.s.sol` redeploys official Aqua and
+  `AquaSwapVMRouter` plus `TestWETH`, `tWBTC` (8 dec) and `tUSDC` (6 dec),
+  writes `deployments/<chainId>.json`, and `scripts/write-addresses.mjs`
+  turns that into the `moorSepolia` block of `packages/core/src/addresses.ts`
+  — proven end to end against Anvil (`contracts:deploy:anvil`; `router.AQUA()`
+  matches). The Sepolia run itself waits on `SEPOLIA_RPC_URL`,
+  `DEPLOYER_PRIVATE_KEY` and faucet ETH.
+
+  `packages/erc7730/descriptors/calldata-Aqua.json` — the ERC-7730 descriptor
+  for `ship`/`dock`, generated from the compiled ABI and clean under
+  `erc7730 lint` (device limits: owner ≤ 22, URL ≤ 26). Address is the zero
+  placeholder until deploy.
+
+  `pnpm ledger:emu` starts Speculos with the **prebuilt** Ethereum app
+  (`LedgerHQ/app-ethereum` 1.22.3 ships an ELF per device — no build), and
+  checks for `qemu-user-static` first, which is the one system package pip
+  cannot install. `@ledgerhq/wallet-cli` 2.1.0 installed; `ring init` needs
+  the device. Three Ledger findings (prebuilt ELFs, the qemu dependency, the
+  undocumented headless Key Ring enrolment) are in `spec/feedback/`.
+
 - **Phase 0 scaffolding: the monorepo exists and every check is green.**
   pnpm workspaces with `apps/live-app` (Next.js 16, empty page wired for
   Sepolia, Wallet API deps declared), `apps/agent` (env validation, a cycle

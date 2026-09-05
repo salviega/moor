@@ -1,0 +1,12 @@
+{
+	"name": "@moor/contracts",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Foundry project: MoorRegistrar, MoorProgramFactory, the Sepolia redeploy of Aqua + SwapVM, and the demo taker.",
+	"scripts": {
+		"deploy": "forge script script/Deploy.s.sol --rpc-url \"$SEPOLIA_RPC_URL\" --private-key \"$DEPLOYER_PRIVATE_KEY\" --broadcast -vvv && node scripts/write-addresses.mjs --chain=11155111",
+		"deploy:anvil": "forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast",
+		"demo:taker": "echo 'demo:taker arrives in phase 1 (07)' && exit 1"
+	}
+}

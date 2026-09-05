@@ -190,6 +190,8 @@ importers:
         specifier: 4.3.3
         version: 4.3.3
 
+  packages/contracts: {}
+
   packages/core:
     dependencies:
       viem:
@@ -2319,7 +2321,7 @@ snapshots:
 
   c32check@2.0.0:
     dependencies:
-      '@noble/hashes': 1.1.5
+      '@noble/hashes': 1.8.0
       base-x: 4.0.1
 
   caniuse-lite@1.0.30001810: {}
