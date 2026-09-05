@@ -11,6 +11,9 @@ export default function Home() {
 				Phase 0 — empty Live App, wired for Ethereum Sepolia (chain {SEPOLIA_CHAIN_ID}). Positions
 				arrive in phase 3.
 			</p>
+			<a className="text-sm text-emerald-300 underline" href="/sign-test">
+				Wallet API sign test →
+			</a>
 		</main>
 	);
 }
