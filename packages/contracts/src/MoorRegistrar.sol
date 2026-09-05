@@ -11,16 +11,16 @@ import { NameCoder } from "@ens/contracts/utils/NameCoder.sol";
 /// @title MoorRoles
 /// @notice The role bitmaps Moor hands out, in one place so scripts, tests and the Live App agree (05 §7).
 library MoorRoles {
-    /// @dev What the holder gets on the root of their own UserRegistry at first-time setup: everything,
-    /// including the admin roles that let them delegate `ROLE_REGISTRAR` to MoorRegistrar and take it back.
-    uint256 internal constant HOLDER_REGISTRY_ROOT = RegistryRolesLib.ROLE_REGISTRAR
-        | RegistryRolesLib.ROLE_REGISTRAR_ADMIN | RegistryRolesLib.ROLE_REGISTER_RESERVED
-        | RegistryRolesLib.ROLE_REGISTER_RESERVED_ADMIN | RegistryRolesLib.ROLE_SET_PARENT
-        | RegistryRolesLib.ROLE_SET_PARENT_ADMIN | RegistryRolesLib.ROLE_UNREGISTER | RegistryRolesLib.ROLE_UNREGISTER_ADMIN
-        | RegistryRolesLib.ROLE_RENEW | RegistryRolesLib.ROLE_RENEW_ADMIN | RegistryRolesLib.ROLE_SET_SUBREGISTRY
-        | RegistryRolesLib.ROLE_SET_SUBREGISTRY_ADMIN | RegistryRolesLib.ROLE_SET_RESOLVER
-        | RegistryRolesLib.ROLE_SET_RESOLVER_ADMIN | RegistryRolesLib.ROLE_SET_URI | RegistryRolesLib.ROLE_SET_URI_ADMIN
-        | RegistryRolesLib.ROLE_UPGRADE | RegistryRolesLib.ROLE_UPGRADE_ADMIN;
+    /// @dev The nine base roles of RegistryRolesLib. Kept separate from HOLDER_REGISTRY_ROOT because one
+    /// eighteen-term expression is "stack too deep" for `forge coverage --ir-minimum`.
+    uint256 internal constant REGISTRY_BASE_ROLES = RegistryRolesLib.ROLE_REGISTRAR
+        | RegistryRolesLib.ROLE_REGISTER_RESERVED | RegistryRolesLib.ROLE_SET_PARENT | RegistryRolesLib.ROLE_UNREGISTER
+        | RegistryRolesLib.ROLE_RENEW | RegistryRolesLib.ROLE_SET_SUBREGISTRY | RegistryRolesLib.ROLE_SET_RESOLVER
+        | RegistryRolesLib.ROLE_SET_URI | RegistryRolesLib.ROLE_UPGRADE;
+
+    /// @dev Same nine roles plus their admin variants (`role << 128` in EAC): what the holder gets on the root of their
+    /// own UserRegistry at first-time setup, so they can delegate `ROLE_REGISTRAR` to MoorRegistrar and take it back.
+    uint256 internal constant HOLDER_REGISTRY_ROOT = REGISTRY_BASE_ROLES | (REGISTRY_BASE_ROLES << 128);
 
     /// @dev What MoorRegistrar needs on the holder's registry root: to create names, nothing else.
     uint256 internal constant REGISTRAR_ON_REGISTRY = RegistryRolesLib.ROLE_REGISTRAR;
