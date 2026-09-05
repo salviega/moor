@@ -36,9 +36,16 @@ verified — until then the linter warns and moves on.
 
 A descriptor served by us is **unsigned**. A production Ledger only clear-signs
 descriptors that carry Ledger's PKI signature, which the device gets from the
-public registry after a merge. Whether Speculos' Ethereum app accepts a local,
-unsigned descriptor is the open question in `spec/feedback/03_ledger.md`; until
-it is answered, `ledger:screens` cannot exist.
+public registry after a merge. Ledger's [ERC-7730 Tester](https://app.devicesdk.ledger.com/clear-signing-tools)
+"injects your descriptor and displays the resulting fields against a live Ledger
+signer or the Speculos emulator" — that is how a local descriptor gets previewed
+before the registry PR. How it gets past the PKI check, and whether it can be
+driven from CI, is the open question in `spec/feedback/03_ledger.md`; until it is
+answered, `ledger:screens` stays a placeholder (phase 3).
+
+`screens/phase0-ethereum-app-1.22.3-home-flex.png` is the phase-0 evidence that
+Speculos runs the prebuilt app: Flex, Ethereum 1.22.3, seed address
+`0xDad77910DbDFdE764fC21FCD4E74D71bBACA6D8D`.
 
 Speculos is not a wallet. Its seed is the public test mnemonic from Speculos'
 own documentation and nothing of value ever touches it.

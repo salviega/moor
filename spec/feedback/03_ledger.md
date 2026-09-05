@@ -25,9 +25,21 @@ Stack en uso: `@ledgerhq/wallet-api-client`, `@ledgerhq/wallet-api-client-react`
 
 **Evidencia:** `.venv/bin/speculos --model flex --display headless … app-1.22.3-flex.elf` → log en la sesión del 5 de septiembre; `packages/erc7730/scripts/emu.mjs` ahora comprueba `qemu-arm-static` antes de arrancar y lo dice.
 
-**Impacto en Moor:** una hora entre diagnosticar y documentar; y una dependencia `sudo` que no puede instalar un script del repo. Sin consecuencia en el diseño.
+**Impacto en Moor:** una hora entre diagnosticar y documentar; y una dependencia `sudo` que no puede instalar un script del repo. Sin consecuencia en el diseño. **Resuelto el mismo día:** con `qemu-user-static` instalado, Speculos arranca la app precompilada 1.22.3 y responde APDUs (`getAppConfiguration`, `getPublicKey`) al primer intento.
 
 **Reportado:** pendiente. Sugerencia: que el README ponga `qemu-user-static` junto al `pip install`, o que Speculos lo compruebe al inicio con un mensaje que nombre el paquete.
+
+### 2026-09-05 — Existe un "ERC-7730 Tester", pero no se sabe cómo pasa la PKI
+
+**Documentado / prometido:** la guía *Validate & Submit* de Clear Signing enlaza un **ERC-7730 Tester** (`app.devicesdk.ledger.com/clear-signing-tools`) que "inyecta tu descriptor y muestra los campos resultantes contra un dispositivo real o Speculos", como paso previo al PR al registro.
+
+**Encontrado:** es exactamente lo que hace falta para verificar un descriptor propio antes de publicarlo — y contradice la experiencia documentada por otro equipo de que un descriptor local no puede renderizarse porque el dispositivo exige la firma PKI de Ledger. Lo que la página **no** dice: si el Tester usa una build de la app con PKI de prueba, si Ledger firma el descriptor al vuelo, o si hace falta un dispositivo/Speculos en un modo especial. Tampoco si es automatizable (para `ledger:screens` en CI) o solo interactivo en el navegador.
+
+**Evidencia:** `developers.ledger.com/docs/clear-signing/for-dapps/validate-submit`; `packages/erc7730/descriptors/calldata-Aqua.json` listo para probarlo.
+
+**Impacto en Moor:** cambia el plan de `ledger:screens` (07, fase 3): de "imposible sin el registro" a "posible con el Tester, quizá no automatizable". Se decide en la fase 3.
+
+**Reportado:** pendiente. Sugerencia: documentar el mecanismo del Tester (qué firma qué) y si expone una CLI/API para CI.
 
 ### 2026-09-05 — El Key Ring en un host sin USB: el track lo pide, la documentación no lo cubre
 

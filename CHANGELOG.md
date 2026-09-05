@@ -30,6 +30,16 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Speculos verified end to end** (phase 0): with `qemu-user-static`
+  installed, `pnpm ledger:emu` runs the prebuilt Ethereum app 1.22.3 on an
+  emulated Flex; `getAppConfiguration` reports 1.22.3 and `getPublicKey
+  m/44'/60'/0'/0/0` returns the Speculos test address
+  `0xDad77910DbDFdE764fC21FCD4E74D71bBACA6D8D` with `9000`. Home screen kept
+  under `packages/erc7730/screens/` as evidence. Ledger's ERC-7730 Tester is
+  now the documented path to preview our unsigned descriptors on Speculos;
+  how it bypasses the PKI check is recorded as an open question in
+  `spec/feedback/03_ledger.md`.
+
 - **Sepolia tooling for phase 0, verified as far as it can be without the
   holder's wallet.** `script/Deploy.s.sol` redeploys official Aqua and
   `AquaSwapVMRouter` plus `TestWETH`, `tWBTC` (8 dec) and `tUSDC` (6 dec),
