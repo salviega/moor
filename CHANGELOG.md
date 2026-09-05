@@ -30,6 +30,14 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **`/sign-test` in the Live App** — the phase-0 diagnostic for the Wallet API:
+  request an Ethereum Sepolia account, then sign and broadcast
+  `TestToken.mint(account, 1,000 tUSDC)` (`amount` 0, `data` present) through
+  `transaction.signAndBroadcast`. `Providers` wires `WalletAPIProvider` with
+  a transport created client-side only (`WindowMessageTransport` in Ledger
+  Live, the simulator's `STANDARD` profile under `pnpm dev`). Adds
+  `bignumber.js` and `buffer` to the Live App.
+
 - **Aqua and SwapVM live on Sepolia; the Live App live on Vercel; `salviega.eth`
   on ENSv2** (phase 0, 2026-09-05, deployer `0x5b1dC626Fa6dD9c2f5FfceA5B0ddDc74aa368258`, 0.0075 ETH):
   - Aqua `0xB8747B3e2F90154420165FB2fc4707D638797140` — tx `0x66beea8da42bf781827d09e035d32178763635b34a69dc38e61b6f79988808aa` — **Sourcify `exact_match`**: the redeployed
