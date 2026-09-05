@@ -9,7 +9,7 @@ the Ledger decides.
 Built for ETHOnline 2026 — 1inch (Aqua/SwapVM), ENS (ENSv2) and Ledger (AI
 Agents) bounties.
 
-**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phases 0–2 done; phase 3 in progress — the Live App has its five screens reading ENS, Aqua and Chainlink on Sepolia and signing through the Wallet API, pending the test on the device — see [`spec/`](./spec/README.md) for the full
+**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phases 0–2 done; phase 3 nearly done — the Live App created a position from Ledger Live on a Ledger Flex (three signatures, name and records on ENSv2); clear signing on the device and the Speculos captures are what remains — see [`spec/`](./spec/README.md) for the full
 specification and [`spec/definicion/07_plan-de-trabajo.md`](./spec/definicion/07_plan-de-trabajo.md)
 for the phased plan and current progress.
 
@@ -42,6 +42,8 @@ the eight `moor.agent.*` keys (`PermissionedResolver.authorizeTextRoles`) — an
 `hasRoles`, and the holder revokes it with one signature (`revokeAgent`).
 
 First named position: `btc-dip.salviega.eth` → `moor.strategy = 11155111:0x35a92a7d…`, owner and `addr` = the Ledger account, expiry = the program's deadline, non-transferable — `createPosition` [`0xdb7e1132…`](https://sepolia.etherscan.io/tx/0xdb7e113201bbe1913d8f497d13b327c0b6c12567ae41b3ac6aaa92e902285d2c). Agent identity: `agent.salviega.eth` → `0xf98d…4B32` (`setupAgent` [`0x4a6f7b8c…`](https://sepolia.etherscan.io/tx/0x4a6f7b8cefba42412a66d9c4f364352dd79b45d881fc1a329ed10274820388f4)).
+
+**First position created from the Live App on a Ledger Flex (phase 3):** `btc-dip-2.salviega.eth` — 1,000 tUSDC buying tWBTC between 58k and 62k, maker = the Ledger account, one session of three signatures: `approve` [`0x4c812fe6…`](https://sepolia.etherscan.io/tx/0x4c812fe62bfa3a6bb7ab46035a4942d109a24a53ebad095eac3ceef9721aed35) · `ship` [`0x0ba89ceb…`](https://sepolia.etherscan.io/tx/0x0ba89ceb0fdba27838cba8835d5b4cb2d9c2f89a2496de4b4a188397ea0979c0) · `createPosition` [`0x35f2c11e…`](https://sepolia.etherscan.io/tx/0x35f2c11e0a1721bbe1e9a84bfa54f0c1235ed5f33d63148062b37e0e21074f45).
 
 First live position (phase 1): `0x35a92a7d…` — 1,000 tUSDC buying tWBTC between 58k and 62k USDC/BTC. `ship` [`0xf5bf8022…`](https://sepolia.etherscan.io/tx/0xf5bf8022d92eb2f7442ff783d3f7805e4b8274c1c8e2b00b7150a8ad5dac8355) · fill of 0.01 tWBTC → 605.86 tUSDC [`0xe76cc5cf…`](https://sepolia.etherscan.io/tx/0xe76cc5cf16e51a611c96abe17bff7a79f487273c3de75ecbfb78180dac867501) · the reverse direction reverts with `DeadlineReached(0)`.
 

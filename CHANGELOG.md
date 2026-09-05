@@ -58,6 +58,21 @@ Two things this project's entries carry that a web app's would not:
   - `pnpm dev` adds an `ethereum_sepolia` account (the holder's address) to the
     simulator profile — it ships without one — so reads show the real names.
   - `/sign-test` removed: the real screens replaced it.
+  - **Verified on the device (2026-09-05):** from Ledger Live Desktop with the
+    Ledger Flex, the Live App at getmoor.vercel.app created
+    **`btc-dip-2.salviega.eth`** — 1,000 tUSDC buying tWBTC between 58k and 62k
+    for 30 days — in one session of three signatures: `approve`
+    `0x4c812fe62bfa3a6bb7ab46035a4942d109a24a53ebad095eac3ceef9721aed35` (block
+    11643272), `ship`
+    `0x0ba89ceb0fdba27838cba8835d5b4cb2d9c2f89a2496de4b4a188397ea0979c0` (11643274),
+    `createPosition`
+    `0x35f2c11e0a1721bbe1e9a84bfa54f0c1235ed5f33d63148062b37e0e21074f45`
+    (11643276). Strategy `0xe803dd796833f17bcfbaea9966c5ac7741f283d7f81cb7c87b311515b946c71f`,
+    maker = the Ledger account; `UniversalResolverV2` resolves `moor.strategy`,
+    `moor.pair`, `moor.side`, `moor.range`, `moor.amount = 1000000000`,
+    `moor.agent` and `addr`; `Aqua.safeBalances` shows 1,000 tUSDC / 0 tWBTC;
+    expiry 1791239749 = the deadline. The first position the holder owns end to
+    end. Blind-signed: the descriptors are not on the device yet.
 
 ### Changed
 
