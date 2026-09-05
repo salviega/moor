@@ -1,0 +1,18 @@
+[submodule "packages/contracts/lib/swap-vm"]
+	path = packages/contracts/lib/swap-vm
+	url = https://github.com/1inch/swap-vm
+[submodule "packages/contracts/lib/aqua"]
+	path = packages/contracts/lib/aqua
+	url = https://github.com/1inch/aqua
+[submodule "packages/contracts/lib/contracts-v2"]
+	path = packages/contracts/lib/contracts-v2
+	url = https://github.com/ensdomains/contracts-v2
+[submodule "packages/contracts/lib/forge-std"]
+	path = packages/contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "packages/contracts/lib/openzeppelin-contracts"]
+	path = packages/contracts/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "packages/contracts/lib/solidity-utils"]
+	path = packages/contracts/lib/solidity-utils
+	url = https://github.com/1inch/solidity-utils

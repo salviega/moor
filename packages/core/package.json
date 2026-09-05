@@ -1,0 +1,24 @@
+{
+	"name": "@moor/core",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "The one implementation of what a Moor position is: program builder, state derivation, ENS record schemas, addresses.",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run --coverage",
+		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"viem": "2.56.3",
+		"zod": "4.5.4"
+	},
+	"devDependencies": {
+		"@types/node": "22.19.14",
+		"@vitest/coverage-v8": "5.0.0",
+		"vitest": "5.0.0"
+	}
+}

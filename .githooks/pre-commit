@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+#
+# The cheap half of the commit ritual (AGENTS.md): formatting and lint, for
+# TypeScript and Solidity. Tests are deliberately not here — they run before
+# the commit by hand and in CI on the pull request.
+
+set -e
+
+echo "pre-commit: biome check"
+pnpm check
+
+if [ -f packages/contracts/foundry.toml ]; then
+	echo "pre-commit: forge fmt --check"
+	forge fmt --root packages/contracts --check
+fi

@@ -46,7 +46,7 @@ Las fechas son de fin de fase. Una fase que se atrasa **no empuja a la 5**: come
 **Objetivo:** que un cambio trivial llegue a producción, y que Sepolia y la Ledger estén listas antes de escribir producto.
 
 - **Primer commit hoy.** Monorepo pnpm: `apps/live-app`, `apps/agent`, `packages/{contracts,core,erc7730}`, Biome, `.nvmrc`, `.githooks`, GitHub Actions con `check`, `test`, `forge test` y build de la Live App.
-- `forge install` de `1inch/swap-vm`, `1inch/aqua` y `ensdomains/contracts-v2` en `packages/contracts`; compila en limpio.
+- ~~`forge install` de `1inch/swap-vm`, `1inch/aqua` y `ensdomains/contracts-v2` en `packages/contracts`; compila en limpio.~~ Cerrado el 5 de septiembre: `test/Deps.t.sol` compila e instancia los tres bajo solc 0.8.30 via-IR. Costó dos submódulos más (OZ 5.4.0, `solidity-utils` 6.9.10) y una sola OZ para todos — detalle en el [06 §2](./06_tecnologias.md#2-contratos-y-cadena) y en [`feedback/`](../feedback/).
 - **Registrar `salviega.eth` en ENSv2 Sepolia.** Es el padre de todas las posiciones de la demo; sin él no hay subnombres.
 - **Redesplegar Aqua y SwapVM en Sepolia** con su código oficial sin modificar, más WBTC y USDC de prueba con `mint` libre. Script `contracts:deploy` que escribe las direcciones en `packages/core`. Pedir ETH de faucet con anticipación: es la partida grande. **Preguntar a los mentores de 1inch si el redespliegue califica, el mismo día.**
 - **Descriptor ERC-7730 de Aqua** (`approve`, `ship`, `dock`): el contrato ya existe, así que este se puede hacer desde el día uno y verificar en el dispositivo. Los de los contratos propios van con cada contrato (regla 2).

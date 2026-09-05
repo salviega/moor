@@ -1,0 +1,47 @@
+# CI runs on the pull request and nowhere else (AGENTS.md, Branches and
+# deployment). Pushing a branch spends no minutes; the verdict is spent on the
+# merge. The ritual already ran locally — this is the second opinion.
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  typescript:
+    name: check · typecheck · test · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm typecheck
+      # Coverage floor (90% on packages/core) is enforced by vitest.config.ts
+      # inside this same command — nothing to read afterwards.
+      - run: pnpm test
+      - run: pnpm build
+
+  contracts:
+    name: forge fmt · build · test · coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - run: forge fmt --root packages/contracts --check
+      - run: forge build --root packages/contracts --sizes
+      - run: forge test --root packages/contracts -vvv
+      # Read, not gated (AGENTS.md, Tests come first): the three named tests are the floor.
+      - run: forge coverage --root packages/contracts --report summary --ir-minimum

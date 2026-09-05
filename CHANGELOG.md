@@ -30,6 +30,32 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Phase 0 scaffolding: the monorepo exists and every check is green.**
+  pnpm workspaces with `apps/live-app` (Next.js 16, empty page wired for
+  Sepolia, Wallet API deps declared), `apps/agent` (env validation, a cycle
+  that does nothing yet), `packages/core` (the one implementation of a
+  position: `PositionParams`, `deriveState()`, record schemas, ENSv2 Sepolia
+  addresses — 20 tests, 100% coverage against the 90% floor),
+  `packages/erc7730` (descriptor layout, `ledger:emu`/`ledger:screens`
+  placeholders) and `packages/contracts` (Foundry). Biome, `.nvmrc`,
+  `.githooks` (pre-commit lint/fmt, pre-push refuses `main`), and a PR-only
+  GitHub Actions workflow with a TypeScript job and a Foundry job.
+
+  **SwapVM, Aqua and ENSv2 compile together under one toolchain** — solc
+  0.8.30, via-IR, cancun, the settings they pin — proven by
+  `test/Deps.t.sol`. Getting there took two decisions worth recording:
+  SwapVM and Aqua resolve dependencies through `node_modules` and their npm
+  packages are not published, so OpenZeppelin 5.4.0 and `@1inch/solidity-utils`
+  6.9.10 come in as submodules; and Foundry's resolver ignores solc context
+  remappings, so ENSv2's own OpenZeppelin 5.3.0 cannot be scoped to its tree
+  — everything builds against 5.4.0, which is source-compatible. Both are in
+  `spec/feedback/` as the first real entries.
+
+  Dependencies are pinned by tag where the upstream has one (`swap-vm`
+  v1.0.2, `aqua` v1.0.0, `openzeppelin-contracts` v5.4.0, `solidity-utils`
+  6.9.10, `forge-std` v1.16.2) and by commit where it does not
+  (`contracts-v2`).
+
 - **Test coverage floor: 90% on `packages/core`, no blanket number on
   contracts.** `packages/core`'s Vitest coverage thresholds
   (lines/functions/branches/statements) are enforced inside `pnpm test`

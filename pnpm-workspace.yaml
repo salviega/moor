@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm ≥12 refuses to run dependency build scripts unless approved. esbuild
+# (pulled in by vitest and tsx) needs its postinstall to place the platform binary.
+allowBuilds:
+  esbuild: true
+
+# pnpm ≥12 also refuses packages published very recently (supply-chain guard).
+# The Anthropic SDK moves fast; this pin was verified against npm on 2026-09-05.
+minimumReleaseAgeExclude:
+  - '@anthropic-ai/sdk@0.124.0'
