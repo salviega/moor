@@ -31,10 +31,13 @@ No commit lands without this, in this order. A failing step is a blocker, not a
 warning to note and move past.
 
 1. **Tests first, and they have failed once.** `pnpm test` (Vitest on
-   `packages/core`) and `forge test` (in `packages/contracts`) pass. A test that
-   guards a promise in `04_diseno-de-solucion.md` — the direction gate, the
-   agent's negative roles, `strategyHash` parity — was written before the code
-   and seen failing for the expected reason.
+   `packages/core`, **coverage at 90% or above** — lines, functions, branches
+   and statements, enforced by `vitest.config.ts`'s own `coverage.thresholds`
+   so the command itself fails under the floor, not a separate step) and
+   `forge test` (in `packages/contracts`) pass. A test that guards a promise
+   in `04_diseno-de-solucion.md` — the direction gate, the agent's negative
+   roles, `strategyHash` parity — was written before the code and seen
+   failing for the expected reason.
 2. `pnpm typecheck` — clean.
 3. `pnpm check` (Biome) and `forge fmt --check` — clean.
 4. **Every signable function has its ERC-7730 descriptor and a Speculos screen.**
@@ -133,6 +136,12 @@ Three tests carry the product, and each guards a sentence in the spec:
 Contract tests run against SwapVM's `CoreInvariants` as well as our own: a
 program that breaks exact-in/exact-out symmetry behaves strangely with real
 takers even if every Moor test is green.
+
+**Contracts don't carry a blanket coverage number.** `forge coverage` runs in
+CI and the report is read, but a suite hitting 90% by testing getters is
+worth less than one that misses 90% while covering every negative-role case
+and the direction gate above. The three named tests are the actual floor;
+the percentage is a signal, not the gate, here.
 
 ## Security
 
