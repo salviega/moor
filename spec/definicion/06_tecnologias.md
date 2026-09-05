@@ -165,7 +165,8 @@ Desde la raíz, con `pnpm`:
 | `contracts:coverage`| `forge coverage --report summary` en `packages/contracts` — se lee, no se exige un %  |
 | `contracts:deploy`  | (`deploy:sepolia` en el paquete — `deploy` es un comando reservado de pnpm) `script/Deploy.s.sol` en Sepolia (`SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`): Aqua, `AquaSwapVMRouter`, `TestWETH` si no hay `WETH_ADDRESS`, `tWBTC`, `tUSDC`; luego `write-addresses.mjs` reescribe `packages/core/src/addresses.ts` |
 | `contracts:deploy:anvil` | Lo mismo contra un Anvil local con la llave 0 de Anvil — es como se verificó el script |
-| `demo:taker`        | El taker de demo: ejecuta swaps contra una posición para mostrar fills               |
+| `demo:ship`         | `ShipDemo.s.sol`: envía una posición de prueba desde la wallet del broadcaster (`MOOR_AMOUNT`, `MOOR_PRICE_MIN/MAX`, `MOOR_FEE_BPS`, `MOOR_DAYS`); escribe `deployments/positions/<chainId>-<hash>.json` |
+| `demo:taker`        | `DemoTaker.s.sol`: llena esa posición (`MOOR_POSITION`, `MOOR_AMOUNT_IN`) o, con `MOOR_REVERSE=1`, muestra la dirección contraria revirtiendo. Infraestructura de demo, no producto |
 | `ledger:emu`        | Levanta Speculos con la app de Ethereum y una seed de prueba; la Live App en `dev:ledger` firma contra él |
 | `ledger:screens`    | Firma en Speculos cada transacción del flujo (`approve`, `ship`, `createPosition`, `dock`, `revokeRoles`) y guarda las capturas en `packages/erc7730/screens/` |
 

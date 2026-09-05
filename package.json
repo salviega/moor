@@ -28,7 +28,8 @@
 		"demo:taker": "pnpm --filter @moor/contracts demo:taker",
 		"ledger:emu": "pnpm --filter @moor/erc7730 emu",
 		"ledger:screens": "pnpm --filter @moor/erc7730 screens",
-		"contracts:deploy:anvil": "pnpm --filter @moor/contracts deploy:anvil"
+		"contracts:deploy:anvil": "pnpm --filter @moor/contracts deploy:anvil",
+		"demo:ship": "pnpm --filter @moor/contracts demo:ship"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.12",

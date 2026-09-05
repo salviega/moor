@@ -123,9 +123,10 @@ that has never failed has never proven anything.
 Three tests carry the product, and each guards a sentence in the spec:
 
 - **The direction gate** (`04 §6`): a swap that would sell what the position is
-  buying reverts, and `quote` returns zero. This is also the first risk in the
-  plan — if it cannot be made to pass by the noon of September 7, plan B
-  (`_limitSwap1D` + invalidator) goes in that day and the spec is cut to match.
+  buying reverts — `quote` and `swap` both, with `DeadlineReached(0)` from the
+  trap at PC 31. `test/MoorProgram.t.sol` and the `CoreInvariants` harness in
+  `test/MoorProgramInvariants.t.sol`. This was the first risk in the plan; it
+  closed on September 5 without plan B.
 - **The agent's negative roles** (`05 §7`): `setText` on the position,
   `grantRoles`, `unregister`, `renew`, `dock` — each attempted from the agent's
   key, each reverting; `hasRoles` false for everything but its own text record.

@@ -12,7 +12,7 @@ Cada una con lo que se descartó y por qué. Las cuatro primeras vienen del [03]
 | Decisión | Se elige | Se descarta | Por qué |
 | --- | --- | --- | --- |
 | Motor de la posición | **SwapVM** sobre Aqua: `AquaSwapVMRouter`, `useAquaInsteadOfSignature = true` | `AquaApp` propio compuesto con la SDK de Aqua | La SDK solo codifica `ship`/`dock`; la lógica exigía un AMM en Solidity. SwapVM ya es un `AquaApp` y puntúa más |
-| Programa | Liquidez concentrada **unidireccional**: `_dynamicBalancesXD` → salto por `tokenIn` → `_xycConcentrateGrowLiquidityXD` → fee → `_deadline` | Range order bidireccional | Un rango bidireccional vende de vuelta si el precio regresa. El salto condicional por token de entrada cierra la dirección contraria (ver §5) |
+| Programa | Liquidez concentrada **unidireccional**: `Deadline` → `JumpIfTokenIn(permitido)` → trampa `Deadline(0)` → `FeeFlatIn` → `XYCConcentrateSwap`. Sin balances en el programa: los da Aqua | Range order bidireccional | Un rango bidireccional vende de vuelta si el precio regresa. El salto por token de entrada cierra la dirección contraria (ver §5). La trampa es `Deadline(0)` porque el router de Aqua no despacha `Revert` |
 | Identidad de la posición | **Registry de subnombres propio** bajo el nombre del holder + **un Permissioned Resolver por holder** | Wildcard sobre el resolver del padre | Wildcard no crea objeto onchain: sin token, expiración, permisos ni revocación. No pasa "ENSv2 central" |
 | Modificar opcodes de SwapVM | **No** en el MVP; stretch al final | Opcode propio desde el día uno | Cinco invariantes + orden de instrucciones crítico; se prueba contra `CoreInvariants` solo si sobra tiempo |
 | **Cadena** (revisa al 03) | **Una: Sepolia.** Aqua y SwapVM redesplegados con su código oficial sin modificar; ENSv2 en su beta | Dos cadenas: Aqua en fork local + ENSv2 en Sepolia | La Wallet API de Ledger Live firma y transmite solo a redes que Ledger Live conoce; un fork de Anvil no lo es, Sepolia sí. Aqua no tiene despliegue en testnet. 1inch permite redesplegar |
@@ -126,11 +126,11 @@ Dos invariantes, cada uno garantizado por el protocolo y no por código nuestro.
 
 **b) Una posición de comprar nunca vende; una de vender nunca compra.**
 
-Un rango de liquidez concentrada es, por naturaleza, bidireccional: si el precio entra, convierte; si sale por donde entró, deconvierte. Para Moor eso sería un defecto: el 04 promete que lo comprado se queda comprado. La dirección se cierra **en el programa**, con el control de flujo de SwapVM: la instrucción de salto por token de entrada (`_jumpIfTokenIn`) desvía a un final sin swap cualquier trade cuyo `tokenIn` sea el token que la posición está comprando. Un taker que intente vendérselo de vuelta recibe una `quote` de cero y un `swap` que revierte.
+Un rango de liquidez concentrada es, por naturaleza, bidireccional: si el precio entra, convierte; si sale por donde entró, deconvierte. Para Moor eso sería un defecto: el 04 promete que lo comprado se queda comprado. La dirección se cierra **en el programa**, con el control de flujo de SwapVM: `JumpIfTokenIn(tokenPermitido, 38)` salta al cuerpo solo cuando el taker trae el token que la posición compra; cualquier otro `tokenIn` cae en la instrucción siguiente, `Deadline(0)`, que revierte con `DeadlineReached(0)` — esa dirección venció en la época 0. Un taker que intente vendérselo de vuelta recibe un `quote` y un `swap` que **revierten**. Verificado el 5 de septiembre con el harness `CoreInvariants` de SwapVM (`test/MoorProgramInvariants.t.sol`) y en Sepolia.
 
 **Cómo se verifica.** Pruebas de contratos que intentan lo prohibido y esperan que falle: `dock` desde el agente, `setText` sobre la posición desde el agente, `grantRoles` desde el agente, swap en dirección contraria. Y la prueba de dirección corre además contra `CoreInvariants` de SwapVM, porque un programa que rompe simetría exact-in/out se comporta raro con los takers reales.
 
-> **Riesgo declarado:** que `_jumpIfTokenIn` combinado con balances dinámicos no baste para cerrar la dirección sin romper invariantes es la **primera cosa que se verifica en la fase 1**. Si no se puede, el plan B es un programa 1D con `_limitSwap1D` + `_invalidateTokenOut1D` — una orden límite pura, unidireccional por construcción, que cobra fee solo al llenarse — y el "trabaja mientras espera" del 02 se recorta honestamente a eso.
+> ~~**Riesgo declarado:** que `_jumpIfTokenIn` combinado con balances dinámicos no baste para cerrar la dirección sin romper invariantes.~~ **Cerrado el 5 de septiembre:** basta, y con margen — el programa pasa `CoreInvariants` en la dirección permitida. El plan B (`_limitSwap1D`) no hizo falta.
 
 ---
 
@@ -245,7 +245,7 @@ Ordenados por cuánto daño hacen si se materializan.
 
 | Riesgo | Qué pasa | Qué se hace |
 | --- | --- | --- |
-| **La dirección no se puede cerrar en el programa** (§5b) | La posición deconvierte si el precio regresa; el 04 promete lo contrario | Verificar en fase 1, primero. Plan B: `_limitSwap1D` + invalidador — orden límite pura, y recortar el "trabaja mientras espera" |
+| ~~**La dirección no se puede cerrar en el programa** (§5b)~~ **Cerrado el 5 sep:** `JumpIfTokenIn` + trampa `Deadline(0)`, `CoreInvariants` en verde, verificado en Sepolia | — | Sin plan B necesario |
 | ~~**Redesplegar Aqua/SwapVM en Sepolia se complica**~~ **Cerrado el 5 sep:** desplegados y verificados en Sourcify con `exact_match` | — | Sin plan B necesario |
 | **1inch no acepta el redespliegue como "oficial"** | Descalifica el track de 1inch | Preguntar a los mentores en los primeros días, con la regla ("redeployments allowed") en la mano |
 | **Clear Signing con descriptores no publicados** | La Ledger muestra blind signing en la demo | Verificar en fase 0 que Ledger Live en modo desarrollador acepta descriptores ERC-7730 locales, y usar **Speculos** para ver la pantalla exacta de cada firma sin depender del dispositivo. Si no, plan B: mostrar el descriptor y la simulación en la Live App y ser transparentes |

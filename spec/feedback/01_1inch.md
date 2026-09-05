@@ -27,6 +27,22 @@ _Se llena mientras se construye. Primer candidato ya visible desde la investigac
 
 **Reportado:** pendiente. Sugerencia concreta: o publicar los paquetes que los badges anuncian, o documentar en el README el consumo desde Foundry externo con las dos dependencias y los remappings.
 
+### 2026-09-05 — `Revert` está documentado como instrucción de control de flujo, pero el router de Aqua no lo despacha
+
+**Documentado / prometido:** `docs/PROGRAMS.md` lista `Revert` entre las instrucciones de control de flujo disponibles para componer programas, y `src/instructions/Controls.sol` lo implementa (`InstructionRevert(bytes)`).
+
+**Encontrado:** `src/opcodes/AquaOpcodes.sol` (el set que despacha `AquaSwapVMRouter`) no incluye `Revert`; solo `Opcodes.sol` (router genérico) lo tiene. Un programa Aqua con `Revert` revierte con `UnknownOpcode(1)` — falla, pero con un error ajeno. Descubierto por la prueba que esperaba `InstructionRevert(MoorWrongDirection)`.
+
+**Evidencia:** `lib/swap-vm/src/opcodes/AquaOpcodes.sol` (`_runOpcode`), `lib/swap-vm/src/opcodes/Opcodes.sol:48`, `packages/contracts/test/MoorProgram.t.sol` (primera corrida).
+
+**Impacto en Moor:** cambió la trampa de dirección a `Deadline(0)` — sí despachado, determinista y de 7 bytes — con la lectura "esa dirección venció en la época 0". Media hora.
+
+**Reportado:** pendiente. Sugerencia: o despachar `Revert` (y `Stop`) en `AquaOpcodes`, o marcar en `PROGRAMS.md` qué instrucciones existen en cada set de opcodes.
+
+### 2026-09-05 — Lo que funcionó: `CoreInvariants` y la base de pruebas Aqua se reutilizan tal cual
+
+**Encontrado:** `test/invariants/CoreInvariants.t.sol` es un contrato abstracto con un solo método que implementar (`_executeSwap`) y una configuración por struct; `test/base/AquaSwapVMTest.sol` trae `shipStrategy`, `swap`, `quote` y un `MockTaker` listos. Desde un proyecto externo con `forge install`, un programa nuevo tiene su suite de invariantes en ~80 líneas. Es lo que decidió la compuerta del plan en una tarde.
+
 ### 2026-09-05 — Lo que funcionó: el redespliegue reproduce el bytecode oficial
 
 **Encontrado:** `Aqua` compilado desde el submódulo `v1.0.0` con los ajustes de su `foundry.toml` (solc 0.8.30, via-IR) y desplegado en Sepolia (0xB8747B3e2F90154420165FB2fc4707D638797140) verifica en Sourcify con **`exact_match`** — mismo bytecode y metadata que la fuente. Es lo que hace defendible "official contracts" ante el jurado aun sin despliegue oficial en testnet: la reproducibilidad está.

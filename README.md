@@ -9,7 +9,7 @@ the Ledger decides.
 Built for ETHOnline 2026 — 1inch (Aqua/SwapVM), ENS (ENSv2) and Ledger (AI
 Agents) bounties.
 
-**Status:** phase 0 done (monorepo, Sepolia deployments, Live App on Vercel, first Ledger Live signature); phase 1 next — see [`spec/`](./spec/README.md) for the full
+**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phase 2 (ENSv2 names and permissions) next — see [`spec/`](./spec/README.md) for the full
 specification and [`spec/definicion/07_plan-de-trabajo.md`](./spec/definicion/07_plan-de-trabajo.md)
 for the phased plan and current progress.
 
@@ -27,6 +27,8 @@ production addresses do not exist on Sepolia. Source of truth: `packages/core/sr
 | tUSDC (6 dec, open mint — demo only) | [`0x274a…57AB`](https://sepolia.etherscan.io/address/0x274aaB610937e018310cCedC0b05B543b75557AB) | [`0x09d4e09f…`](https://sepolia.etherscan.io/tx/0x09d4e09fc4ccae6ec374a35a497e2089df33a86615f323adbb6a00b668492537) |
 
 Live App (empty, phase 0): [getmoor.vercel.app](https://getmoor.vercel.app) · ENS parent: `salviega.eth` on ENSv2 Sepolia.
+
+First live position (phase 1): `0x35a92a7d…` — 1,000 tUSDC buying tWBTC between 58k and 62k USDC/BTC. `ship` [`0xf5bf8022…`](https://sepolia.etherscan.io/tx/0xf5bf8022d92eb2f7442ff783d3f7805e4b8274c1c8e2b00b7150a8ad5dac8355) · fill of 0.01 tWBTC → 605.86 tUSDC [`0xe76cc5cf…`](https://sepolia.etherscan.io/tx/0xe76cc5cf16e51a611c96abe17bff7a79f487273c3de75ecbfb78180dac867501) · the reverse direction reverts with `DeadlineReached(0)`.
 
 ## Documentation
 
