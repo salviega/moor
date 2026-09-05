@@ -1,0 +1,24 @@
+{
+	"id": "moor",
+	"name": "Moor",
+	"url": "http://localhost:3000",
+	"homepageUrl": "https://github.com/salviega/moor",
+	"icon": "",
+	"platforms": ["desktop"],
+	"apiVersion": "^2.0.0",
+	"manifestVersion": "2",
+	"branch": "debug",
+	"categories": ["defi"],
+	"currencies": ["ethereum_sepolia"],
+	"content": {
+		"shortDescription": {
+			"en": "Turn the waiting time of holding into productive capital. Sign once; the Ledger decides."
+		},
+		"description": {
+			"en": "A position signed once from your Ledger that earns fees through 1inch Aqua while the tokens never leave the wallet, already contains the order that fills when the price arrives, and has an ENS name anyone can read. An agent watches and proposes; the Ledger decides."
+		}
+	},
+	"permissions": ["account.list", "account.request", "transaction.signAndBroadcast"],
+	"domains": ["http://*", "https://*"],
+	"visibility": "complete"
+}

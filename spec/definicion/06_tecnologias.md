@@ -11,8 +11,8 @@
 | Tecnología     | Versión | Para qué                                                                                   |
 | -------------- | ------- | ------------------------------------------------------------------------------------------ |
 | **Node.js**    | 22 LTS  | Runtime de la Live App (build) y del agente. Fijado en `.nvmrc` y en `engines`             |
-| **TypeScript** | 5.9 / 7.x | `strict: true`. Sin `any` en `packages/core`. Next 16 declara soporte para 5.x; **confirmar 7.x** antes de subir |
-| **pnpm**       | 11.x    | Workspaces del monorepo. Instalaciones rápidas, lockfile estricto, sin dependencias fantasma |
+| **TypeScript** | 5.9.3   | `strict: true`. Sin `any` en `packages/core`. 7.x existe en npm pero Next 16 declara 5.x; se queda en 5.9 |
+| **pnpm**       | 12.3    | Workspaces del monorepo. Lockfile estricto, sin dependencias fantasma. Desde la 12 bloquea build scripts (`allowBuilds`) y paquetes publicados hace muy poco (`minimumReleaseAgeExclude`); ambos configurados en `pnpm-workspace.yaml` |
 | **Foundry**    | 1.3.x   | Compilar, probar y desplegar contratos. `forge`, `cast`, `anvil`. Ya instalado localmente  |
 
 Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scripts de la raíz con `pnpm -r` alcanzan. Turborepo entra si el CI empieza a tardar, no antes.
@@ -24,13 +24,15 @@ Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scrip
 | Tecnología                        | Versión         | Para qué                                                                                              |
 | --------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------- |
 | **Solidity**                      | 0.8.x           | `MoorRegistrar`, `MoorProgramFactory`, scripts de despliegue                                          |
-| **`1inch/swap-vm`**               | `main` (git)    | El motor. Se trae con `forge install`; de aquí salen `AquaSwapVMRouter`, `ProgramBuilder`, los opcodes y `CoreInvariants` para las pruebas |
-| **`1inch/aqua`**                  | `main` (git)    | `IAqua`, `AquaApp`, el contrato `Aqua` para redesplegar en Sepolia                                    |
-| **`ensdomains/contracts-v2`**     | `main` (git)    | `IPermissionedRegistry`, `RegistryRolesLib`, `PermissionedResolver`, `VerifiableFactory`. Trae OpenZeppelin como submódulo |
+| **`1inch/swap-vm`**               | v1.0.2 (git)    | El motor. Se trae con `forge install`; de aquí salen `AquaSwapVMRouter`, `ProgramBuilder`, los opcodes y `CoreInvariants` para las pruebas |
+| **`1inch/aqua`**                  | v1.0.0 (git)    | `IAqua`, `AquaApp`, el contrato `Aqua` para redesplegar en Sepolia                                    |
+| **`ensdomains/contracts-v2`**     | commit (git)    | `IPermissionedRegistry`, `RegistryRolesLib`, `PermissionedResolver`, `VerifiableFactory`. Trae OpenZeppelin como submódulo |
 | **viem**                          | 2.56            | Lectura y escritura de cadena desde TypeScript: `packages/core`, Live App y agente. Un solo cliente para los tres |
 | **`@1inch/aqua-sdk`**             | 0.3             | Codificar `ship`/`dock` y parsear eventos `Shipped`/`Docked`/`Pulled`/`Pushed` sin escribir ABIs a mano |
 
 **Por qué Foundry y no Hardhat.** Los tres protocolos de los que depende Moor están hechos con Foundry. Con `forge install` se traen como dependencia y compilan en el mismo árbol; sus scripts de despliegue corren sin traducir; y `CoreInvariants` de SwapVM —la prueba que decide si la dirección del programa se puede cerrar ([05 §5](./05_stack-y-arquitectura.md#5-la-regla-que-no-puede-fallar-solo-la-ledger-mueve-capital-y-la-posición-no-se-deshace-sola))— se hereda tal cual. Además, `@1inch/aqua` y `@1inch/swap-vm` **no están publicados en npm** pese a lo que dicen sus READMEs, así que la vía Hardhat habría empezado copiando fuentes a mano.
+
+**Dos submódulos más de los previstos.** SwapVM y Aqua resuelven sus dependencias por `node_modules` y fijan **OpenZeppelin 5.4.0** y **`@1inch/solidity-utils` 6.9.x**; se traen con `forge install` (`OpenZeppelin/openzeppelin-contracts@v5.4.0`, `1inch/solidity-utils@6.9.10`) y se remapean en `foundry.toml`. ENSv2 lleva su propio OZ 5.3.0; como el resolutor de Foundry no honra remappings por contexto de solc, **todos compilan contra la 5.4.0** — son compatibles en código fuente. `forge coverage` necesita `--ir-minimum` con via-IR.
 
 **Anvil** se usa para las pruebas locales rápidas (fork de Sepolia), no para la demo: la demo va en Sepolia real ([05 §1](./05_stack-y-arquitectura.md#1-decisiones)).
 
@@ -40,8 +42,8 @@ Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scrip
 
 | Tecnología                              | Versión | Para qué                                                                                                  |
 | --------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
-| **Next.js**                             | 16.3    | La Live App. App Router. Es lo que usa el tutorial oficial de Ledger. Casi todo cliente: la Wallet API vive en el navegador |
-| **React**                               | 19.2    | Viene con Next                                                                                            |
+| **Next.js**                             | 16.3.4  | La Live App. App Router. Es lo que usa el tutorial oficial de Ledger. Casi todo cliente: la Wallet API vive en el navegador |
+| **React**                               | 19.2.8  | Viene con Next                                                                                            |
 | **`@ledgerhq/wallet-api-client`**       | 1.15    | El puente con Ledger Live: `account.list`, `transaction.signAndBroadcast`. Es la única forma de firmar     |
 | **`@ledgerhq/wallet-api-client-react`** | 1.4     | Hooks sobre el cliente: `useAccounts`, `useSignTransaction`. Menos plomería en los componentes             |
 | **`@ledgerhq/wallet-api-simulator`**    | 2.3     | Simula Ledger Live en el navegador para desarrollar **sin abrir Ledger Live ni conectar el dispositivo**. Solo desarrollo |
@@ -91,8 +93,8 @@ Se activan los **fallbacks del lado del servidor** del SDK (`fallbacks: "default
 | Tecnología          | Versión | Para qué                                                                                        |
 | ------------------- | ------- | ----------------------------------------------------------------------------------------------- |
 | **Biome**           | 2.5     | Lint y formato de TypeScript en un solo binario. Script `check`                                 |
-| **Vitest**          | 5.x     | Pruebas de `packages/core`: derivación de estado, construcción de programa, esquemas             |
-| **`@vitest/coverage-v8`** | 4.x | Motor de cubrimiento de Vitest. `pnpm test` corre con `--coverage`; el umbral vive en `vitest.config.ts` |
+| **Vitest**          | 5.0     | Pruebas de `packages/core`: derivación de estado, construcción de programa, esquemas             |
+| **`@vitest/coverage-v8`** | 5.0 | Motor de cubrimiento de Vitest. `pnpm test` corre con `--coverage`; el umbral vive en `vitest.config.ts` |
 | **`forge test`**    | —       | Pruebas de contratos, incluidas las de "lo prohibido debe fallar" y la de dirección contra `CoreInvariants` |
 | **`forge fmt`**     | —       | Formato de Solidity                                                                             |
 | **Speculos**        | `pip install speculos` | Emulador oficial del dispositivo Ledger (Nano S/S+/X, Stax, Flex). Corre la app de Ethereum sin hardware; API REST en `:5000`, botones automatizables, capturas de pantalla. Sirve para ver **exactamente qué muestra la pantalla** al firmar `ship`, `createPosition` o `revokeRoles` con nuestros descriptores ERC-7730, y para capturar esas pantallas en CI |
@@ -183,5 +185,4 @@ Desde la raíz, con `pnpm`:
 - **Tooling ERC-7730.** Ledger mantiene un registro público de descriptores con un linter (`erc7730`, Python). Confirmar cómo se cargan descriptores locales en Ledger Live en modo desarrollador — es tarea de fase 0 en el [07](./07_plan-de-trabajo.md).
 - **Speculos + Clear Signing.** Confirmar cómo se le entregan a la app de Ethereum emulada los descriptores ERC-7730 locales (la app los recibe como metadata firmada; en desarrollo hay que ver qué acepta). Sin eso, Speculos muestra las pantallas de blind signing y no sirve para lo que queremos.
 - **Instalación exacta del Key Ring CLI** (`wallet-cli ring`) en Linux y su flujo de enrolamiento en un host sin USB. La página del track lo describe; la doc de `ai-tools` de Ledger aún no.
-- **TypeScript 7.x vs 5.9.** Confirmar compatibilidad de Next 16.3 antes de fijar.
 - **Cómo enumerar subnombres** de un `UserRegistry` desde viem: eventos, `UniversalResolverV2` o un índice mínimo. Compartido con el [05](./05_stack-y-arquitectura.md#11-pendientes).

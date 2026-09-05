@@ -15,7 +15,21 @@ _Se llena mientras se construye. Primer candidato ya visible desde la investigac
 
 ## Bitácora
 
-_Sin entradas todavía — la fase 0 y 1 del [07](../definicion/07_plan-de-trabajo.md) son donde se instalan y se prueban los contratos por primera vez._
+### 2026-09-05 — Los paquetes npm que anuncian los READMEs no existen
+
+**Documentado / prometido:** el README de SwapVM muestra un badge de npm para `@1inch/swap-vm`, y el de Aqua para `@1inch/aqua`. Sus `remappings.txt` apuntan a `node_modules/` (`@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/`, `@1inch/aqua/=node_modules/@1inch/aqua/`), y `swap-vm/package.json` depende de `"@1inch/aqua": "github:1inch/aqua#v1.0.0"`.
+
+**Encontrado:** `npm view @1inch/swap-vm version` y `npm view @1inch/aqua version` no devuelven nada (5 de septiembre de 2026). Los repos son híbridos Hardhat/Foundry cuyo flujo esperado es `yarn install` dentro del propio repo; consumirlos desde otro proyecto Foundry con `forge install` funciona, pero hay que proveer uno mismo OpenZeppelin 5.4.0 y `@1inch/solidity-utils` 6.9.x como submódulos y escribir los remappings a mano. `@1inch/aqua-sdk` (TypeScript) sí está publicado.
+
+**Evidencia:** `packages/contracts/foundry.toml` (bloque `remappings`), `lib/swap-vm/remappings.txt`, `lib/aqua/remappings.txt`, `lib/swap-vm/package.json`.
+
+**Impacto en Moor:** ~1 hora de la fase 0 en averiguar el layout y las versiones exactas. Ninguna decisión cambió; reforzó la de Foundry sobre Hardhat, porque con Hardhat habría empezado copiando fuentes a mano.
+
+**Reportado:** pendiente. Sugerencia concreta: o publicar los paquetes que los badges anuncian, o documentar en el README el consumo desde Foundry externo con las dos dependencias y los remappings.
+
+### 2026-09-05 — Lo que funcionó: instalación limpia con tags
+
+**Encontrado:** `forge install 1inch/swap-vm` y `forge install 1inch/aqua` resuelven al último tag (`v1.0.2`, `v1.0.0`) sin pedir nada, y la combinación SwapVM + Aqua + OZ 5.4.0 + solidity-utils 6.9.10 compila en limpio con solc 0.8.30 via-IR — mismos ajustes que sus `foundry.toml`. Cero fricción una vez resuelto lo anterior.
 
 <!--
 ### AAAA-MM-DD — Título corto del hallazgo

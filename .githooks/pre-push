@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+#
+# Refuses a direct push to main. Work goes on a branch and reaches main through a
+# pull request, so the checks have a chance to speak before production does.
+#
+# Installed by the `prepare` script in package.json, which points core.hooksPath
+# at this directory. This is a local guard, not a server-side one: enforcing it
+# for everyone needs branch protection, which needs a public repository or a paid
+# plan. Until then, this is what there is.
+#
+# To override in a genuine emergency: git push --no-verify
+
+protected="refs/heads/main"
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+	if [ "$remote_ref" = "$protected" ]; then
+		echo "pre-push: refusing to push straight to main." >&2
+		echo >&2
+		echo "  Merging to main deploys the Live App to production." >&2
+		echo "  Open a pull request instead:" >&2
+		echo >&2
+		echo "    git switch -c feature/<name>" >&2
+		echo "    git push -u origin feature/<name>" >&2
+		echo "    gh pr create" >&2
+		echo >&2
+		echo "  If this is a real emergency: git push --no-verify" >&2
+		exit 1
+	fi
+done
+
+exit 0

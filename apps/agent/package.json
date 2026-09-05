@@ -1,0 +1,23 @@
+{
+	"name": "@moor/agent",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Headless watcher. Reads price and balances, derives state with @moor/core, writes moor.agent.* on its own subname. Never signs anything else.",
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"once": "tsx src/main.ts --once",
+		"loop": "tsx src/main.ts"
+	},
+	"dependencies": {
+		"@anthropic-ai/sdk": "0.124.0",
+		"@moor/core": "workspace:*",
+		"pino": "10.3.1",
+		"viem": "2.56.3",
+		"zod": "4.5.4"
+	},
+	"devDependencies": {
+		"@types/node": "22.19.14",
+		"tsx": "4.23.13"
+	}
+}

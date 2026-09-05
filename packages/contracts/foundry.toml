@@ -1,0 +1,58 @@
+# Moor contracts. Sepolia only during the hackathon (05 §1).
+#
+# The three protocols we build on pin solc 0.8.30 with via-IR (SwapVM, Aqua) and
+# evm cancun (ENSv2); we match them so the redeployed bytecode is theirs, not a
+# recompile with different settings.
+
+[profile.default]
+src = "src"
+out = "out"
+test = "test"
+script = "script"
+libs = ["lib"]
+solc_version = "0.8.30"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+# Deployment scripts write the new addresses for packages/core (AGENTS.md).
+fs_permissions = [{ access = "read-write", path = "./deployments" }]
+ignored_warnings_from = ["lib/"]
+
+# SwapVM and Aqua resolve their dependencies through node_modules (they are
+# hybrid Hardhat/Foundry repos). We give them the same packages as git
+# submodules and remap them here.
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    # OpenZeppelin 5.4.0 is what SwapVM and Aqua pin; ENSv2 pins 5.3.0 and is
+    # source-compatible with it. One version for everybody — Foundry's resolver
+    # does not honour solc context remappings, so two versions cannot coexist.
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-v5/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/contracts-v2/contracts/lib/openzeppelin-contracts-upgradeable/contracts/",
+    "@1inch/solidity-utils/=lib/solidity-utils/",
+    "@1inch/aqua/=lib/aqua/",
+    "@1inch/swap-vm/=lib/swap-vm/",
+    "@ensdomains/contracts-v2/=lib/contracts-v2/contracts/src/",
+    "@ensdomains/verifiable-factory/=lib/contracts-v2/contracts/lib/verifiable-factory/src/",
+    "@ens/contracts/=lib/contracts-v2/contracts/lib/ens-contracts/contracts/",
+    "@ensdomains/buffer/=lib/contracts-v2/contracts/lib/buffer/",
+    "@ensdomains/solsha1/contracts/=lib/contracts-v2/contracts/lib/solsha1/contracts/",
+    "@unruggable/gateways/=lib/contracts-v2/contracts/lib/unruggable-gateways/",
+    "solady/=lib/contracts-v2/contracts/lib/solady/src/",
+]
+
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = true
+int_types = "long"
+number_underscore = "thousands"
+single_line_statement_blocks = "multi"
+multiline_func_header = "all"
+
+[profile.ci]
+fuzz = { runs = 1000 }
+
+[fuzz]
+runs = 256

@@ -1,0 +1,36 @@
+{
+	"name": "moor",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Turns the waiting time of holding into productive capital. Ledger signs once; 1inch Aqua earns; ENS names it; the agent proposes and the Ledger decides.",
+	"license": "MIT",
+	"engines": {
+		"node": ">=22 <23",
+		"pnpm": ">=10"
+	},
+	"packageManager": "pnpm@12.3.4",
+	"scripts": {
+		"prepare": "git config core.hooksPath .githooks",
+		"dev": "pnpm --filter @moor/live-app dev",
+		"dev:ledger": "pnpm --filter @moor/live-app dev:ledger",
+		"agent": "pnpm --filter @moor/agent once",
+		"agent:loop": "pnpm --filter @moor/agent loop",
+		"check": "biome check .",
+		"check:fix": "biome check --write .",
+		"typecheck": "pnpm -r --if-present typecheck",
+		"test": "pnpm --filter @moor/core test",
+		"build": "pnpm --filter @moor/live-app build",
+		"contracts:build": "forge build --root packages/contracts",
+		"contracts:test": "forge test --root packages/contracts",
+		"contracts:coverage": "forge coverage --root packages/contracts --report summary --ir-minimum",
+		"contracts:fmt": "forge fmt --root packages/contracts --check",
+		"contracts:deploy": "pnpm --filter @moor/contracts deploy",
+		"demo:taker": "pnpm --filter @moor/contracts demo:taker",
+		"ledger:emu": "pnpm --filter @moor/erc7730 emu",
+		"ledger:screens": "pnpm --filter @moor/erc7730 screens"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.12",
+		"typescript": "5.9.3"
+	}
+}

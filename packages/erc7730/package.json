@@ -1,0 +1,11 @@
+{
+	"name": "@moor/erc7730",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "ERC-7730 Clear Signing descriptors for everything the holder signs, plus the Speculos captures that prove what the device shows.",
+	"scripts": {
+		"emu": "node scripts/emu.mjs",
+		"screens": "node scripts/screens.mjs"
+	}
+}

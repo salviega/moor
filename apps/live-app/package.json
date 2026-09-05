@@ -1,0 +1,33 @@
+{
+	"name": "@moor/live-app",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "The Ledger Live Live App. Defines, reviews and signs positions through the Wallet API; reads everything else through @moor/core.",
+	"scripts": {
+		"dev": "NEXT_PUBLIC_WALLET_API_SIMULATOR=1 next dev",
+		"dev:ledger": "next dev",
+		"build": "next build",
+		"start": "next start",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@ledgerhq/wallet-api-client": "1.15.3",
+		"@ledgerhq/wallet-api-client-react": "1.4.34",
+		"@moor/core": "workspace:*",
+		"@tanstack/react-query": "5.102.8",
+		"next": "16.3.4",
+		"react": "19.2.8",
+		"react-dom": "19.2.8",
+		"viem": "2.56.3",
+		"zod": "4.5.4"
+	},
+	"devDependencies": {
+		"@ledgerhq/wallet-api-simulator": "2.3.3",
+		"@tailwindcss/postcss": "4.3.3",
+		"@types/node": "22.19.14",
+		"@types/react": "19.2.14",
+		"@types/react-dom": "19.2.3",
+		"tailwindcss": "4.3.3"
+	}
+}
