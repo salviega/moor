@@ -1,0 +1,145 @@
+{
+	"$schema": "https://raw.githubusercontent.com/LedgerHQ/clear-signing-erc7730-registry/master/specs/erc7730-v1.schema.json",
+	"context": {
+		"$id": "Aqua",
+		"contract": {
+			"abi": [
+				{
+					"type": "function",
+					"name": "dock",
+					"inputs": [
+						{
+							"name": "app",
+							"type": "address",
+							"internalType": "address"
+						},
+						{
+							"name": "strategyHash",
+							"type": "bytes32",
+							"internalType": "bytes32"
+						},
+						{
+							"name": "tokens",
+							"type": "address[]",
+							"internalType": "address[]"
+						}
+					],
+					"outputs": [],
+					"stateMutability": "nonpayable"
+				},
+				{
+					"type": "function",
+					"name": "ship",
+					"inputs": [
+						{
+							"name": "app",
+							"type": "address",
+							"internalType": "address"
+						},
+						{
+							"name": "strategy",
+							"type": "bytes",
+							"internalType": "bytes"
+						},
+						{
+							"name": "tokens",
+							"type": "address[]",
+							"internalType": "address[]"
+						},
+						{
+							"name": "amounts",
+							"type": "uint256[]",
+							"internalType": "uint256[]"
+						}
+					],
+					"outputs": [
+						{
+							"name": "strategyHash",
+							"type": "bytes32",
+							"internalType": "bytes32"
+						}
+					],
+					"stateMutability": "nonpayable"
+				}
+			],
+			"deployments": [
+				{
+					"chainId": 11155111,
+					"address": "0x0000000000000000000000000000000000000000"
+				}
+			]
+		}
+	},
+	"metadata": {
+		"owner": "Moor",
+		"info": {
+			"legalName": "Moor",
+			"url": "https://moor.vercel.app"
+		},
+		"constants": {}
+	},
+	"display": {
+		"formats": {
+			"ship(address,bytes,address[],uint256[])": {
+				"$id": "ship",
+				"intent": "Open Moor position",
+				"fields": [
+					{
+						"path": "app",
+						"label": "Strategy engine",
+						"format": "addressName",
+						"params": {
+							"types": ["contract"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "tokens.[]",
+						"label": "Token",
+						"format": "addressName",
+						"params": {
+							"types": ["token"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "amounts.[]",
+						"label": "Amount committed",
+						"format": "tokenAmount",
+						"params": {
+							"tokenPath": "tokens.[]"
+						}
+					}
+				],
+				"required": ["app", "tokens.[]", "amounts.[]"],
+				"excluded": ["strategy"]
+			},
+			"dock(address,bytes32,address[])": {
+				"$id": "dock",
+				"intent": "Close Moor position",
+				"fields": [
+					{
+						"path": "app",
+						"label": "Strategy engine",
+						"format": "addressName",
+						"params": {
+							"types": ["contract"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "tokens.[]",
+						"label": "Token returned",
+						"format": "addressName",
+						"params": {
+							"types": ["token"],
+							"sources": ["local", "ens"]
+						}
+					}
+				],
+				"required": ["app", "tokens.[]"],
+				"excluded": ["strategyHash"]
+			}
+		}
+	}
+}

@@ -80,7 +80,7 @@ Formularios con estado de React y `useActionState`; sin librería de formularios
 | **Claude Opus 5**        | `claude-opus-5` | El modelo. Thinking adaptativo (viene por defecto). Salida estructurada con `messages.parse()` contra el esquema zod de la propuesta |
 | **viem**                 | 2.56    | Leer Aqua/SwapVM y escribir `setText` en el subnombre del agente. La llave caliente se carga desde Key Ring     |
 | **pino**                 | 10.x    | Logs estructurados. Cada ciclo deja una línea: qué leyó, qué derivó, si propuso                                 |
-| **Ledger Key Ring CLI**  | —       | `wallet-cli ring`: custodia de la llave del agente, la RPC y la API key de Anthropic, cifradas con la seed de la Ledger y descifradas sin USB en el VPS |
+| **Ledger Key Ring CLI**  | `wallet-cli` 2.1.0 | `wallet-cli ring encrypt/decrypt --key <nombre>`: custodia de la llave del agente, la RPC y la API key de Anthropic, cifradas con la seed de la Ledger y descifradas sin USB en el VPS (solo red) |
 
 **Dónde entra el modelo y dónde no.** Leer precio, leer balances, derivar estado y detectar umbrales es **código determinista** en `packages/core` — no se le pregunta a un modelo cuánto vale `1 − balIn/monto0`. Claude entra **solo cuando se cruza un umbral**: recibe la posición, la lectura y las alternativas ya simuladas por código, y devuelve una propuesta estructurada (`none | widen | narrow | close | renew`, parámetros, razonamiento en dos frases). Una llamada por propuesta, no por ciclo. La salida se valida con zod antes de escribirse en ENS; si no valida, no se escribe.
 
@@ -97,7 +97,10 @@ Se activan los **fallbacks del lado del servidor** del SDK (`fallbacks: "default
 | **`@vitest/coverage-v8`** | 5.0 | Motor de cubrimiento de Vitest. `pnpm test` corre con `--coverage`; el umbral vive en `vitest.config.ts` |
 | **`forge test`**    | —       | Pruebas de contratos, incluidas las de "lo prohibido debe fallar" y la de dirección contra `CoreInvariants` |
 | **`forge fmt`**     | —       | Formato de Solidity                                                                             |
-| **Speculos**        | `pip install speculos` | Emulador oficial del dispositivo Ledger (Nano S/S+/X, Stax, Flex). Corre la app de Ethereum sin hardware; API REST en `:5000`, botones automatizables, capturas de pantalla. Sirve para ver **exactamente qué muestra la pantalla** al firmar `ship`, `createPosition` o `revokeRoles` con nuestros descriptores ERC-7730, y para capturar esas pantallas en CI |
+| **Speculos**        | 0.27 (`.venv`) | Emulador oficial del dispositivo Ledger (Nano S+/X, Stax, Flex, Apex). Corre la app de Ethereum sin hardware; API REST, botones automatizables, capturas. Sirve para ver **exactamente qué muestra la pantalla** al firmar `ship`, `createPosition` o `revokeRoles` con nuestros descriptores ERC-7730, y para capturar esas pantallas en CI. Requiere el paquete de sistema `qemu-user-static` |
+| **App de Ethereum (ELF)** | 1.22.3 | **Precompilada** por dispositivo en los releases de `LedgerHQ/app-ethereum`; `ledger:emu` la descarga. No hay que compilarla |
+| **`erc7730`**       | 1.0.10 (`.venv`) | Linter oficial de descriptores ERC-7730: límites del dispositivo, esquema, y validación del ABI contra Sourcify/Etherscan cuando el contrato está verificado |
+| **`@ledgerhq/wallet-cli`** | 2.1.0 (global) | Ledger Wallet CLI. `ring init` (con dispositivo) provisiona el Key Ring; `ring encrypt`/`decrypt --key` después sin dispositivo, con red |
 | **GitHub Actions**  | —       | En cada PR: `pnpm check`, `pnpm test`, `forge test`, build de la Live App                        |
 | **`.githooks`**     | —       | Pre-commit: `pnpm check` y `forge fmt --check`. Pre-push: pruebas. Como en los otros proyectos    |
 
@@ -156,7 +159,8 @@ Desde la raíz, con `pnpm`:
 | `test`              | Vitest en `packages/core`, con `--coverage` — falla si el cubrimiento baja de 90%    |
 | `contracts:test`    | `forge test` en `packages/contracts`                                                |
 | `contracts:coverage`| `forge coverage --report summary` en `packages/contracts` — se lee, no se exige un %  |
-| `contracts:deploy`  | Despliega Aqua, SwapVM, tokens de prueba y contratos propios en Sepolia; escribe las direcciones en `packages/core` |
+| `contracts:deploy`  | `script/Deploy.s.sol` en Sepolia (`SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`): Aqua, `AquaSwapVMRouter`, `TestWETH` si no hay `WETH_ADDRESS`, `tWBTC`, `tUSDC`; luego `write-addresses.mjs` reescribe `packages/core/src/addresses.ts` |
+| `contracts:deploy:anvil` | Lo mismo contra un Anvil local con la llave 0 de Anvil — es como se verificó el script |
 | `demo:taker`        | El taker de demo: ejecuta swaps contra una posición para mostrar fills               |
 | `ledger:emu`        | Levanta Speculos con la app de Ethereum y una seed de prueba; la Live App en `dev:ledger` firma contra él |
 | `ledger:screens`    | Firma en Speculos cada transacción del flujo (`approve`, `ship`, `createPosition`, `dock`, `revokeRoles`) y guarda las capturas en `packages/erc7730/screens/` |
@@ -184,5 +188,5 @@ Desde la raíz, con `pnpm`:
 - **Fuente de precio.** Chainlink tiene feeds en Sepolia (BTC/USD); Pyth también. Elegir una y fijarla en `packages/core`. Compartido con el [04](./04_diseno-de-solucion.md#8-decisiones-tomadas-y-pendientes).
 - **Tooling ERC-7730.** Ledger mantiene un registro público de descriptores con un linter (`erc7730`, Python). Confirmar cómo se cargan descriptores locales en Ledger Live en modo desarrollador — es tarea de fase 0 en el [07](./07_plan-de-trabajo.md).
 - **Speculos + Clear Signing.** Confirmar cómo se le entregan a la app de Ethereum emulada los descriptores ERC-7730 locales (la app los recibe como metadata firmada; en desarrollo hay que ver qué acepta). Sin eso, Speculos muestra las pantallas de blind signing y no sirve para lo que queremos.
-- **Instalación exacta del Key Ring CLI** (`wallet-cli ring`) en Linux y su flujo de enrolamiento en un host sin USB. La página del track lo describe; la doc de `ai-tools` de Ledger aún no.
+- **Enrolar el Key Ring en un host sin USB.** La instalación ya está clara (`npm i -g @ledgerhq/wallet-cli`; `ring init` con dispositivo; luego solo red). Lo que sigue sin documentar es cómo un segundo host (el VPS) pasa a ser miembro del mismo trustchain. Se resuelve con el dispositivo — ver [`feedback/03_ledger.md`](../feedback/03_ledger.md).
 - **Cómo enumerar subnombres** de un `UserRegistry` desde viem: eventos, `UniversalResolverV2` o un índice mínimo. Compartido con el [05](./05_stack-y-arquitectura.md#11-pendientes).

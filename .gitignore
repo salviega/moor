@@ -40,3 +40,9 @@ coverage/
 
 # Claude Code local settings (also excluded globally, kept here for portability)
 .claude/settings.local.json
+
+# Speculos app binaries (downloaded by ledger:emu)
+packages/erc7730/.speculos/
+
+# Python tooling (Speculos, erc7730) — see 06 §6
+.venv/
