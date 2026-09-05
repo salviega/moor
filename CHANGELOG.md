@@ -30,6 +30,30 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Aqua and SwapVM live on Sepolia; the Live App live on Vercel; `salviega.eth`
+  on ENSv2** (phase 0, 2026-09-05, deployer `0x5b1dC626Fa6dD9c2f5FfceA5B0ddDc74aa368258`, 0.0075 ETH):
+  - Aqua `0xB8747B3e2F90154420165FB2fc4707D638797140` — tx `0x66beea8da42bf781827d09e035d32178763635b34a69dc38e61b6f79988808aa` — **Sourcify `exact_match`**: the redeployed
+    bytecode is the official one byte for byte.
+  - AquaSwapVMRouter `0xdD026eA05C9256A1162dC3d41102579458A804Cd` — tx `0x039c3354bc524c26c15006de99517ca7f38d3718fe672717d8c14d91e458f1a2` (owner = deployer, name
+    `AquaSwapVMRouter`, version `1`).
+  - TestWETH `0x10C5026152eB4f79119d6cFb75205aEB6E98dfA0` — tx `0x51c04d41a7d8ce3486c135b626ea36d54528bf0381315638ac8ce81048d06232`.
+  - tWBTC `0xfA92A297eC2cCC8Ec010ACa475F07240e2D47deC` — tx `0x69b6c4c16ba6adc55cf697857e6cc23ae9ef32681f07f3c16579b6a25af27ced`; tUSDC `0x274aaB610937e018310cCedC0b05B543b75557AB` — tx `0x09d4e09fc4ccae6ec374a35a497e2089df33a86615f323adbb6a00b668492537` (open `mint`, demo only).
+
+  `packages/core/src/addresses.ts` rewritten by `write-addresses.mjs`; the
+  ERC-7730 descriptor now points at the real Aqua address and lints against
+  its verified ABI. Live App at `https://getmoor.vercel.app` (Vercel project `moor`, Root
+  Directory `apps/live-app`, Node 22, GitHub repo connected so merges to
+  `main` deploy); `manifest.json` carries that URL. `salviega.eth` resolves
+  through `UniversalResolverV2` (resolver `0xc93Ad19307813019b9595147823b035DD93ce363`).
+  Key Ring initialised on the holder's laptop.
+
+### Fixed
+
+- `pnpm deploy` is a reserved pnpm command, so the contracts script is now
+  `deploy:sepolia` (`pnpm contracts:deploy` still works).
+- The root `prepare` script tolerates a missing `.git`, which is what Vercel's
+  build has — it was failing `pnpm install` there.
+
 - **Speculos verified end to end** (phase 0): with `qemu-user-static`
   installed, `pnpm ledger:emu` runs the prebuilt Ethereum app 1.22.3 on an
   emulated Flex; `getAppConfiguration` reports 1.22.3 and `getPublicKey

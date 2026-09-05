@@ -27,6 +27,10 @@ _Se llena mientras se construye. Primer candidato ya visible desde la investigac
 
 **Reportado:** pendiente. Sugerencia concreta: o publicar los paquetes que los badges anuncian, o documentar en el README el consumo desde Foundry externo con las dos dependencias y los remappings.
 
+### 2026-09-05 — Lo que funcionó: el redespliegue reproduce el bytecode oficial
+
+**Encontrado:** `Aqua` compilado desde el submódulo `v1.0.0` con los ajustes de su `foundry.toml` (solc 0.8.30, via-IR) y desplegado en Sepolia (0xB8747B3e2F90154420165FB2fc4707D638797140) verifica en Sourcify con **`exact_match`** — mismo bytecode y metadata que la fuente. Es lo que hace defendible "official contracts" ante el jurado aun sin despliegue oficial en testnet: la reproducibilidad está.
+
 ### 2026-09-05 — Lo que funcionó: instalación limpia con tags
 
 **Encontrado:** `forge install 1inch/swap-vm` y `forge install 1inch/aqua` resuelven al último tag (`v1.0.2`, `v1.0.0`) sin pedir nada, y la combinación SwapVM + Aqua + OZ 5.4.0 + solidity-utils 6.9.10 compila en limpio con solc 0.8.30 via-IR — mismos ajustes que sus `foundry.toml`. Cero fricción una vez resuelto lo anterior.
