@@ -85,8 +85,18 @@ Two things this project's entries carry that a web app's would not:
     `0x1cc1326ac4d04141a7759e0d341f1505f66f824f319d34866d2dd4e089f85941`), was
     rooted at `0xd7A4…564C`, the wallet that had registered `salviega.eth` —
     which turned out not to be on the Ledger; it is unused. The name is being
-    transferred to the Ledger account in app.ens.dev. `DeployRegistrar` learnt
-    `MOOR_REGISTRAR` (reuse the verified registrar) and a holder-derived salt.
+    transferred to the Ledger account with `safeTransferFrom` on the ETHRegistry.
+    `DeployRegistrar` learnt `MOOR_REGISTRAR` (reuse the verified registrar) and a
+    holder-derived salt. **The holder also needs their own resolver**: the one
+    app.ens.dev created at registration kept its root roles on `0xd7A4…` after
+    the transfer (`grantRootRoles` from the Ledger reverted with
+    `EACCannotGrantRoles`), so `DeployResolver.s.sol` deploys a
+    `PermissionedResolver` proxy rooted at the holder — `0x694A2f963164C152A23b91Ef0DE53FE9B02aE1E3`, tx
+    `0xf98f21f04e3dd692d3e80cb0a1466b895c4f9a01638a0bc7f5f644aa73948a80`, block
+    11642997 — and `SetupHolder` now starts with `setResolver` + `setAddr` on
+    the name. Rehearsed again end to end on a Sepolia fork as the Ledger holder
+    (`findResolver(salviega.eth)` → the new resolver). Finding recorded in
+    `spec/feedback/02_ens.md`.
     `packages/core/src/addresses.ts` carries `moorRegistrar`. Still to sign by
     the holder: `setSubregistry`, the two `grantRootRoles`, `setupAgent`,
     `createPosition`.
