@@ -63,10 +63,10 @@ contract SetupHolder is Script {
         }
         // Idempotent: the agent's name is registered once per holder.
         bytes32 agentNode;
-        if (holderRegistry.getResolver(MoorRegistrar.AGENT_LABEL) == address(0)) {
+        if (holderRegistry.getResolver(registrar.AGENT_LABEL()) == address(0)) {
             agentNode = registrar.setupAgent(holderRegistry, resolver, parentName, agent, agentExpiry);
         } else {
-            agentNode = registrar.node(parentName, MoorRegistrar.AGENT_LABEL);
+            agentNode = registrar.node(parentName, registrar.AGENT_LABEL());
             console2.log("agent name already registered; skipping setupAgent");
         }
         vm.stopBroadcast();
