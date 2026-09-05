@@ -33,7 +33,7 @@ Live App (empty, phase 0): [getmoor.vercel.app](https://getmoor.vercel.app) · E
 | Contract | Address | Deploy tx |
 | --- | --- | --- |
 | MoorRegistrar (Sourcify `exact_match`) | [`0xe691…9966`](https://sepolia.etherscan.io/address/0xe6915D2E5e8Db86661a66472e5B178d0dB419966) | [`0x4de2af32…`](https://sepolia.etherscan.io/tx/0x4de2af32609b80e9d51fd03009ceb59543c2c197e6cf69e71b3bb44e62b14de2) |
-| `salviega.eth` UserRegistry (ENSv2 proxy via VerifiableFactory) | [`0x6b1D…9E81`](https://sepolia.etherscan.io/address/0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81) | [`0x1cc1326a…`](https://sepolia.etherscan.io/tx/0x1cc1326ac4d04141a7759e0d341f1505f66f824f319d34866d2dd4e089f85941) |
+| `salviega.eth` UserRegistry (ENSv2 proxy via VerifiableFactory; root = the Ledger account `0xAA1a…62E1`) | [`0xE924…3922`](https://sepolia.etherscan.io/address/0xE924f689Ee48B43F7D1c5Ac683E9f4648f553922) | [`0x0170490f…`](https://sepolia.etherscan.io/tx/0x0170490fa68a22a8f0222cb8832b67356b5c831a93a2224dd156d06295ed9fa4) |
 
 Each position is a non-transferable ENSv2 subname (`btc-dip.salviega.eth`) whose `moor.*` records
 describe it. The agent is `agent.salviega.eth` and holds exactly one permission: `ROLE_SET_TEXT` on
