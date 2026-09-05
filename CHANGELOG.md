@@ -30,8 +30,9 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
-- **Phase 2: the name and the permissions — built, tested and deployed
-  2026-09-05; waits only for the holder's Ledger signature on Sepolia.**
+- **Phase 2: the name and the permissions — closed 2026-09-05, three days
+  early.** `btc-dip.salviega.eth` exists on ENSv2 Sepolia, describes the
+  position, and the agent demonstrably cannot touch it.
   - `packages/contracts/src/MoorRegistrar.sol`: stateless, ownerless.
     `createPosition` registers `<label>.<holder>.eth` in the holder's
     `UserRegistry` (expiry = the position's deadline, no
@@ -96,10 +97,20 @@ Two things this project's entries carry that a web app's would not:
     11642997 — and `SetupHolder` now starts with `setResolver` + `setAddr` on
     the name. Rehearsed again end to end on a Sepolia fork as the Ledger holder
     (`findResolver(salviega.eth)` → the new resolver). Finding recorded in
-    `spec/feedback/02_ens.md`.
-    `packages/core/src/addresses.ts` carries `moorRegistrar`. Still to sign by
-    the holder: `setSubregistry`, the two `grantRootRoles`, `setupAgent`,
-    `createPosition`.
+    `spec/feedback/02_ens.md`. `packages/core/src/addresses.ts` carries `moorRegistrar`.
+  - **Signed by the holder on the Ledger Flex** (account `0xAA1a…62E1`,
+    `m/44'/60'/0'/0/0`, blind-signed — descriptors reach the device in phase
+    3): `setResolver` `0x79df7e129b4e5f745e99cf2ba802aad5ed767f2b3d89dd39c3ce1872e31114cf`, `setAddr` `0xf4aac0831ed809858fb98f70b8f7949f1384e5994d7d85c4a56f2794a7357b55` (a first `setAddr`, `0xfdce5239ce0495e87d85dbd12f2f3c3c48f118a0426e102a46104cb78c6de008`, wrote forge's default simulation sender because the script derived the value from `msg.sender`; fixed in the script and re-run), `setSubregistry` `0xf779c082ffb97d6eaaa342264120dac5dee1c4baa934b75d0c23e2886fd61ab6`, `grantRootRoles` on the registry `0xf57dae5fac438181a699a76bc18c2a0932ea4b7a248d99e7a0bb10900349a3fd` and on the resolver `0x6457e040220fefd8e19f70e67fe5036e91a1da3f47c1dbff2938ba039db6115e`, `setupAgent` `0x4a6f7b8cefba42412a66d9c4f364352dd79b45d881fc1a329ed10274820388f4`, `createPosition` `0xdb7e113201bbe1913d8f497d13b327c0b6c12567ae41b3ac6aaa92e902285d2c`.
+    **Verified on Sepolia:** `UniversalResolverV2.resolve` returns
+    `moor.version`, `moor.strategy` (`11155111:0x35a9…b477`), `moor.program`,
+    `moor.pair`, `moor.side`, `moor.range` (`58000:62000`), `moor.agent`
+    (`agent.salviega.eth`) and `addr` (the holder) for `btc-dip.salviega.eth`;
+    `ownerOf` is the holder, `expiry` equals the program's deadline and the
+    holder lacks `ROLE_CAN_TRANSFER_ADMIN`; the agent has `ROLE_SET_TEXT` on
+    `(any name, moor.agent.*)`, none on `(btc-dip, moor.strategy)`, no root
+    role anywhere and zero roles on the position — `eth_call` of its
+    `setText(moor.agent.checkedAt)` succeeds and of `setText(moor.strategy)`
+    reverts.
 
 - **Phase 1: the program, and the rule that cannot fail — closed 2026-09-05,
   three days early, without plan B.**
