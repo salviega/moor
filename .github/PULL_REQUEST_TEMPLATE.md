@@ -27,7 +27,8 @@ hand, against Sepolia only. Review the diff before running it, not after —
 ## Checklist
 
 - [ ] Tests were written before the implementation, and failed first
-- [ ] `pnpm test` (Vitest) and `forge test` pass
+- [ ] `pnpm test` (Vitest) passes, coverage on `packages/core` at 90% or above
+- [ ] `forge test` passes
 - [ ] `pnpm typecheck` is clean
 - [ ] `pnpm check` (Biome) and `forge fmt --check` are clean
 - [ ] The agent's negative-role tests still pass: it cannot touch the position,

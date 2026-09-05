@@ -92,6 +92,7 @@ Se activan los **fallbacks del lado del servidor** del SDK (`fallbacks: "default
 | ------------------- | ------- | ----------------------------------------------------------------------------------------------- |
 | **Biome**           | 2.5     | Lint y formato de TypeScript en un solo binario. Script `check`                                 |
 | **Vitest**          | 5.x     | Pruebas de `packages/core`: derivación de estado, construcción de programa, esquemas             |
+| **`@vitest/coverage-v8`** | 4.x | Motor de cubrimiento de Vitest. `pnpm test` corre con `--coverage`; el umbral vive en `vitest.config.ts` |
 | **`forge test`**    | —       | Pruebas de contratos, incluidas las de "lo prohibido debe fallar" y la de dirección contra `CoreInvariants` |
 | **`forge fmt`**     | —       | Formato de Solidity                                                                             |
 | **Speculos**        | `pip install speculos` | Emulador oficial del dispositivo Ledger (Nano S/S+/X, Stax, Flex). Corre la app de Ethereum sin hardware; API REST en `:5000`, botones automatizables, capturas de pantalla. Sirve para ver **exactamente qué muestra la pantalla** al firmar `ship`, `createPosition` o `revokeRoles` con nuestros descriptores ERC-7730, y para capturar esas pantallas en CI |
@@ -99,6 +100,8 @@ Se activan los **fallbacks del lado del servidor** del SDK (`fallbacks: "default
 | **`.githooks`**     | —       | Pre-commit: `pnpm check` y `forge fmt --check`. Pre-push: pruebas. Como en los otros proyectos    |
 
 **Una prueba que vale por dos:** `packages/core` construye el programa y calcula `strategyHash`; una prueba de Foundry construye el mismo programa en Solidity y compara. Si divergen, la Live App estaría firmando una cosa y mostrando otra.
+
+**Cubrimiento: 90% en `packages/core`, sin umbral ciego en los contratos.** `vitest.config.ts` declara `coverage.thresholds` (`lines`/`functions`/`branches`/`statements`) sobre `include: ["packages/core/src/**/*.ts"]` — igual que en `cuente-conmigo`, el número se valida **dentro** de `pnpm test`, que falla si algo queda por debajo; no hay un paso aparte que "revise el %" después. `forge coverage --report summary` corre en CI para los contratos, pero se lee contra las pruebas críticas nombradas en `AGENTS.md` (la compuerta de dirección, los roles negativos del agente, la paridad de `strategyHash`), no contra un porcentaje: un contrato pequeño y crítico se prueba exhaustivo en sus ramas de decisión, no de manera uniforme.
 
 **Speculos no es una wallet.** Ledger lo dice sin rodeos: no tiene firmware real, solo reimplementa funciones del SDK, y "no debe usarse para guardar cripto ni hacer transacciones". Aquí se usa para una sola cosa: que la pantalla de cada firma esté bien **antes** de tocar el dispositivo, y que un cambio en un descriptor ERC-7730 rompa una captura en CI en vez de sorprendernos en la demo.
 
@@ -148,8 +151,9 @@ Desde la raíz, con `pnpm`:
 | `agent`             | Un ciclo del agente y sale. Para probar                                             |
 | `agent:loop`        | El agente en bucle, como corre en el VPS                                            |
 | `check`             | Biome sobre todo el monorepo                                                        |
-| `test`              | Vitest en `packages/core`                                                           |
+| `test`              | Vitest en `packages/core`, con `--coverage` — falla si el cubrimiento baja de 90%    |
 | `contracts:test`    | `forge test` en `packages/contracts`                                                |
+| `contracts:coverage`| `forge coverage --report summary` en `packages/contracts` — se lee, no se exige un %  |
 | `contracts:deploy`  | Despliega Aqua, SwapVM, tokens de prueba y contratos propios en Sepolia; escribe las direcciones en `packages/core` |
 | `demo:taker`        | El taker de demo: ejecuta swaps contra una posición para mostrar fills               |
 | `ledger:emu`        | Levanta Speculos con la app de Ethereum y una seed de prueba; la Live App en `dev:ledger` firma contra él |

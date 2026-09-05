@@ -30,6 +30,19 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Test coverage floor: 90% on `packages/core`, no blanket number on
+  contracts.** `packages/core`'s Vitest coverage thresholds
+  (lines/functions/branches/statements) are enforced inside `pnpm test`
+  itself — the command fails under the floor, there is no separate
+  coverage-check step, the same mechanism as the 80% floor on
+  `cuente-conmigo`. Contracts run `forge coverage --report summary` in CI,
+  but are held to the three named critical tests (the direction gate, the
+  agent's negative roles, `strategyHash` parity) rather than a percentage: a
+  small, security-critical contract earns more from exhaustive coverage on
+  its decision branches than from hitting a uniform number by testing
+  getters. Documented in `AGENTS.md`, `spec/definicion/06_tecnologias.md`
+  §6/§9, and the PR template checklist.
+
 ### Changed
 
 ### Fixed
