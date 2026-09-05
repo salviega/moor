@@ -187,16 +187,16 @@ No hay cuentas ni sesiones: la identidad es la wallet, y **los permisos se hacen
 | Roles root (`MoorRoles.HOLDER_REGISTRY_ROOT`, todos con sus admin) | Solo el holder | Nadie más puede delegar ni ampliar. Incluye revocar a `MoorRegistrar` (`revokeRootRoles`) |
 | Cualquier rol | **Agente: ninguno** | — |
 
-`expiry` del subnombre = `_deadline` del programa SwapVM. Cuando la estrategia vence, el nombre vence. El registry del holder es un proxy de `UserRegistryImpl` desplegado por `VerifiableFactory` (Sepolia, salviega: `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81`, salt 1 del deployer).
+`expiry` del subnombre = `_deadline` del programa SwapVM. Cuando la estrategia vence, el nombre vence. El registry del holder es un proxy de `UserRegistryImpl` desplegado por `VerifiableFactory` (Sepolia, salviega: `0xE924f689Ee48B43F7D1c5Ac683E9f4648f553922`, root = la cuenta Ledger `0xAA1a…62E1`, salt `keccak("moor", holder)`).
 
-### ENSv2 — Permissioned Resolver (el que el holder ya tiene)
+### ENSv2 — Permissioned Resolver (uno por holder)
 
-Los recursos de EAC del `PermissionedResolver` son `keccak(namehash, keccak(clave))` para los text records —**por clave**, no por tipo— y `namehash = 0` significa *cualquier nombre del resolver* (`authorizeTextRoles(name, key, account, grant)`). Por eso el agente sí escribe en el nombre de la posición, pero solo en sus ocho claves. No hace falta un resolver nuevo ni un subnombre por posición para el agente.
+Los recursos de EAC del `PermissionedResolver` son `keccak(namehash, keccak(clave))` para los text records —**por clave**, no por tipo— y `namehash = 0` significa *cualquier nombre del resolver* (`authorizeTextRoles(name, key, account, grant)`). Por eso el agente sí escribe en el nombre de la posición, pero solo en sus ocho claves, y no hace falta un subnombre por posición para el agente. El resolver sí es propio del holder —proxy de `PermissionedResolverImpl` vía `VerifiableFactory`, root = holder (`DeployResolver.s.sol`)—: el que app.ens.dev crea al registrar el nombre conserva su root en la wallet que registró aunque el nombre se transfiera ([feedback/02_ens](../feedback/02_ens.md)).
 
 | Recurso | Rol | Quién |
 | --- | --- | --- |
 | root del resolver | `ROLE_SET_TEXT`, `ROLE_SET_ADDR`, `ROLE_SET_TEXT_ADMIN` (`MoorRoles.REGISTRAR_ON_RESOLVER`) | `MoorRegistrar`: escribe `addr` y `moor.*` en `createPosition`, otorga y revoca las claves del agente |
-| root del resolver · todos los roles y sus admin | — | Holder (dueño del resolver desde app.ens.dev) |
+| root del resolver · todos los roles de records y sus admin (`MoorRoles.HOLDER_RESOLVER_ROOT`) | — | Holder, desde `initialize` |
 | `(cualquier nombre, moor.agent.checkedAt)` … `(cualquier nombre, moor.agent.simulation)` — ocho recursos | `ROLE_SET_TEXT` | Agente (llave caliente, custodiada en Key Ring) |
 | `(btc-dip.salviega.eth, moor.strategy)` y cualquier otra clave, `addr`, `contenthash`, alias, clear | — | **Agente: ninguno** |
 
@@ -262,7 +262,7 @@ Ordenados por cuánto daño hacen si se materializan.
 - Verificar que Ledger Live acepta descriptores ERC-7730 locales en modo desarrollador, y cómo se cargan (candidato: el ERC-7730 Tester de Ledger — [`feedback/03_ledger.md`](../feedback/03_ledger.md)).
 - Fuente de precio (compartida con el 04).
 - Cadencia del agente y umbrales de propuesta (compartido con el 04).
-- ~~Cómo enumera la Live App los subnombres de un `UserRegistry`.~~ Cerrado en la fase 2: el evento `LabelRegistered(tokenId, labelHash, label, owner, expiry, sender)` del registry del holder lleva el label en claro; `listPositions()` en `packages/core` hace un `eth_getLogs` desde el bloque de creación del registry (salviega: 11642814) y filtra `sender == MoorRegistrar`, menos `agent`. Sin indexador.
+- ~~Cómo enumera la Live App los subnombres de un `UserRegistry`.~~ Cerrado en la fase 2: el evento `LabelRegistered(tokenId, labelHash, label, owner, expiry, sender)` del registry del holder lleva el label en claro; `listPositions()` en `packages/core` hace un `eth_getLogs` desde el bloque de creación del registry (salviega: 11642925) y filtra `sender == MoorRegistrar`, menos `agent`. Sin indexador.
 
 **Direcciones ENSv2 en Sepolia** (de la tabla oficial de despliegues, a fijar en `packages/core`):
 
@@ -276,7 +276,8 @@ Ordenados por cuánto daño hacen si se materializan.
 | `PermissionedResolverImpl` | `0x9eae5c2730a7dd16bdd1dee6421a1b91e3b0365e` |
 | `UniversalResolverV2` | `0x4a1817d13e9cf196f471725176355c1234b63c70` |
 | **`MoorRegistrar`** (fase 2, Sourcify `exact_match`) | `0xe6915D2E5e8Db86661a66472e5B178d0dB419966` |
-| Registry de `salviega.eth` (proxy `UserRegistryImpl`) | `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81` |
-| Resolver de `salviega.eth` (proxy `PermissionedResolverImpl`, de app.ens.dev) | `0xc93Ad19307813019b9595147823b035DD93ce363` |
+| Registry de `salviega.eth` (proxy `UserRegistryImpl`, root = holder Ledger `0xAA1aEf44DDE610F433f271C6A8749139DD5162E1`) | `0xE924f689Ee48B43F7D1c5Ac683E9f4648f553922` |
+| Resolver de `salviega.eth` (proxy `PermissionedResolverImpl`, root = holder Ledger) | `0x694A2f963164C152A23b91Ef0DE53FE9B02aE1E3` |
+| Resolver anterior de app.ens.dev (root = `0xd7A4…`, sin uso) | `0xc93Ad19307813019b9595147823b035DD93ce363` |
 
 Aqua y SwapVM: las direcciones canónicas de producción (`0x1111113ccf1426a8e30e2bff5e005d929bf6a90a`, `0x111111338c5091E8440b67B168bAe16a668AC0De`) **no aplican en Sepolia**. Las nuestras, del redespliegue del 5 de septiembre: Aqua `0xB8747B3e2F90154420165FB2fc4707D638797140` (Sourcify `exact_match`), `AquaSwapVMRouter` `0xdD026eA05C9256A1162dC3d41102579458A804Cd`, `TestWETH` `0x10C5026152eB4f79119d6cFb75205aEB6E98dfA0`, `tWBTC` `0xfA92A297eC2cCC8Ec010ACa475F07240e2D47deC`, `tUSDC` `0x274aaB610937e018310cCedC0b05B543b75557AB` — fuente de verdad en `packages/core/src/addresses.ts`.

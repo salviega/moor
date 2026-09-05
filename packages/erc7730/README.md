@@ -8,7 +8,7 @@ and the Speculos captures that prove what the device shows.
 | `descriptors/calldata-Aqua.json` | `ship`, `dock` | lints clean; real Aqua address, ABI validated against Sourcify |
 | `descriptors/calldata-MoorRegistrar.json` | `createPosition`, `setupAgent`, `revokeAgent` | lints clean; `0xe691…9966`, ABI validated against Sourcify (`exact_match`) |
 | `descriptors/calldata-PermissionedRegistry.json` | `setSubregistry`, `grantRootRoles`, `revokeRootRoles`, `grantRoles`, `revokeRoles`, `unregister` | ETHRegistry + the holder's registry; lint warns only that the ENS proxies are not on Sourcify |
-| `descriptors/calldata-PermissionedResolver.json` | `grantRootRoles`, `revokeRootRoles`, `authorizeTextRoles` | the holder's resolver; same warning |
+| `descriptors/calldata-PermissionedResolver.json` | `grantRootRoles`, `revokeRootRoles`, `authorizeTextRoles` | the holder's resolver `0x694A…E1E3`; same warning |
 
 `approve` is the standard ERC-20 descriptor Ledger already ships; no file here.
 

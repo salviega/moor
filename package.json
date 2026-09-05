@@ -1,6 +1,6 @@
 {
 	"name": "moor",
-	"version": "0.1.0",
+	"version": "0.4.0",
 	"private": true,
 	"description": "Turns the waiting time of holding into productive capital. Ledger signs once; 1inch Aqua earns; ENS names it; the agent proposes and the Ledger decides.",
 	"license": "MIT",
@@ -30,7 +30,8 @@
 		"ledger:screens": "pnpm --filter @moor/erc7730 screens",
 		"contracts:deploy:anvil": "pnpm --filter @moor/contracts deploy:anvil",
 		"demo:ship": "pnpm --filter @moor/contracts demo:ship",
-		"contracts:deploy:registrar": "pnpm --filter @moor/contracts deploy:registrar"
+		"contracts:deploy:registrar": "pnpm --filter @moor/contracts deploy:registrar",
+		"contracts:deploy:resolver": "pnpm --filter @moor/contracts deploy:resolver"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.12",

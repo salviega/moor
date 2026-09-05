@@ -148,7 +148,7 @@ Los cuatro pendientes de la primera versión de este documento, cerrados el 5 de
 | `unregister()`                                    | Al hacer `dock()`, el nombre se da de baja. Nombre y posición viven y mueren juntos |
 | Permissioned Resolver con roles por nombre **y por clave** de text record | Es donde entran los permisos del agente (decisión 3)              |
 
-Un resolver **por usuario**, no por posición: el que el holder ya tiene en app.ens.dev sirve. Sus recursos de EAC son `(nombre, clave de text record)` —`authorizeTextRoles(name, key, account, grant)`, con `name = 0x00` para *cualquier* nombre del resolver—, así que un solo resolver reparte permisos por clave sin desplegar nada más. *(Corregido en la fase 2: la lectura previa de la documentación decía "por tipo de record"; ver [`feedback/02_ens.md`](../feedback/02_ens.md).)*
+Un resolver **por usuario**, no por posición: un proxy de `PermissionedResolverImpl` con el holder como root (el que app.ens.dev crea al registrar queda con root en la wallet que registró, y transferir el nombre no lo mueve). Sus recursos de EAC son `(nombre, clave de text record)` —`authorizeTextRoles(name, key, account, grant)`, con `name = 0x00` para *cualquier* nombre del resolver—, así que un solo resolver reparte permisos por clave para todas las posiciones. *(Corregido en la fase 2: la lectura previa de la documentación decía "por tipo de record"; ver [`feedback/02_ens.md`](../feedback/02_ens.md).)*
 
 **Prerrequisito:** el nombre del usuario (`salviega.eth` para la demo) tiene que existir en ENSv2 Sepolia. Va en la fase 0 del [07](./07_plan-de-trabajo.md).
 

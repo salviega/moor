@@ -53,6 +53,18 @@ Stack en uso: `ensdomains/contracts-v2` (`main`), ENSv2 beta en Sepolia — dire
 
 **Reportado:** pendiente. Sugerencia: una tabla única de direcciones de la beta en la documentación (con fecha), y verificar los proxies en Sourcify — a Ledger le sirve para Clear Signing y a cualquiera para leer el ABI.
 
+### 2026-09-05 — Transferir un nombre no transfiere su resolver: el root se queda en la wallet que registró
+
+**Documentado / prometido:** app.ens.dev registra el nombre y le crea un `PermissionedResolver` propio; el nombre es un ERC-1155 del `ETHRegistry` transferible con `safeTransferFrom` (el dueño tiene `ROLE_CAN_TRANSFER_ADMIN`). Nada advierte que el resolver sea una pieza aparte con su propia lista de roles.
+
+**Encontrado:** tras transferir `salviega.eth` de `0xd7A4…564C` a la cuenta Ledger `0xAA1a…62E1`, los roles del token (`ROLE_SET_SUBREGISTRY`, `ROLE_SET_RESOLVER`) sí pasaron al nuevo dueño, pero el resolver `0xc93A…e363` siguió con root en `0xd7A4…`: el nuevo dueño no puede escribir un solo record de su propio nombre ni delegar (`grantRootRoles` → `EACCannotGrantRoles(0, roles, 0xAA1a…)`). El nombre y su resolver tienen dueños distintos y la app no lo muestra.
+
+**Evidencia:** traza de `forge script script/SetupHolder.s.sol --ledger` del 5 de septiembre (`setSubregistry` pasa, `resolver.grantRootRoles` revierte); `cast call 0xc93A…e363 "hasRootRoles(uint256,address)(bool)" 16 0xAA1a…` → `false`.
+
+**Impacto en Moor:** ~1 hora. Cambió el 03 §2, 04 §4.0 y 05 §7: el flujo de primera vez incluye un resolver propio del holder (`DeployResolver.s.sol`, proxy vía `VerifiableFactory`, root = holder) y `setResolver` en el nombre. Es, de hecho, lo que el diseño original decía antes de "simplificarlo" al leer que el resolver de app.ens.dev bastaba.
+
+**Reportado:** pendiente. Sugerencia: que la transferencia en app.ens.dev avise "el resolver de este nombre seguirá controlado por la wallet actual" y ofrezca transferir sus roles root o crear uno nuevo; y que la guía de EAC diga explícitamente que registry y resolver son dominios de permisos independientes.
+
 <!--
 ### AAAA-MM-DD — Título corto del hallazgo
 
@@ -85,6 +97,7 @@ Estas no son hallazgos todavía — son huecos que ya se detectaron en la docume
 | 1 | Consumo desde Foundry | `forge install` + imports del tutorial | Sin tags; proyecto en subdirectorio; remappings a mano; OZ 5.3 vs 5.4 | Media | pendiente |
 | 2 | Permissioned Resolver | Roles por tipo de record | Roles **por clave** (`authorizeTextRoles`) — mejor que lo documentado | Nota (positiva) | pendiente |
 | 3 | Direcciones de la beta | Carpetas `deployments/` del repo | No coinciden con app.ens.dev; proxies sin verificar en Sourcify | Baja | pendiente |
+| 4 | Transferencia de nombre | El nombre se transfiere como ERC-1155 | El resolver queda con root en la wallet anterior; la app no lo avisa | Media | pendiente |
 
 ## Reportes abiertos (se llena en fase 5)
 

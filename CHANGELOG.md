@@ -30,8 +30,23 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
-- **Phase 2: the name and the permissions — built, tested and deployed
-  2026-09-05; waits only for the holder's Ledger signature on Sepolia.**
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.4.0] - 2026-09-05
+
+Phases 0, 1 and 2 of [the plan](./spec/definicion/07_plan-de-trabajo.md), all
+closed on 2026-09-05. `0.2.0` and `0.3.0` were not cut when phases 0 and 1
+merged (#7, #8); their entries are folded here rather than back-dated.
+
+### Added
+
+- **Phase 2: the name and the permissions — closed 2026-09-05, three days
+  early.** `btc-dip.salviega.eth` exists on ENSv2 Sepolia, describes the
+  position, and the agent demonstrably cannot touch it.
   - `packages/contracts/src/MoorRegistrar.sol`: stateless, ownerless.
     `createPosition` registers `<label>.<holder>.eth` in the holder's
     `UserRegistry` (expiry = the position's deadline, no
@@ -76,13 +91,40 @@ Two things this project's entries carry that a web app's would not:
   - **Sepolia** (deployer `0x5b1dC626Fa6dD9c2f5FfceA5B0ddDc74aa368258`):
     `MoorRegistrar` `0xe6915D2E5e8Db86661a66472e5B178d0dB419966` — tx
     `0x4de2af32609b80e9d51fd03009ceb59543c2c197e6cf69e71b3bb44e62b14de2`, Sourcify
-    `exact_match`; `salviega.eth`'s `UserRegistry` proxy
-    `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81` via `VerifiableFactory` (salt 1,
-    root = holder) — tx
-    `0x1cc1326ac4d04141a7759e0d341f1505f66f824f319d34866d2dd4e089f85941`, block
-    11642814. `packages/core/src/addresses.ts` carries `moorRegistrar`.
-    Still to sign by the holder: `setSubregistry`, the two `grantRootRoles`,
-    `setupAgent`, `createPosition`.
+    `exact_match`; `salviega.eth`'s `UserRegistry` proxy for the **Ledger
+    holder `0xAA1aEf44DDE610F433f271C6A8749139DD5162E1`**:
+    `0xE924f689Ee48B43F7D1c5Ac683E9f4648f553922` via `VerifiableFactory` (salt
+    `keccak("moor", holder)`, root = holder) — tx
+    `0x0170490fa68a22a8f0222cb8832b67356b5c831a93a2224dd156d06295ed9fa4`, block
+    11642925. A first proxy, `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81` (tx
+    `0x1cc1326ac4d04141a7759e0d341f1505f66f824f319d34866d2dd4e089f85941`), was
+    rooted at `0xd7A4…564C`, the wallet that had registered `salviega.eth` —
+    which turned out not to be on the Ledger; it is unused. The name is being
+    transferred to the Ledger account with `safeTransferFrom` on the ETHRegistry.
+    `DeployRegistrar` learnt `MOOR_REGISTRAR` (reuse the verified registrar) and a
+    holder-derived salt. **The holder also needs their own resolver**: the one
+    app.ens.dev created at registration kept its root roles on `0xd7A4…` after
+    the transfer (`grantRootRoles` from the Ledger reverted with
+    `EACCannotGrantRoles`), so `DeployResolver.s.sol` deploys a
+    `PermissionedResolver` proxy rooted at the holder — `0x694A2f963164C152A23b91Ef0DE53FE9B02aE1E3`, tx
+    `0xf98f21f04e3dd692d3e80cb0a1466b895c4f9a01638a0bc7f5f644aa73948a80`, block
+    11642997 — and `SetupHolder` now starts with `setResolver` + `setAddr` on
+    the name. Rehearsed again end to end on a Sepolia fork as the Ledger holder
+    (`findResolver(salviega.eth)` → the new resolver). Finding recorded in
+    `spec/feedback/02_ens.md`. `packages/core/src/addresses.ts` carries `moorRegistrar`.
+  - **Signed by the holder on the Ledger Flex** (account `0xAA1a…62E1`,
+    `m/44'/60'/0'/0/0`, blind-signed — descriptors reach the device in phase
+    3): `setResolver` `0x79df7e129b4e5f745e99cf2ba802aad5ed767f2b3d89dd39c3ce1872e31114cf`, `setAddr` `0xf4aac0831ed809858fb98f70b8f7949f1384e5994d7d85c4a56f2794a7357b55` (a first `setAddr`, `0xfdce5239ce0495e87d85dbd12f2f3c3c48f118a0426e102a46104cb78c6de008`, wrote forge's default simulation sender because the script derived the value from `msg.sender`; fixed in the script and re-run), `setSubregistry` `0xf779c082ffb97d6eaaa342264120dac5dee1c4baa934b75d0c23e2886fd61ab6`, `grantRootRoles` on the registry `0xf57dae5fac438181a699a76bc18c2a0932ea4b7a248d99e7a0bb10900349a3fd` and on the resolver `0x6457e040220fefd8e19f70e67fe5036e91a1da3f47c1dbff2938ba039db6115e`, `setupAgent` `0x4a6f7b8cefba42412a66d9c4f364352dd79b45d881fc1a329ed10274820388f4`, `createPosition` `0xdb7e113201bbe1913d8f497d13b327c0b6c12567ae41b3ac6aaa92e902285d2c`.
+    **Verified on Sepolia:** `UniversalResolverV2.resolve` returns
+    `moor.version`, `moor.strategy` (`11155111:0x35a9…b477`), `moor.program`,
+    `moor.pair`, `moor.side`, `moor.range` (`58000:62000`), `moor.agent`
+    (`agent.salviega.eth`) and `addr` (the holder) for `btc-dip.salviega.eth`;
+    `ownerOf` is the holder, `expiry` equals the program's deadline and the
+    holder lacks `ROLE_CAN_TRANSFER_ADMIN`; the agent has `ROLE_SET_TEXT` on
+    `(any name, moor.agent.*)`, none on `(btc-dip, moor.strategy)`, no root
+    role anywhere and zero roles on the position — `eth_call` of its
+    `setText(moor.agent.checkedAt)` succeeds and of `setText(moor.strategy)`
+    reverts.
 
 - **Phase 1: the program, and the rule that cannot fail — closed 2026-09-05,
   three days early, without plan B.**
@@ -222,8 +264,3 @@ Two things this project's entries carry that a web app's would not:
   getters. Documented in `AGENTS.md`, `spec/definicion/06_tecnologias.md`
   §6/§9, and the PR template checklist.
 
-### Changed
-
-### Fixed
-
-### Removed
