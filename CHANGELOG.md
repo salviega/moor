@@ -30,6 +30,60 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Phase 2: the name and the permissions — built, tested and deployed
+  2026-09-05; waits only for the holder's Ledger signature on Sepolia.**
+  - `packages/contracts/src/MoorRegistrar.sol`: stateless, ownerless.
+    `createPosition` registers `<label>.<holder>.eth` in the holder's
+    `UserRegistry` (expiry = the position's deadline, no
+    `ROLE_CAN_TRANSFER_ADMIN` — non-transferable), writes `addr` and the
+    `moor.*` records on the holder's existing resolver, and refuses any key
+    outside `moor.*` or inside `moor.agent.*`. `setupAgent` registers
+    `agent.<holder>.eth` once per holder and grants the agent's key
+    `ROLE_SET_TEXT` on exactly the eight `moor.agent.*` keys, for any name of
+    the resolver — ENSv2's `authorizeTextRoles` is **per key**, which retired
+    the per-position agent subname of the original design (03 §3, 05 §7
+    rewritten). `revokeAgent` is the kill switch. Only the root of both
+    registry and resolver can call it. `MoorRoles` names every bitmap.
+  - `test/MoorRegistrar.t.sol` (13) against the real `UserRegistry` and
+    `PermissionedResolver` proxies: records written; only the holder; agent
+    keys refused to the holder; non-transferable; `unregister`; expiry; the
+    agent writes `moor.agent.*` and nothing else (position records, roles,
+    registry all revert); `hasRoles` exact on the eight resources;
+    `revokeAgent` silences; the holder can revoke Moor itself.
+  - `packages/core/src/names.ts`: nodes, DNS encoding, EAC resources
+    (`agentResources()` — what a judge checks), role bitmaps, record
+    encoding, and `listPositions()` over `LabelRegistered` logs of the
+    holder's registry (closes the "how to enumerate subnames" pending of
+    05/06 §11: events, not `UniversalResolverV2`). 54 tests.
+  - Scripts: `DeployRegistrar.s.sol` (`pnpm contracts:deploy:registrar`,
+    deployer pays; writes `deployments/<chainId>.names.json` because
+    `vm.writeJson` cannot add keys; runs with `--skip-simulation` because
+    forge's on-chain simulation reports a spurious `CreateCollision` on the
+    factory's CREATE2), `SetupHolder.s.sol` and `CreatePosition.s.sol` (the
+    holder, `--ledger`). The whole flow was rehearsed on an Anvil fork of
+    Sepolia impersonating the holder: `UniversalResolverV2` resolves
+    `moor.strategy`, `moor.agent`, `moor.range`, `addr` of
+    `btc-dip.salviega.eth` and `addr` of `agent.salviega.eth`; the agent's
+    `setText(moor.agent.proposal)` succeeds and `setText(moor.strategy)`
+    reverts; `hasRootRoles` is false for the agent everywhere.
+  - ERC-7730: `calldata-MoorRegistrar.json` (`createPosition`, `setupAgent`,
+    `revokeAgent`; lint clean), `calldata-PermissionedRegistry.json`
+    (`setSubregistry`, `grantRootRoles`, `revokeRootRoles`, `grantRoles`,
+    `revokeRoles`, `unregister`; ETHRegistry and the holder's registry) and
+    `calldata-PermissionedResolver.json` (`grantRootRoles`, `revokeRootRoles`,
+    `authorizeTextRoles`). The ENS ones lint with one warning: the proxies are
+    not on Sourcify (`spec/feedback/02_ens.md`).
+  - **Sepolia** (deployer `0x5b1dC626Fa6dD9c2f5FfceA5B0ddDc74aa368258`):
+    `MoorRegistrar` `0xe6915D2E5e8Db86661a66472e5B178d0dB419966` — tx
+    `0x4de2af32609b80e9d51fd03009ceb59543c2c197e6cf69e71b3bb44e62b14de2`, Sourcify
+    `exact_match`; `salviega.eth`'s `UserRegistry` proxy
+    `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81` via `VerifiableFactory` (salt 1,
+    root = holder) — tx
+    `0x1cc1326ac4d04141a7759e0d341f1505f66f824f319d34866d2dd4e089f85941`, block
+    11642814. `packages/core/src/addresses.ts` carries `moorRegistrar`.
+    Still to sign by the holder: `setSubregistry`, the two `grantRootRoles`,
+    `setupAgent`, `createPosition`.
+
 - **Phase 1: the program, and the rule that cannot fail — closed 2026-09-05,
   three days early, without plan B.**
   - `packages/contracts/src/MoorProgram.sol`: the one-directional

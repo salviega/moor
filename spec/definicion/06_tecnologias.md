@@ -144,6 +144,9 @@ Validadas con zod al arrancar cada app; si falta una, no arranca. Ninguna vive e
 | `ANTHROPIC_API_KEY`               | Agente       | Sale de Key Ring                                                               |
 | `AGENT_INTERVAL_SECONDS`          | Agente       | Cadencia del ciclo. Por defecto 300                                            |
 | `DEPLOYER_PRIVATE_KEY`            | Foundry      | Solo para scripts de despliegue; local, nunca en CI                            |
+| `MOOR_HOLDER`, `MOOR_SALT`        | Foundry      | `DeployRegistrar.s.sol`: dueño del nombre y salt del proxy del registry (default 1) |
+| `MOOR_AGENT`                      | Foundry      | `SetupHolder.s.sol`: la dirección de la llave del agente que se autoriza       |
+| `MOOR_POSITION`, `MOOR_LABEL`     | Foundry      | `CreatePosition.s.sol`: JSON de la posición (`demo:ship`) y label (default `btc-dip`) |
 
 Las direcciones de ENSv2 en Sepolia son constantes públicas en `packages/core`, no variables: no cambian por entorno.
 
@@ -165,6 +168,8 @@ Desde la raíz, con `pnpm`:
 | `contracts:coverage`| `forge coverage --report summary` en `packages/contracts` — se lee, no se exige un %  |
 | `contracts:deploy`  | (`deploy:sepolia` en el paquete — `deploy` es un comando reservado de pnpm) `script/Deploy.s.sol` en Sepolia (`SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`): Aqua, `AquaSwapVMRouter`, `TestWETH` si no hay `WETH_ADDRESS`, `tWBTC`, `tUSDC`; luego `write-addresses.mjs` reescribe `packages/core/src/addresses.ts` |
 | `contracts:deploy:anvil` | Lo mismo contra un Anvil local con la llave 0 de Anvil — es como se verificó el script |
+| `contracts:deploy:registrar` | `DeployRegistrar.s.sol` (`MOOR_HOLDER`): `MoorRegistrar` + proxy `UserRegistry` del holder vía `VerifiableFactory`; escribe `deployments/<chainId>.names.json`. Con `--skip-simulation`: la simulación on-chain de forge reporta un `CreateCollision` falso sobre el CREATE2 de la factory |
+| *(holder, con Ledger)* | `forge script script/SetupHolder.s.sol --ledger` (`MOOR_AGENT`): `setSubregistry`, roles a `MoorRegistrar`, `setupAgent`. Luego `script/CreatePosition.s.sol --ledger` (`MOOR_POSITION`). Son el *First-time setup* y el *nombrar* del 04 como scripts hasta la fase 3 |
 | `demo:ship`         | `ShipDemo.s.sol`: envía una posición de prueba desde la wallet del broadcaster (`MOOR_AMOUNT`, `MOOR_PRICE_MIN/MAX`, `MOOR_FEE_BPS`, `MOOR_DAYS`); escribe `deployments/positions/<chainId>-<hash>.json` |
 | `demo:taker`        | `DemoTaker.s.sol`: llena esa posición (`MOOR_POSITION`, `MOOR_AMOUNT_IN`) o, con `MOOR_REVERSE=1`, muestra la dirección contraria revirtiendo. Infraestructura de demo, no producto |
 | `ledger:emu`        | Levanta Speculos con la app de Ethereum y una seed de prueba; la Live App en `dev:ledger` firma contra él |
@@ -195,4 +200,4 @@ Desde la raíz, con `pnpm`:
 - **Descriptores locales en el dispositivo.** El camino es el ERC-7730 Tester de Ledger — ver [07](./07_plan-de-trabajo.md) fase 0 y [`feedback/03_ledger.md`](../feedback/03_ledger.md).
 - **Speculos + Clear Signing.** Confirmar cómo se le entregan a la app de Ethereum emulada los descriptores ERC-7730 locales (la app los recibe como metadata firmada; en desarrollo hay que ver qué acepta). Sin eso, Speculos muestra las pantallas de blind signing y no sirve para lo que queremos.
 - **Enrolar el Key Ring en un host sin USB.** La instalación ya está clara (`npm i -g @ledgerhq/wallet-cli`; `ring init` con dispositivo; luego solo red). Lo que sigue sin documentar es cómo un segundo host (el VPS) pasa a ser miembro del mismo trustchain. Se resuelve con el dispositivo — ver [`feedback/03_ledger.md`](../feedback/03_ledger.md).
-- **Cómo enumerar subnombres** de un `UserRegistry` desde viem: eventos, `UniversalResolverV2` o un índice mínimo. Compartido con el [05](./05_stack-y-arquitectura.md#11-pendientes).
+- ~~**Cómo enumerar subnombres** de un `UserRegistry` desde viem.~~ Cerrado en la fase 2: `listPositions()` sobre el evento `LabelRegistered` del registry del holder ([05 §11](./05_stack-y-arquitectura.md#11-pendientes)).

@@ -159,7 +159,7 @@ kind of record, and the secrets an unattended process needs:
   role checked by the resolver and the registry, never a condition in a
   component. If a rule can be expressed as a role, it belongs in a role — and
   `hasRoles` is how anybody, judge included, verifies it without trusting us.
-- **The agent's key does one thing.** `ROLE_SET_TEXT` on its own subname; no
+- **The agent's key does one thing.** `ROLE_SET_TEXT` on the eight `moor.agent.*` keys; no
   registry role, no admin role, no approval, not the maker. A change that gives
   it anything else is a change to the product, goes through the spec first, and
   is what `08_roadmap.md` §1b exists to do properly.
@@ -241,7 +241,7 @@ real takers on Sepolia — and is labelled as such everywhere it appears.
 
 It runs headless, every 300 seconds, and each cycle starts from reading the
 chain — it has no memory it cannot lose. It reads price and balances, derives
-state with `packages/core`, and writes `moor.agent.*` on its own subname. That
+state with `packages/core`, and writes `moor.agent.*` on the position name. That
 is the whole of what it can do, and the negative-role tests are what say so.
 
 When a threshold crosses it makes one call to the model, validates the answer

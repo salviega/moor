@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// Turns deployments/<chainId>.json (written by script/Deploy.s.sol) into the
+// Turns deployments/<chainId>.json (script/Deploy.s.sol) and <chainId>.names.json
+// (script/DeployRegistrar.s.sol) into the
 // `moorSepolia` block of packages/core/src/addresses.ts. A deployment is a diff
 // in that file plus tx hashes in the CHANGELOG (AGENTS.md). Zero addresses for
 // Moor's own contracts are preserved until their phase deploys them.
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,6 +21,9 @@ const out = resolve(args.out ?? resolve(here, "../../core/src/addresses.ts"));
 const dep = JSON.parse(readFileSync(resolve(here, `../deployments/${chainId}.json`), "utf8"));
 if (String(dep.chainId) !== chainId)
 	throw new Error(`deployment chainId ${dep.chainId} != ${chainId}`);
+// Phase 2 (DeployRegistrar.s.sol) writes its addresses to a sibling file.
+const namesPath = resolve(here, `../deployments/${chainId}.names.json`);
+const names = existsSync(namesPath) ? JSON.parse(readFileSync(namesPath, "utf8")) : {};
 
 const src = readFileSync(out, "utf8");
 const blockRe =
@@ -39,6 +43,9 @@ const next = {
 	swapVmRouter: `"${dep.swapVmRouter}"`,
 	testWbtc: `"${dep.testWbtc}"`,
 	testUsdc: `"${dep.testUsdc}"`,
+	// Moor's own contracts appear once their phase deploys them (DeployRegistrar.s.sol).
+	...(names.moorRegistrar ? { moorRegistrar: `"${names.moorRegistrar}"` } : {}),
+	...(dep.moorProgramFactory ? { moorProgramFactory: `"${dep.moorProgramFactory}"` } : {}),
 };
 const body = Object.entries(next)
 	.map(([k, v]) => `\t${k}: ${v},`)

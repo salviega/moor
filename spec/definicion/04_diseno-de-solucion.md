@@ -70,7 +70,7 @@ Todo lo que el agente **no** puede tocar está aquí. Todo esto se escribe en la
 
 ### Propuesta del agente
 
-Vive en los records del subnombre del agente, `agent.<label>.<holder>.eth`. Es lo único que el agente escribe.
+Vive en los records `moor.agent.*` del **propio nombre de la posición**. Son las únicas ocho claves que el agente puede escribir (por clave, no por tipo: `authorizeTextRoles`); las `moor.*` del holder le revierten.
 
 | Record                      | Contenido                                                            |
 | --------------------------- | -------------------------------------------------------------------- |
@@ -89,9 +89,9 @@ Una propuesta **no hace nada por sí misma**. Es texto que el holder lee en la L
 
 | Campo    | Tipo        | Notas                                                                     |
 | -------- | ----------- | ------------------------------------------------------------------------- |
-| `nombre` | subnombre   | `agent.<label>.<holder>.eth`. Uno por posición                            |
+| `nombre` | subnombre   | `agent.<holder>.eth`. Uno por holder; su `addr` es la llave del agente     |
 | `addr`   | dirección   | Su llave caliente. Es lo que el holder autoriza y lo que puede revocar    |
-| `roles`  | derivado    | Exactamente uno: escribir text records en su propio subnombre. Ver §6     |
+| `roles`  | derivado    | Exactamente uno: `ROLE_SET_TEXT` sobre las ocho claves `moor.agent.*`. Ver §6 |
 
 ---
 
@@ -102,7 +102,7 @@ Una propuesta **no hace nada por sí misma**. Es texto que el holder lee en la L
 Antes de la primera posición, el holder necesita que su nombre pueda tener subnombres administrados por Moor. Ocurre una vez y no se repite.
 
 1. Abre Moor en Ledger Live. Moor detecta que `salviega.eth` aún no tiene registry de Moor.
-2. La Live App explica qué va a pasar: se crea un registry de subnombres bajo su nombre y un resolver propio, y se autoriza al registrador de Moor a crear posiciones ahí — **y a nada más**.
+2. La Live App explica qué va a pasar: se crea un registry de subnombres bajo su nombre (su resolver actual sirve), se autoriza al registrador de Moor a crear posiciones ahí — **y a nada más** — y se registra `agent.<holder>.eth` con el único permiso del agente.
 3. Firma en la Ledger. Cada transacción se muestra en términos del producto.
 4. Listo. Desde ahora, crear una posición es la sesión del 4.1.
 
@@ -137,12 +137,12 @@ No hay un momento de "ejecución" separado del anterior: **la orden se llena mie
 ### 4.4 Vigilar y proponer
 
 1. El agente corre solo, cada pocos minutos. Lee el precio, lee el estado de la posición en Aqua, calcula estado, % convertido y fees.
-2. Escribe su lectura en `agent.btc-dip.salviega.eth`. Siempre, aunque no haya nada que proponer: así el holder sabe que el agente está vivo.
+2. Escribe su lectura en los records `moor.agent.*` de `btc-dip.salviega.eth`. Siempre, aunque no haya nada que proponer: así el holder sabe que el agente está vivo.
 3. Si detecta algo que merece atención —el precio se alejó tanto del rango que la posición lleva días sin trabajar; la posición se completó; el vencimiento está cerca—, **simula** alternativas y escribe una propuesta con su razonamiento y el resultado simulado.
 4. El holder la ve en la Live App, en la ficha de la posición, marcada como *propuesta del agente*. Puede ignorarla.
 5. Si la acepta, la Live App la convierte en la sesión de firma correspondiente (cerrar; o cerrar y crear una nueva con el rango propuesto). La Ledger muestra qué se va a hacer. El holder confirma o no.
 
-El agente **nunca** llega al paso 5 por su cuenta. No tiene cómo: no es el maker en Aqua, no tiene permisos en el registry, y en el resolver solo puede escribir sus propios records.
+El agente **nunca** llega al paso 5 por su cuenta. No tiene cómo: no es el maker en Aqua, no tiene permisos en el registry, y en el resolver solo puede escribir las claves `moor.agent.*`.
 
 ### 4.5 Cerrar
 
@@ -196,7 +196,7 @@ Fuera de Ledger Live no hay pantallas de Moor. Pero el nombre `btc-dip.salviega.
 
 **Sobre el agente**
 
-- Puede: leer todo, escribir text records **únicamente** en su propio subnombre.
+- Puede: leer todo, escribir **únicamente** las ocho claves `moor.agent.*` (en cualquier nombre del resolver del holder).
 - No puede: nada más. Ni en la posición, ni en el registry, ni en Aqua. No puede otorgarse ni pedir más permisos.
 - Sus propuestas no tienen efecto hasta que el holder las firma. Si el agente se cae, la posición no se entera.
 - Si su última lectura tiene más de una hora, la interfaz lo dice como aviso, no como error: la posición sigue bien; el que está callado es el agente.
@@ -230,7 +230,7 @@ Fuera de Ledger Live no hay pantallas de Moor. Pero el nombre `btc-dip.salviega.
 
 - Un solo tipo de usuario; sin roles ni cuentas. La identidad es la wallet.
 - La posición es un rango unidireccional de liquidez concentrada; "trabajar" y "ejecutar" son el mismo mecanismo.
-- El agente escribe solo en su propio subnombre y no tiene ninguna capacidad de ejecución. Se revoca con una firma.
+- El agente escribe solo las claves `moor.agent.*` (permiso por clave del `PermissionedResolver`) y no tiene ninguna capacidad de ejecución. Se revoca con una firma (`revokeAgent`). Su identidad es `agent.<holder>.eth`, una por holder.
 - Las posiciones viven bajo el nombre del holder, con un flujo de primera vez que lo habilita.
 - La interfaz dice explícitamente que los fees se cobran solo dentro del rango.
 
