@@ -30,6 +30,20 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.4.0] - 2026-09-05
+
+Phases 0, 1 and 2 of [the plan](./spec/definicion/07_plan-de-trabajo.md), all
+closed on 2026-09-05. `0.2.0` and `0.3.0` were not cut when phases 0 and 1
+merged (#7, #8); their entries are folded here rather than back-dated.
+
+### Added
+
 - **Phase 2: the name and the permissions — closed 2026-09-05, three days
   early.** `btc-dip.salviega.eth` exists on ENSv2 Sepolia, describes the
   position, and the agent demonstrably cannot touch it.
@@ -250,8 +264,3 @@ Two things this project's entries carry that a web app's would not:
   getters. Documented in `AGENTS.md`, `spec/definicion/06_tecnologias.md`
   §6/§9, and the PR template checklist.
 
-### Changed
-
-### Fixed
-
-### Removed
