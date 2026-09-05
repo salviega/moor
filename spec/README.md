@@ -45,4 +45,4 @@ Aparte de la definición, [`feedback/`](./feedback/) es una bitácora viva de lo
 
 ## Estado
 
-**Documentación completa del 01 al 08. Construcción: fase 0 — andamiaje y Sepolia** ([07](./definicion/07_plan-de-trabajo.md)). Cierre de submissions el 13 de septiembre de 2026. Los pendientes de cada tema están al final de su documento; los que atraviesan varios (fuente de precio, enumerar subnombres, confirmar el redespliegue con 1inch) tienen fase asignada en el 07.
+**Documentación completa del 01 al 08. Construcción: fase 0 casi cerrada** ([07](./definicion/07_plan-de-trabajo.md)) — monorepo y CI en verde, Aqua/SwapVM redesplegados en Sepolia (Aqua con `exact_match` en Sourcify), `salviega.eth` en ENSv2, Live App en [Vercel](https://getmoor.vercel.app), Speculos verificado. Falta la primera firma real desde Ledger Live y el Key Ring en el VPS. Cierre de submissions el 13 de septiembre de 2026. Los pendientes de cada tema están al final de su documento; los que atraviesan varios (fuente de precio, enumerar subnombres, confirmar el redespliegue con 1inch) tienen fase asignada en el 07.

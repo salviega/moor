@@ -1,6 +1,10 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.5.12/schema.json",
-	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
 	"files": {
 		"includes": [
 			"**",
@@ -13,11 +17,31 @@
 			"!packages/contracts/cache",
 			"!packages/contracts/broadcast",
 			"!packages/erc7730/screens",
-			"!pnpm-lock.yaml"
+			"!pnpm-lock.yaml",
+			"!packages/contracts/deployments",
+			"!packages/erc7730/.speculos"
 		]
 	},
-	"formatter": { "enabled": true, "indentStyle": "tab", "lineWidth": 100 },
-	"linter": { "enabled": true, "rules": { "preset": "none" } },
-	"javascript": { "formatter": { "quoteStyle": "double", "semicolons": "always" } },
-	"json": { "formatter": { "enabled": true } }
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 100
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "none"
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"semicolons": "always"
+		}
+	},
+	"json": {
+		"formatter": {
+			"enabled": true
+		}
+	}
 }

@@ -65,7 +65,7 @@
 			"deployments": [
 				{
 					"chainId": 11155111,
-					"address": "0x0000000000000000000000000000000000000000"
+					"address": "0xB8747B3e2F90154420165FB2fc4707D638797140"
 				}
 			]
 		}
@@ -74,7 +74,7 @@
 		"owner": "Moor",
 		"info": {
 			"legalName": "Moor",
-			"url": "https://moor.vercel.app"
+			"url": "https://getmoor.vercel.app"
 		},
 		"constants": {}
 	},

@@ -1,9 +1,9 @@
 {
 	"id": "moor",
 	"name": "Moor",
-	"url": "http://localhost:3000",
+	"url": "https://getmoor.vercel.app",
 	"homepageUrl": "https://github.com/salviega/moor",
-	"icon": "",
+	"icon": "https://getmoor.vercel.app/favicon.ico",
 	"platforms": ["desktop"],
 	"apiVersion": "^2.0.0",
 	"manifestVersion": "2",

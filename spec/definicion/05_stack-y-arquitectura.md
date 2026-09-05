@@ -259,7 +259,7 @@ Ordenados por cuánto daño hacen si se materializan.
 ## 11. Pendientes
 
 - **Confirmar con 1inch** que Aqua y SwapVM redesplegados sin modificar en Sepolia califican como "official contracts".
-- Verificar que Ledger Live acepta descriptores ERC-7730 locales en modo desarrollador, y cómo se cargan.
+- Verificar que Ledger Live acepta descriptores ERC-7730 locales en modo desarrollador, y cómo se cargan (candidato: el ERC-7730 Tester de Ledger — [`feedback/03_ledger.md`](../feedback/03_ledger.md)).
 - Fuente de precio (compartida con el 04).
 - Cadencia del agente y umbrales de propuesta (compartido con el 04).
 - Cómo enumera la Live App los subnombres de un `UserRegistry`: eventos, `UniversalResolverV2`, o un índice mínimo en `packages/core`.
@@ -276,4 +276,4 @@ Ordenados por cuánto daño hacen si se materializan.
 | `PermissionedResolverImpl` | `0x9eae5c2730a7dd16bdd1dee6421a1b91e3b0365e` |
 | `UniversalResolverV2` | `0x4a1817d13e9cf196f471725176355c1234b63c70` |
 
-Aqua y SwapVM: las direcciones canónicas de producción (`0x1111113ccf1426a8e30e2bff5e005d929bf6a90a`, `0x111111338c5091E8440b67B168bAe16a668AC0De`) **no aplican en Sepolia**; las nuestras salen del redespliegue en fase 0.
+Aqua y SwapVM: las direcciones canónicas de producción (`0x1111113ccf1426a8e30e2bff5e005d929bf6a90a`, `0x111111338c5091E8440b67B168bAe16a668AC0De`) **no aplican en Sepolia**. Las nuestras, del redespliegue del 5 de septiembre: Aqua `0xB8747B3e2F90154420165FB2fc4707D638797140` (Sourcify `exact_match`), `AquaSwapVMRouter` `0xdD026eA05C9256A1162dC3d41102579458A804Cd`, `TestWETH` `0x10C5026152eB4f79119d6cFb75205aEB6E98dfA0`, `tWBTC` `0xfA92A297eC2cCC8Ec010ACa475F07240e2D47deC`, `tUSDC` `0x274aaB610937e018310cCedC0b05B543b75557AB` — fuente de verdad en `packages/core/src/addresses.ts`.

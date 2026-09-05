@@ -25,10 +25,10 @@ export const ensV2Sepolia = {
 
 /** Written by `contracts:deploy`. Zero until the redeploy in phase 0 lands. */
 export const moorSepolia = {
-	aqua: ZERO_ADDRESS,
-	swapVmRouter: ZERO_ADDRESS,
+	aqua: "0xB8747B3e2F90154420165FB2fc4707D638797140",
+	swapVmRouter: "0xdD026eA05C9256A1162dC3d41102579458A804Cd",
 	moorRegistrar: ZERO_ADDRESS,
 	moorProgramFactory: ZERO_ADDRESS,
-	testWbtc: ZERO_ADDRESS,
-	testUsdc: ZERO_ADDRESS,
+	testWbtc: "0xfA92A297eC2cCC8Ec010ACa475F07240e2D47deC",
+	testUsdc: "0x274aaB610937e018310cCedC0b05B543b75557AB",
 } as const satisfies Record<string, Address>;

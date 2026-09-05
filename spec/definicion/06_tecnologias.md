@@ -120,7 +120,7 @@ Se activan los **fallbacks del lado del servidor** del SDK (`fallbacks: "default
 | **Faucets de Sepolia**            | Gratis   | ETH para redesplegar Aqua + SwapVM + tokens + contratos propios. **Pedir desde el día uno**    |
 | **ENS App (Sepolia, ENSv2)**      | Gratis   | Registrar `salviega.eth` de prueba en ENSv2                                                   |
 | **Ledger Live Desktop**           | —        | Modo desarrollador para cargar el `manifest.json` local y probar con el dispositivo real       |
-| **Vercel**                        | Hobby    | Hospedar la Live App. La URL de producción va al manifest                                      |
+| **Vercel**                        | Hobby    | Hospedar la Live App: proyecto `moor`, Root Directory `apps/live-app`, Node 22, repo conectado. Producción: [getmoor.vercel.app](https://getmoor.vercel.app) — `moor.vercel.app` estaba tomado. *Gotcha:* el `prepare` de la raíz debe tolerar la ausencia de `.git` o tumba el `pnpm install` del build |
 | **Anthropic API**                 | Pago por uso | Claude Opus 5 para las propuestas. Pocas llamadas: solo al cruzar umbrales                |
 | **VPS** (cualquiera)              | ~5 USD/mes | El agente headless, con Key Ring enrolado                                                   |
 
@@ -134,7 +134,9 @@ Validadas con zod al arrancar cada app; si falta una, no arranca. Ninguna vive e
 | --------------------------------- | ------------ | ------------------------------------------------------------------------------ |
 | `NEXT_PUBLIC_SEPOLIA_RPC_URL`     | Live App     | Se inlinea en build; cambiarla exige redesplegar                               |
 | `NEXT_PUBLIC_MOOR_REGISTRAR`      | Live App     | Dirección de `MoorRegistrar` en Sepolia                                        |
-| `NEXT_PUBLIC_AQUA`, `NEXT_PUBLIC_SWAPVM_ROUTER` | Live App | Direcciones del redespliegue en Sepolia. Las de producción de 1inch **no** aplican |
+| `NEXT_PUBLIC_AQUA`, `NEXT_PUBLIC_SWAPVM_ROUTER` | Live App | Direcciones del redespliegue en Sepolia. Las de producción de 1inch **no** aplican. *Hoy no hacen falta:* la Live App las lee de `packages/core/src/addresses.ts`, que `contracts:deploy` reescribe |
+| `DEPLOYER_ADDRESS`                | Foundry      | Dueño del `AquaSwapVMRouter` (`Rescuable`). Solo fondos de prueba                |
+| `WETH_ADDRESS`                    | Foundry      | Opcional. Si falta, `Deploy.s.sol` despliega un `TestWETH`                      |
 | `SEPOLIA_RPC_URL`                 | Agente       | Distinta llave que la de la Live App. Sale de Key Ring                         |
 | `AGENT_PRIVATE_KEY`               | Agente       | La llave caliente. **Sale de Key Ring, nunca de un `.env`**                     |
 | `ANTHROPIC_API_KEY`               | Agente       | Sale de Key Ring                                                               |
@@ -159,7 +161,7 @@ Desde la raíz, con `pnpm`:
 | `test`              | Vitest en `packages/core`, con `--coverage` — falla si el cubrimiento baja de 90%    |
 | `contracts:test`    | `forge test` en `packages/contracts`                                                |
 | `contracts:coverage`| `forge coverage --report summary` en `packages/contracts` — se lee, no se exige un %  |
-| `contracts:deploy`  | `script/Deploy.s.sol` en Sepolia (`SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`): Aqua, `AquaSwapVMRouter`, `TestWETH` si no hay `WETH_ADDRESS`, `tWBTC`, `tUSDC`; luego `write-addresses.mjs` reescribe `packages/core/src/addresses.ts` |
+| `contracts:deploy`  | (`deploy:sepolia` en el paquete — `deploy` es un comando reservado de pnpm) `script/Deploy.s.sol` en Sepolia (`SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`): Aqua, `AquaSwapVMRouter`, `TestWETH` si no hay `WETH_ADDRESS`, `tWBTC`, `tUSDC`; luego `write-addresses.mjs` reescribe `packages/core/src/addresses.ts` |
 | `contracts:deploy:anvil` | Lo mismo contra un Anvil local con la llave 0 de Anvil — es como se verificó el script |
 | `demo:taker`        | El taker de demo: ejecuta swaps contra una posición para mostrar fills               |
 | `ledger:emu`        | Levanta Speculos con la app de Ethereum y una seed de prueba; la Live App en `dev:ledger` firma contra él |
@@ -186,7 +188,8 @@ Desde la raíz, con `pnpm`:
 ## 11. Pendientes
 
 - **Fuente de precio.** Chainlink tiene feeds en Sepolia (BTC/USD); Pyth también. Elegir una y fijarla en `packages/core`. Compartido con el [04](./04_diseno-de-solucion.md#8-decisiones-tomadas-y-pendientes).
-- **Tooling ERC-7730.** Ledger mantiene un registro público de descriptores con un linter (`erc7730`, Python). Confirmar cómo se cargan descriptores locales en Ledger Live en modo desarrollador — es tarea de fase 0 en el [07](./07_plan-de-trabajo.md).
+- **Verificación de contratos.** El verificador Sourcify de `forge 1.3` no entiende la respuesta de la API actual (`error decoding response body`); la API v2 de Sourcify sí funciona con el standard-json de `forge verify-contract --show-standard-json-input`. Empaquetarlo como script `contracts:verify`. Etherscan requiere `ETHERSCAN_API_KEY`.
+- **Descriptores locales en el dispositivo.** El camino es el ERC-7730 Tester de Ledger — ver [07](./07_plan-de-trabajo.md) fase 0 y [`feedback/03_ledger.md`](../feedback/03_ledger.md).
 - **Speculos + Clear Signing.** Confirmar cómo se le entregan a la app de Ethereum emulada los descriptores ERC-7730 locales (la app los recibe como metadata firmada; en desarrollo hay que ver qué acepta). Sin eso, Speculos muestra las pantallas de blind signing y no sirve para lo que queremos.
 - **Enrolar el Key Ring en un host sin USB.** La instalación ya está clara (`npm i -g @ledgerhq/wallet-cli`; `ring init` con dispositivo; luego solo red). Lo que sigue sin documentar es cómo un segundo host (el VPS) pasa a ser miembro del mismo trustchain. Se resuelve con el dispositivo — ver [`feedback/03_ledger.md`](../feedback/03_ledger.md).
 - **Cómo enumerar subnombres** de un `UserRegistry` desde viem: eventos, `UniversalResolverV2` o un índice mínimo. Compartido con el [05](./05_stack-y-arquitectura.md#11-pendientes).
