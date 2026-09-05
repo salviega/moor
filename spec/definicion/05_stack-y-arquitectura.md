@@ -46,9 +46,9 @@ Una cadena, tres protocolos, dos procesos nuestros. Y una regla que atraviesa el
 │  ENSv2 (beta oficial)                                                  │
 │   salviega.eth                                                         │
 │    └─ UserRegistry del holder  ──── MoorRegistrar (ROLE_REGISTRAR)     │
-│        ├─ btc-dip.salviega.eth        records: moor.strategy, moor.program… │
-│        └─ agent.btc-dip.salviega.eth  records: moor.agent.*            │
-│   PermissionedResolver del holder (roles por nombre y tipo de record)   │
+│        ├─ btc-dip.salviega.eth   records: moor.strategy… + moor.agent.* │
+│        └─ agent.salviega.eth     addr: la llave del agente             │
+│   PermissionedResolver del holder (roles por nombre y por clave)        │
 │                                                                        │
 └──────────▲──────────────────────────────────────────▲──────────────────┘
            │ lee: precio, balances, quotes            │ escribe: solo moor.agent.* (ROLE_SET_TEXT)
@@ -67,7 +67,7 @@ Una cadena, tres protocolos, dos procesos nuestros. Y una regla que atraviesa el
 
 **Contratos propios.** Dos, pequeños:
 
-- **`MoorRegistrar`** — llamado por el holder en `createPosition`. Registra el subnombre en el `UserRegistry` del holder, escribe los records de la posición en su resolver, registra `agent.<label>` y le otorga a la llave del agente `ROLE_SET_TEXT` sobre ese recurso. Necesita `ROLE_REGISTRAR` en el registry y los roles de escritura de records (con sus admin) en el resolver del holder, otorgados en la primera vez.
+- **`MoorRegistrar`** — sin estado ni dueño. `createPosition` (lo firma el holder): registra el subnombre en el `UserRegistry` del holder con `expiry` = vencimiento y sin `ROLE_CAN_TRANSFER_ADMIN`, y escribe `addr` y los records `moor.*` en el resolver del holder; rechaza claves que no empiecen por `moor.` o que sean `moor.agent.*`. `setupAgent` (una vez por holder): registra `agent.<holder>.eth`, le pone `addr` y otorga a la llave del agente `ROLE_SET_TEXT` sobre las ocho claves `moor.agent.*` en cualquier nombre del resolver. `revokeAgent`: las quita. Necesita `ROLE_REGISTRAR` en el registry y `ROLE_SET_TEXT | ROLE_SET_ADDR | ROLE_SET_TEXT_ADMIN` en el resolver, otorgados en la primera vez; solo actúa si `msg.sender` es root de ambos (Sepolia: `0xe6915D2E5e8Db86661a66472e5B178d0dB419966`, Sourcify `exact_match`).
 - **`MoorProgramFactory`** (o una librería) — construye el bytecode del programa a partir de par, rango, fee y vencimiento, de forma determinista, para que la Live App, el agente y las pruebas produzcan el mismo programa y el mismo `strategyHash`.
 
 Nada de Moor toca tokens. Nada de Moor es `maker` de nada.
@@ -181,33 +181,33 @@ No hay cuentas ni sesiones: la identidad es la wallet, y **los permisos se hacen
 
 | Rol | Quién lo tiene | Efecto |
 | --- | --- | --- |
-| `ROLE_REGISTRAR`, `ROLE_RENEW` | `MoorRegistrar` | Crea y renueva subnombres cuando el holder firma `createPosition` |
-| `ROLE_UNREGISTER`, `ROLE_SET_RESOLVER` | Holder, sobre cada posición | Da de baja el nombre al cerrar; cambia resolver |
+| `ROLE_REGISTRAR` | `MoorRegistrar` | Crea subnombres cuando el holder firma `createPosition` / `setupAgent` |
+| `ROLE_UNREGISTER`, `ROLE_RENEW`, `ROLE_SET_RESOLVER` (+ sus admin) | Holder, sobre cada posición (`MoorRoles.NAME_OWNER`) | Da de baja el nombre al cerrar; renueva; cambia resolver |
 | `ROLE_CAN_TRANSFER_ADMIN` | **Nadie** | La posición es **intransferible**: está atada a la wallet cuyos tokens usa Aqua |
-| Roles admin (`role << 128`) | Solo el holder | Nadie más puede delegar ni ampliar. Incluye revocar a `MoorRegistrar` |
+| Roles root (`MoorRoles.HOLDER_REGISTRY_ROOT`, todos con sus admin) | Solo el holder | Nadie más puede delegar ni ampliar. Incluye revocar a `MoorRegistrar` (`revokeRootRoles`) |
 | Cualquier rol | **Agente: ninguno** | — |
 
-`expiry` del subnombre = `_deadline` del programa SwapVM. Cuando la estrategia vence, el nombre vence.
+`expiry` del subnombre = `_deadline` del programa SwapVM. Cuando la estrategia vence, el nombre vence. El registry del holder es un proxy de `UserRegistryImpl` desplegado por `VerifiableFactory` (Sepolia, salviega: `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81`, salt 1 del deployer).
 
-### ENSv2 — Permissioned Resolver (una instancia por holder)
+### ENSv2 — Permissioned Resolver (el que el holder ya tiene)
 
-Los recursos de EAC son `namehash + tipo de record`, no por clave. Por eso el agente **no** escribe en el nombre de la posición: si tuviera `ROLE_SET_TEXT` ahí para `moor.agent.proposal`, también podría pisar `moor.strategy`.
+Los recursos de EAC del `PermissionedResolver` son `keccak(namehash, keccak(clave))` para los text records —**por clave**, no por tipo— y `namehash = 0` significa *cualquier nombre del resolver* (`authorizeTextRoles(name, key, account, grant)`). Por eso el agente sí escribe en el nombre de la posición, pero solo en sus ocho claves. No hace falta un resolver nuevo ni un subnombre por posición para el agente.
 
 | Recurso | Rol | Quién |
 | --- | --- | --- |
-| `btc-dip.salviega.eth` · text / addr / contenthash | Todos | Holder; `MoorRegistrar` solo en `createPosition` (con roles otorgados en la primera vez) |
-| `btc-dip.salviega.eth` · cualquiera | — | **Agente: ninguno** |
-| `agent.btc-dip.salviega.eth` · text | `ROLE_SET_TEXT` | Agente (llave caliente, custodiada en Key Ring) |
-| `agent.btc-dip.salviega.eth` · addr / contenthash / alias / clear | — | Agente: ninguno |
+| root del resolver | `ROLE_SET_TEXT`, `ROLE_SET_ADDR`, `ROLE_SET_TEXT_ADMIN` (`MoorRoles.REGISTRAR_ON_RESOLVER`) | `MoorRegistrar`: escribe `addr` y `moor.*` en `createPosition`, otorga y revoca las claves del agente |
+| root del resolver · todos los roles y sus admin | — | Holder (dueño del resolver desde app.ens.dev) |
+| `(cualquier nombre, moor.agent.checkedAt)` … `(cualquier nombre, moor.agent.simulation)` — ocho recursos | `ROLE_SET_TEXT` | Agente (llave caliente, custodiada en Key Ring) |
+| `(btc-dip.salviega.eth, moor.strategy)` y cualquier otra clave, `addr`, `contenthash`, alias, clear | — | **Agente: ninguno** |
 
-**Verificable:** `hasRoles(resource, roleBitmap, agente)` devuelve `false` para todo lo que no sea el text del subnombre del agente. Un juez lo comprueba sin creernos.
+**Verificable:** `resolver.hasRoles(resource, ROLE_SET_TEXT, agente)` es `true` exactamente para los ocho recursos que devuelve `agentResources()` de `packages/core` y `false` para cualquier otro; `hasRootRoles` es `false` para el agente en registry y resolver. Un juez lo comprueba con `cast call` sin creernos.
 
-**Kill switch:** `revokeRoles(...)` firmado en la Ledger. EAC es reversible, así que el agente queda mudo sin tocar la posición. Lo mismo aplica a `MoorRegistrar`: el holder puede revocarle `ROLE_REGISTRAR` y Moor deja de poder crear posiciones bajo su nombre.
+**Kill switch:** `MoorRegistrar.revokeAgent(resolver, agente)` firmado en la Ledger (o `authorizeTextRoles(..., false)` directo en el resolver). EAC es reversible, así que el agente queda mudo sin tocar la posición. Lo mismo aplica a `MoorRegistrar`: el holder puede revocarle `ROLE_REGISTRAR` en el registry y sus roles en el resolver, y Moor deja de poder crear posiciones bajo su nombre.
 
 ### Ledger
 
 - Todo lo anterior lo firma el holder en el dispositivo, vía Wallet API (`transaction.signAndBroadcast`) desde la Live App.
-- **Clear Signing** requiere un descriptor **ERC-7730** por contrato y función que el holder firme: `approve` (estándar), `Aqua.ship`/`dock`, `MoorRegistrar.createPosition`, `PermissionedRegistry.revokeRoles`, `PermissionedResolver.revokeRoles`. Sin descriptor, la Ledger muestra blind signing.
+- **Clear Signing** requiere un descriptor **ERC-7730** por contrato y función que el holder firme: `approve` (estándar), `Aqua.ship`/`dock`, `MoorRegistrar.createPosition`/`setupAgent`/`revokeAgent`, `PermissionedRegistry.setSubregistry`/`grantRootRoles`/`revokeRootRoles`/`unregister`, `PermissionedResolver.grantRootRoles`/`revokeRootRoles`/`authorizeTextRoles` — los tres archivos de `packages/erc7730/descriptors/`. Sin descriptor, la Ledger muestra blind signing.
 - La llave del agente **no es una Ledger** y no debe serlo: firma `setText` cada pocos minutos sin humano. Lo que sí es Ledger es la custodia de esa llave y de los demás secretos del agente, en Key Ring.
 
 ---
@@ -262,7 +262,7 @@ Ordenados por cuánto daño hacen si se materializan.
 - Verificar que Ledger Live acepta descriptores ERC-7730 locales en modo desarrollador, y cómo se cargan (candidato: el ERC-7730 Tester de Ledger — [`feedback/03_ledger.md`](../feedback/03_ledger.md)).
 - Fuente de precio (compartida con el 04).
 - Cadencia del agente y umbrales de propuesta (compartido con el 04).
-- Cómo enumera la Live App los subnombres de un `UserRegistry`: eventos, `UniversalResolverV2`, o un índice mínimo en `packages/core`.
+- ~~Cómo enumera la Live App los subnombres de un `UserRegistry`.~~ Cerrado en la fase 2: el evento `LabelRegistered(tokenId, labelHash, label, owner, expiry, sender)` del registry del holder lleva el label en claro; `listPositions()` en `packages/core` hace un `eth_getLogs` desde el bloque de creación del registry (salviega: 11642814) y filtra `sender == MoorRegistrar`, menos `agent`. Sin indexador.
 
 **Direcciones ENSv2 en Sepolia** (de la tabla oficial de despliegues, a fijar en `packages/core`):
 
@@ -275,5 +275,8 @@ Ordenados por cuánto daño hacen si se materializan.
 | `UserRegistryImpl` | `0x624a25d67b59d587752ebec8dded8827dae52050` |
 | `PermissionedResolverImpl` | `0x9eae5c2730a7dd16bdd1dee6421a1b91e3b0365e` |
 | `UniversalResolverV2` | `0x4a1817d13e9cf196f471725176355c1234b63c70` |
+| **`MoorRegistrar`** (fase 2, Sourcify `exact_match`) | `0xe6915D2E5e8Db86661a66472e5B178d0dB419966` |
+| Registry de `salviega.eth` (proxy `UserRegistryImpl`) | `0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81` |
+| Resolver de `salviega.eth` (proxy `PermissionedResolverImpl`, de app.ens.dev) | `0xc93Ad19307813019b9595147823b035DD93ce363` |
 
 Aqua y SwapVM: las direcciones canónicas de producción (`0x1111113ccf1426a8e30e2bff5e005d929bf6a90a`, `0x111111338c5091E8440b67B168bAe16a668AC0De`) **no aplican en Sepolia**. Las nuestras, del redespliegue del 5 de septiembre: Aqua `0xB8747B3e2F90154420165FB2fc4707D638797140` (Sourcify `exact_match`), `AquaSwapVMRouter` `0xdD026eA05C9256A1162dC3d41102579458A804Cd`, `TestWETH` `0x10C5026152eB4f79119d6cFb75205aEB6E98dfA0`, `tWBTC` `0xfA92A297eC2cCC8Ec010ACa475F07240e2D47deC`, `tUSDC` `0x274aaB610937e018310cCedC0b05B543b75557AB` — fuente de verdad en `packages/core/src/addresses.ts`.

@@ -146,28 +146,29 @@ Los cuatro pendientes de la primera versión de este documento, cerrados el 5 de
 | **No** otorgar `ROLE_CAN_TRANSFER_ADMIN`          | La posición es intransferible: está atada a la wallet cuyos tokens usa Aqua        |
 | `expiry` del registro                             | Espeja el `_deadline` del programa SwapVM; si la estrategia vence, el nombre vence |
 | `unregister()`                                    | Al hacer `dock()`, el nombre se da de baja. Nombre y posición viven y mueren juntos |
-| Permissioned Resolver con roles por tipo de record | Es donde entran los permisos del agente (decisión 3)                             |
+| Permissioned Resolver con roles por nombre **y por clave** de text record | Es donde entran los permisos del agente (decisión 3)              |
 
-Un resolver **por usuario**, no por posición: la instancia es por cuenta y sus recursos de EAC son `namehash + tipo de record`, así que un solo resolver reparte permisos distintos por posición.
+Un resolver **por usuario**, no por posición: el que el holder ya tiene en app.ens.dev sirve. Sus recursos de EAC son `(nombre, clave de text record)` —`authorizeTextRoles(name, key, account, grant)`, con `name = 0x00` para *cualquier* nombre del resolver—, así que un solo resolver reparte permisos por clave sin desplegar nada más. *(Corregido en la fase 2: la lectura previa de la documentación decía "por tipo de record"; ver [`feedback/02_ens.md`](../feedback/02_ens.md).)*
 
 **Prerrequisito:** el nombre del usuario (`salviega.eth` para la demo) tiene que existir en ENSv2 Sepolia. Va en la fase 0 del [07](./07_plan-de-trabajo.md).
 
 ### 3. El agente tiene cero permisos sobre la posición; escribe solo en su propio subnombre
 
-Al traducir la regla del [02](./02_solucion.md) a roles apareció un problema: los recursos del resolver son por **tipo** de record, no por clave. Dar `ROLE_SET_TEXT` al agente sobre `btc-dip.salviega.eth` para que escriba `moor.proposal` le permitiría también sobreescribir `moor.strategy`.
+Al traducir la regla del [02](./02_solucion.md) a roles apareció un problema aparente: la documentación sugería que los recursos del resolver eran por **tipo** de record, y dar `ROLE_SET_TEXT` al agente sobre `btc-dip.salviega.eth` le habría permitido pisar `moor.strategy`. El código de `PermissionedResolver` resuelve el problema: `authorizeTextRoles` otorga `ROLE_SET_TEXT` **por clave**, así que el agente escribe `moor.agent.*` en el nombre de la posición y no puede tocar ninguna otra clave.
 
 **Se elige** la forma que el bonus de ENS describe con sus palabras — agentes como namespaces con identidad y permisos propios:
 
 ```
-btc-dip.salviega.eth          la posición. Records: estrategia, strategyHash de Aqua, chainId, estado.
+btc-dip.salviega.eth          la posición. Records moor.*: estrategia, strategyHash de Aqua, par, rango…
                               Escribe: solo el usuario, desde la Ledger.
-agent.btc-dip.salviega.eth    el agente. Records: última lectura, simulación, propuesta.
-                              Escribe: la llave del agente, con ROLE_SET_TEXT solo aquí.
+                              Records moor.agent.*: última lectura, simulación, propuesta.
+                              Escribe: la llave del agente, con ROLE_SET_TEXT solo en esas ocho claves.
+agent.salviega.eth            la identidad del agente (una por holder). addr = su llave caliente.
 ```
 
 Roles exactos del agente:
 
-- **Resolver:** `ROLE_SET_TEXT` únicamente, y únicamente sobre el recurso de `agent.<posición>`. Nada de `ROLE_SET_ADDR`, `ROLE_SET_CONTENTHASH`, `ROLE_SET_ALIAS`, `ROLE_CLEAR`.
+- **Resolver:** `ROLE_SET_TEXT` únicamente, y únicamente sobre las ocho claves `moor.agent.*` (recurso `(cualquier nombre, clave)`). Nada sobre `moor.strategy` ni las demás claves del holder; nada de `ROLE_SET_ADDR`, `ROLE_SET_CONTENTHASH`, `ROLE_SET_ALIAS`, `ROLE_CLEAR`.
 - **Registry:** ninguno. No `unregister`, no `renew`, no `setResolver`, no transferencia.
 - **Roles admin** (`role << 128`): ninguno. No puede delegar ni ampliar lo que tiene.
 - **Aqua:** no es maker, no tiene `approve`, no puede `ship` ni `dock`.

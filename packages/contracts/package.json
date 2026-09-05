@@ -10,6 +10,7 @@
 		"deploy:sepolia": "forge script script/Deploy.s.sol --rpc-url \"$SEPOLIA_RPC_URL\" --private-key \"$DEPLOYER_PRIVATE_KEY\" --broadcast -vvv && node scripts/write-addresses.mjs --chain=11155111",
 		"demo:ship": "forge script script/ShipDemo.s.sol --rpc-url \"$SEPOLIA_RPC_URL\" --private-key \"$DEPLOYER_PRIVATE_KEY\" --broadcast -vvv",
 		"demo:ship:anvil": "forge script script/ShipDemo.s.sol --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast",
-		"demo:taker:anvil": "forge script script/DemoTaker.s.sol --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast"
+		"demo:taker:anvil": "forge script script/DemoTaker.s.sol --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast",
+		"deploy:registrar": "forge script script/DeployRegistrar.s.sol --rpc-url \"$SEPOLIA_RPC_URL\" --private-key \"$DEPLOYER_PRIVATE_KEY\" --broadcast -vvv --skip-simulation"
 	}
 }

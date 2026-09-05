@@ -1,0 +1,296 @@
+{
+	"$schema": "https://raw.githubusercontent.com/LedgerHQ/clear-signing-erc7730-registry/master/specs/erc7730-v1.schema.json",
+	"context": {
+		"$id": "PermissionedRegistry",
+		"contract": {
+			"abi": [
+				{
+					"type": "function",
+					"name": "grantRoles",
+					"inputs": [
+						{
+							"name": "anyId",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "roleBitmap",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "account",
+							"type": "address",
+							"internalType": "address"
+						}
+					],
+					"outputs": [
+						{
+							"name": "",
+							"type": "bool",
+							"internalType": "bool"
+						}
+					],
+					"stateMutability": "nonpayable"
+				},
+				{
+					"type": "function",
+					"name": "grantRootRoles",
+					"inputs": [
+						{
+							"name": "roleBitmap",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "account",
+							"type": "address",
+							"internalType": "address"
+						}
+					],
+					"outputs": [
+						{
+							"name": "",
+							"type": "bool",
+							"internalType": "bool"
+						}
+					],
+					"stateMutability": "nonpayable"
+				},
+				{
+					"type": "function",
+					"name": "revokeRoles",
+					"inputs": [
+						{
+							"name": "anyId",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "roleBitmap",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "account",
+							"type": "address",
+							"internalType": "address"
+						}
+					],
+					"outputs": [
+						{
+							"name": "",
+							"type": "bool",
+							"internalType": "bool"
+						}
+					],
+					"stateMutability": "nonpayable"
+				},
+				{
+					"type": "function",
+					"name": "revokeRootRoles",
+					"inputs": [
+						{
+							"name": "roleBitmap",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "account",
+							"type": "address",
+							"internalType": "address"
+						}
+					],
+					"outputs": [
+						{
+							"name": "",
+							"type": "bool",
+							"internalType": "bool"
+						}
+					],
+					"stateMutability": "nonpayable"
+				},
+				{
+					"type": "function",
+					"name": "setSubregistry",
+					"inputs": [
+						{
+							"name": "anyId",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "registry",
+							"type": "address",
+							"internalType": "contract IRegistry"
+						}
+					],
+					"outputs": [],
+					"stateMutability": "nonpayable"
+				},
+				{
+					"type": "function",
+					"name": "unregister",
+					"inputs": [
+						{
+							"name": "anyId",
+							"type": "uint256",
+							"internalType": "uint256"
+						}
+					],
+					"outputs": [],
+					"stateMutability": "nonpayable"
+				}
+			],
+			"deployments": [
+				{
+					"chainId": 11155111,
+					"address": "0xBDC85dD5b15D7ecb354cd7cb6f2c50b4f2c4F0E2"
+				},
+				{
+					"chainId": 11155111,
+					"address": "0x6b1D890908f8cDEEF618dC3c278a76Bf28cf9E81"
+				}
+			]
+		}
+	},
+	"metadata": {
+		"owner": "Moor",
+		"info": {
+			"legalName": "Moor",
+			"url": "https://getmoor.vercel.app"
+		},
+		"constants": {}
+	},
+	"display": {
+		"formats": {
+			"setSubregistry(uint256,address)": {
+				"$id": "setSubregistry",
+				"intent": "Attach registry to name",
+				"fields": [
+					{
+						"path": "anyId",
+						"label": "Name id",
+						"format": "raw"
+					},
+					{
+						"path": "registry",
+						"label": "New registry",
+						"format": "addressName",
+						"params": {
+							"types": ["contract"],
+							"sources": ["local", "ens"]
+						}
+					}
+				],
+				"required": ["anyId", "registry"]
+			},
+			"grantRootRoles(uint256,address)": {
+				"$id": "grantRootRoles",
+				"intent": "Grant registry roles",
+				"fields": [
+					{
+						"path": "account",
+						"label": "To",
+						"format": "addressName",
+						"params": {
+							"types": ["contract", "eoa", "wallet"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "roleBitmap",
+						"label": "Role bitmap",
+						"format": "raw"
+					}
+				],
+				"required": ["account", "roleBitmap"]
+			},
+			"revokeRootRoles(uint256,address)": {
+				"$id": "revokeRootRoles",
+				"intent": "Revoke registry roles",
+				"fields": [
+					{
+						"path": "account",
+						"label": "From",
+						"format": "addressName",
+						"params": {
+							"types": ["contract", "eoa", "wallet"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "roleBitmap",
+						"label": "Role bitmap",
+						"format": "raw"
+					}
+				],
+				"required": ["account", "roleBitmap"]
+			},
+			"grantRoles(uint256,uint256,address)": {
+				"$id": "grantRoles",
+				"intent": "Grant roles on name",
+				"fields": [
+					{
+						"path": "anyId",
+						"label": "Name id",
+						"format": "raw"
+					},
+					{
+						"path": "account",
+						"label": "To",
+						"format": "addressName",
+						"params": {
+							"types": ["contract", "eoa", "wallet"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "roleBitmap",
+						"label": "Role bitmap",
+						"format": "raw"
+					}
+				],
+				"required": ["anyId", "account", "roleBitmap"]
+			},
+			"revokeRoles(uint256,uint256,address)": {
+				"$id": "revokeRoles",
+				"intent": "Revoke roles on name",
+				"fields": [
+					{
+						"path": "anyId",
+						"label": "Name id",
+						"format": "raw"
+					},
+					{
+						"path": "account",
+						"label": "From",
+						"format": "addressName",
+						"params": {
+							"types": ["contract", "eoa", "wallet"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "roleBitmap",
+						"label": "Role bitmap",
+						"format": "raw"
+					}
+				],
+				"required": ["anyId", "account", "roleBitmap"]
+			},
+			"unregister(uint256)": {
+				"$id": "unregister",
+				"intent": "Remove position name",
+				"fields": [
+					{
+						"path": "anyId",
+						"label": "Name id",
+						"format": "raw"
+					}
+				],
+				"required": ["anyId"]
+			}
+		}
+	}
+}

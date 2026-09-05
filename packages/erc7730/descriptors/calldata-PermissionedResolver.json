@@ -1,0 +1,179 @@
+{
+	"$schema": "https://raw.githubusercontent.com/LedgerHQ/clear-signing-erc7730-registry/master/specs/erc7730-v1.schema.json",
+	"context": {
+		"$id": "PermissionedResolver",
+		"contract": {
+			"abi": [
+				{
+					"type": "function",
+					"name": "authorizeTextRoles",
+					"inputs": [
+						{
+							"name": "toName",
+							"type": "bytes",
+							"internalType": "bytes"
+						},
+						{
+							"name": "key",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "account",
+							"type": "address",
+							"internalType": "address"
+						},
+						{
+							"name": "grant",
+							"type": "bool",
+							"internalType": "bool"
+						}
+					],
+					"outputs": [
+						{
+							"name": "",
+							"type": "bool",
+							"internalType": "bool"
+						}
+					],
+					"stateMutability": "nonpayable"
+				},
+				{
+					"type": "function",
+					"name": "grantRootRoles",
+					"inputs": [
+						{
+							"name": "roleBitmap",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "account",
+							"type": "address",
+							"internalType": "address"
+						}
+					],
+					"outputs": [
+						{
+							"name": "",
+							"type": "bool",
+							"internalType": "bool"
+						}
+					],
+					"stateMutability": "nonpayable"
+				},
+				{
+					"type": "function",
+					"name": "revokeRootRoles",
+					"inputs": [
+						{
+							"name": "roleBitmap",
+							"type": "uint256",
+							"internalType": "uint256"
+						},
+						{
+							"name": "account",
+							"type": "address",
+							"internalType": "address"
+						}
+					],
+					"outputs": [
+						{
+							"name": "",
+							"type": "bool",
+							"internalType": "bool"
+						}
+					],
+					"stateMutability": "nonpayable"
+				}
+			],
+			"deployments": [
+				{
+					"chainId": 11155111,
+					"address": "0xc93Ad19307813019b9595147823b035DD93ce363"
+				}
+			]
+		}
+	},
+	"metadata": {
+		"owner": "Moor",
+		"info": {
+			"legalName": "Moor",
+			"url": "https://getmoor.vercel.app"
+		},
+		"constants": {}
+	},
+	"display": {
+		"formats": {
+			"grantRootRoles(uint256,address)": {
+				"$id": "grantRootRoles",
+				"intent": "Grant resolver roles",
+				"fields": [
+					{
+						"path": "account",
+						"label": "To",
+						"format": "addressName",
+						"params": {
+							"types": ["contract", "eoa", "wallet"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "roleBitmap",
+						"label": "Role bitmap",
+						"format": "raw"
+					}
+				],
+				"required": ["account", "roleBitmap"]
+			},
+			"revokeRootRoles(uint256,address)": {
+				"$id": "revokeRootRoles",
+				"intent": "Revoke resolver roles",
+				"fields": [
+					{
+						"path": "account",
+						"label": "From",
+						"format": "addressName",
+						"params": {
+							"types": ["contract", "eoa", "wallet"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "roleBitmap",
+						"label": "Role bitmap",
+						"format": "raw"
+					}
+				],
+				"required": ["account", "roleBitmap"]
+			},
+			"authorizeTextRoles(bytes,string,address,bool)": {
+				"$id": "authorizeTextRoles",
+				"intent": "Set text record permission",
+				"fields": [
+					{
+						"path": "key",
+						"label": "Record key",
+						"format": "raw"
+					},
+					{
+						"path": "account",
+						"label": "Account",
+						"format": "addressName",
+						"params": {
+							"types": ["contract", "eoa", "wallet"],
+							"sources": ["local", "ens"]
+						}
+					},
+					{
+						"path": "grant",
+						"label": "Grant",
+						"format": "raw"
+					}
+				],
+				"required": ["key", "account", "grant"],
+				"excluded": ["toName"]
+			}
+		}
+	}
+}

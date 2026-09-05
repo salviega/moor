@@ -5,10 +5,10 @@ and the Speculos captures that prove what the device shows.
 
 | Descriptor | Functions | Status |
 | --- | --- | --- |
-| `descriptors/calldata-Aqua.json` | `ship`, `dock` | written; lints clean; Sepolia address is the zero placeholder until `contracts:deploy` |
-| `descriptors/calldata-MoorRegistrar.json` | `createPosition` | phase 2, with the contract |
-| `descriptors/calldata-PermissionedRegistry.json` | `revokeRoles` | phase 2 |
-| `descriptors/calldata-PermissionedResolver.json` | `revokeRoles` | phase 2 |
+| `descriptors/calldata-Aqua.json` | `ship`, `dock` | lints clean; real Aqua address, ABI validated against Sourcify |
+| `descriptors/calldata-MoorRegistrar.json` | `createPosition`, `setupAgent`, `revokeAgent` | lints clean; `0xe691…9966`, ABI validated against Sourcify (`exact_match`) |
+| `descriptors/calldata-PermissionedRegistry.json` | `setSubregistry`, `grantRootRoles`, `revokeRootRoles`, `grantRoles`, `revokeRoles`, `unregister` | ETHRegistry + the holder's registry; lint warns only that the ENS proxies are not on Sourcify |
+| `descriptors/calldata-PermissionedResolver.json` | `grantRootRoles`, `revokeRootRoles`, `authorizeTextRoles` | the holder's resolver; same warning |
 
 `approve` is the standard ERC-20 descriptor Ledger already ships; no file here.
 
