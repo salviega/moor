@@ -25,7 +25,7 @@ contract CreatePosition is Script {
         string memory parentName = string.concat(parentLabel, ".eth");
         string memory label = vm.envOr("MOOR_LABEL", string("btc-dip"));
 
-        MoorRegistrar.Record[] memory records = new MoorRegistrar.Record[](7);
+        MoorRegistrar.Record[] memory records = new MoorRegistrar.Record[](8);
         records[0] = MoorRegistrar.Record("moor.version", "1");
         records[1] = MoorRegistrar.Record(
             "moor.strategy",
@@ -46,6 +46,7 @@ contract CreatePosition is Script {
             string.concat(vm.envOr("MOOR_PRICE_MIN", string("58000")), ":", vm.envOr("MOOR_PRICE_MAX", string("62000")))
         );
         records[6] = MoorRegistrar.Record("moor.agent", string.concat("agent.", parentName));
+        records[7] = MoorRegistrar.Record("moor.amount", vm.toString(vm.parseJsonUint(pos, ".amount")));
         uint64 expiry = uint64(vm.parseJsonUint(pos, ".deadline"));
 
         vm.startBroadcast();

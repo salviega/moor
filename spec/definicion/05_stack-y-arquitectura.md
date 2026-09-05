@@ -160,7 +160,7 @@ estado      = !existe               → cerrada
 
 **Fees.** Aqua no separa fee de principal: el fee queda dentro del balance virtual. Se deriva reconstruyendo los trades desde los eventos `Pulled`/`Pushed` de la estrategia y comparando lo recibido con lo que habría dado la curva sin fee. `packages/core` lo hace en una función que también usan las pruebas de contratos, así que si el cálculo se desvía del contrato, falla una prueba.
 
-**Precio para la interfaz.** Mientras no se decida la fuente ([04 §8](./04_diseno-de-solucion.md#8-decisiones-tomadas-y-pendientes)), la Live App usa el último precio escrito por el agente y dice de cuándo es. Si tiene más de una hora, lo marca.
+**Precio para la interfaz.** Chainlink BTC/USD en Sepolia, por `readPrice()` de `packages/core` (decidido en la fase 3, [04 §8](./04_diseno-de-solucion.md#8-decisiones-tomadas-y-pendientes)); la Live App muestra el precio y de cuándo es. El panel del agente muestra además el precio que el agente escribió, con su hora, y lo marca si tiene más de una hora.
 
 ---
 
@@ -260,7 +260,7 @@ Ordenados por cuánto daño hacen si se materializan.
 
 - **Confirmar con 1inch** que Aqua y SwapVM redesplegados sin modificar en Sepolia califican como "official contracts".
 - Verificar que Ledger Live acepta descriptores ERC-7730 locales en modo desarrollador, y cómo se cargan (candidato: el ERC-7730 Tester de Ledger — [`feedback/03_ledger.md`](../feedback/03_ledger.md)).
-- Fuente de precio (compartida con el 04).
+- ~~Fuente de precio (compartida con el 04).~~ Chainlink BTC/USD, fase 3.
 - Cadencia del agente y umbrales de propuesta (compartido con el 04).
 - ~~Cómo enumera la Live App los subnombres de un `UserRegistry`.~~ Cerrado en la fase 2: el evento `LabelRegistered(tokenId, labelHash, label, owner, expiry, sender)` del registry del holder lleva el label en claro; `listPositions()` en `packages/core` hace un `eth_getLogs` desde el bloque de creación del registry (salviega: 11642925) y filtra `sender == MoorRegistrar`, menos `agent`. Sin indexador.
 

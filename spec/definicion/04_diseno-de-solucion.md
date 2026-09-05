@@ -65,6 +65,7 @@ Una posición no es un registro en una base de datos: es la composición de tres
 | `moor.side`            | `buy` · `sell`                              | Holder        |
 | `moor.range`           | `precioMin:precioMax`                       | Holder        |
 | `moor.agent`           | Nombre del subnombre del agente             | Holder        |
+| `moor.amount`          | Monto comprometido de `tokenIn`, en unidades base (fase 3: así el % convertido no necesita leer eventos) | Holder |
 
 Todo lo que el agente **no** puede tocar está aquí. Todo esto se escribe en la sesión de creación y no cambia: cambiar la estrategia es crear otra posición.
 
@@ -236,7 +237,7 @@ Fuera de Ledger Live no hay pantallas de Moor. Pero el nombre `btc-dip.salviega.
 
 **Pendientes**
 
-- Fuente de precio del agente y de la interfaz (oráculo, DEX, ambos).
+- ~~Fuente de precio del agente y de la interfaz (oráculo, DEX, ambos).~~ Decidido en la fase 3: **Chainlink BTC/USD en Sepolia** (`0x1b44…Ee43`), leído por `readPrice()` de `packages/core`; la interfaz marca el rango contra él y dice de cuándo es. El agente usa la misma función (fase 4).
 - Qué umbrales disparan una propuesta del agente (días sin operar, distancia al rango, cercanía del vencimiento).
 - Si la pantalla *Revisar y firmar* muestra una estimación de fees; el principio 6 sugiere que no, o que sea muy conservadora.
 - Cómo se ve el flujo de *aceptar propuesta* cuando implica cerrar y crear (dos posiciones, dos nombres): ¿el nuevo hereda el label con sufijo?

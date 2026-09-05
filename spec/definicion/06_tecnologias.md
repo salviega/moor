@@ -48,12 +48,12 @@ Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scrip
 | **`@ledgerhq/wallet-api-client-react`** | 1.4     | Hooks sobre el cliente: `useAccounts`, `useSignTransaction`. Menos plomería en los componentes             |
 | **`@ledgerhq/wallet-api-simulator`**    | 2.3     | Simula Ledger Live en el navegador para desarrollar **sin abrir Ledger Live ni conectar el dispositivo**. Solo desarrollo |
 | **Tailwind CSS**                        | 4.x     | Estilos. Configuración por CSS                                                                            |
-| **shadcn/ui**                           | —       | Componentes copiados al repo: dialog, sheet, form, toast, slider (el rango)                               |
+| **lucide-react**                        | 1.41    | Iconos. Los componentes (botón, tarjeta, campo, aviso, badge de estado, toast) son seis funciones propias en `src/components/`; no hizo falta shadcn/ui |
 | **TanStack Query**                      | 5.x     | Polling de balances, estado y records del agente. Caché y reintentos sin escribirlos                     |
 
 **No hay conexión de wallet.** Ni wagmi, ni RainbowKit, ni WalletConnect: dentro de Ledger Live, la cuenta la da la Wallet API y la firma la hace Ledger Live. viem solo lee.
 
-**El transporte se crea solo en el navegador.** `WindowMessageTransport` toca `window`, así que `Providers` lo instancia en un `useEffect` y no renderiza nada hasta tenerlo; el prerender estático de Next queda como cascarón. `NEXT_PUBLIC_WALLET_API_SIMULATOR=1` (script `dev`) cambia al transporte del simulador con el perfil `STANDARD`.
+**El transporte se crea solo en el navegador.** `WindowMessageTransport` toca `window`, así que `Providers` lo instancia en un `useEffect` y no renderiza nada hasta tenerlo; el prerender estático de Next queda como cascarón. `NEXT_PUBLIC_WALLET_API_SIMULATOR=1` (script `dev`) cambia al transporte del simulador con el perfil `STANDARD` **más una cuenta `ethereum_sepolia`** con la dirección del holder (el perfil no trae ninguna; ver [`feedback/03_ledger.md`](../feedback/03_ledger.md)). Firmar en el simulador devuelve un hash inventado; la app no espera recibos en ese modo.
 
 **Dos capas de emulación, dos herramientas.** El `wallet-api-simulator` reemplaza a **Ledger Live** (el host que da cuentas y firma); **Speculos** ([§6](#6-desarrollo-y-calidad)) reemplaza al **dispositivo** (corre la app de Ethereum y muestra lo que la Ledger mostraría). Desarrollo diario con el simulador; verificación de pantallas de firma con Speculos; el dispositivo real solo al cerrar cada pantalla y en la demo.
 
@@ -134,8 +134,8 @@ Validadas con zod al arrancar cada app; si falta una, no arranca. Ninguna vive e
 
 | Variable                          | Dónde se usa | Notas                                                                          |
 | --------------------------------- | ------------ | ------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_SEPOLIA_RPC_URL`     | Live App     | Se inlinea en build; cambiarla exige redesplegar                               |
-| `NEXT_PUBLIC_MOOR_REGISTRAR`      | Live App     | Dirección de `MoorRegistrar` en Sepolia                                        |
+| `NEXT_PUBLIC_SEPOLIA_RPC_URL`     | Live App     | Opcional; por defecto el RPC público de PublicNode. Se inlinea en build. `eth_getLogs` se pide en tramos de 10k bloques por los límites de los RPC públicos |
+| ~~`NEXT_PUBLIC_MOOR_REGISTRAR`~~  | Live App     | No existe: las direcciones salen de `packages/core/src/addresses.ts`         |
 | `NEXT_PUBLIC_AQUA`, `NEXT_PUBLIC_SWAPVM_ROUTER` | Live App | Direcciones del redespliegue en Sepolia. Las de producción de 1inch **no** aplican. *Hoy no hacen falta:* la Live App las lee de `packages/core/src/addresses.ts`, que `contracts:deploy` reescribe |
 | `DEPLOYER_ADDRESS`                | Foundry      | Dueño del `AquaSwapVMRouter` (`Rescuable`). Solo fondos de prueba                |
 | `WETH_ADDRESS`                    | Foundry      | Opcional. Si falta, `Deploy.s.sol` despliega un `TestWETH`                      |
@@ -196,7 +196,7 @@ Desde la raíz, con `pnpm`:
 
 ## 11. Pendientes
 
-- **Fuente de precio.** Chainlink tiene feeds en Sepolia (BTC/USD); Pyth también. Elegir una y fijarla en `packages/core`. Compartido con el [04](./04_diseno-de-solucion.md#8-decisiones-tomadas-y-pendientes).
+- ~~**Fuente de precio.**~~ Chainlink BTC/USD en Sepolia, fijado en `packages/core` (`chainlinkSepolia.btcUsd`, `readPrice()`), fase 3.
 - **Verificación de contratos.** El verificador Sourcify de `forge 1.3` no entiende la respuesta de la API actual (`error decoding response body`); la API v2 de Sourcify sí funciona con el standard-json de `forge verify-contract --show-standard-json-input`. Empaquetarlo como script `contracts:verify`. Etherscan requiere `ETHERSCAN_API_KEY`.
 - **Descriptores locales en el dispositivo.** El camino es el ERC-7730 Tester de Ledger — ver [07](./07_plan-de-trabajo.md) fase 0 y [`feedback/03_ledger.md`](../feedback/03_ledger.md).
 - **Speculos + Clear Signing.** Confirmar cómo se le entregan a la app de Ethereum emulada los descriptores ERC-7730 locales (la app los recibe como metadata firmada; en desarrollo hay que ver qué acepta). Sin eso, Speculos muestra las pantallas de blind signing y no sirve para lo que queremos.

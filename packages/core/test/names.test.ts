@@ -1,4 +1,4 @@
-import { keccak256, labelhash, namehash, stringToHex } from "viem";
+import { keccak256, labelhash, namehash, stringToHex, toEventSelector } from "viem";
 import { describe, expect, it } from "vitest";
 import {
 	AGENT_LABEL,
@@ -13,6 +13,7 @@ import {
 	labelId,
 	labelRegisteredEvent,
 	listPositions,
+	MoorRoles,
 	positionNode,
 	positionsFromLogs,
 	resolverResource,
@@ -156,5 +157,25 @@ describe("listing positions", () => {
 			fromBlock: 11642814n,
 			event: labelRegisteredEvent,
 		});
+	});
+});
+
+describe("LabelRegistered", () => {
+	it("has the registry's topic0 and indexing (tokenId, labelHash and sender are indexed)", () => {
+		expect(toEventSelector(labelRegisteredEvent)).toBe(
+			"0x2fe093918572373e9f1f0368f414dffd0043a74ae8c9fd7b0e390b26a0d20b6e",
+		);
+		expect(labelRegisteredEvent.inputs.filter((i) => i.indexed).map((i) => i.name)).toEqual([
+			"tokenId",
+			"labelHash",
+			"sender",
+		]);
+	});
+});
+
+describe("role bitmaps", () => {
+	it("matches MoorRoles in MoorRegistrar.sol (values seen in the Sepolia traces)", () => {
+		expect(MoorRoles.REGISTRAR_ON_REGISTRY).toBe(1n);
+		expect(MoorRoles.REGISTRAR_ON_RESOLVER).toBe(5444517870735015415413993718908291383313n);
 	});
 });
