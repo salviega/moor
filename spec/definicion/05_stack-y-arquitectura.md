@@ -246,11 +246,11 @@ Ordenados por cuánto daño hacen si se materializan.
 | Riesgo | Qué pasa | Qué se hace |
 | --- | --- | --- |
 | **La dirección no se puede cerrar en el programa** (§5b) | La posición deconvierte si el precio regresa; el 04 promete lo contrario | Verificar en fase 1, primero. Plan B: `_limitSwap1D` + invalidador — orden límite pura, y recortar el "trabaja mientras espera" |
-| **Redesplegar Aqua/SwapVM en Sepolia se complica** | Sin motor de posición | Plan B: fork de Base con `chainId` real + `transaction.sign` y broadcast propio. Frágil pero funcional. Empezar el redespliegue en fase 0 |
+| ~~**Redesplegar Aqua/SwapVM en Sepolia se complica**~~ **Cerrado el 5 sep:** desplegados y verificados en Sourcify con `exact_match` | — | Sin plan B necesario |
 | **1inch no acepta el redespliegue como "oficial"** | Descalifica el track de 1inch | Preguntar a los mentores en los primeros días, con la regla ("redeployments allowed") en la mano |
 | **Clear Signing con descriptores no publicados** | La Ledger muestra blind signing en la demo | Verificar en fase 0 que Ledger Live en modo desarrollador acepta descriptores ERC-7730 locales, y usar **Speculos** para ver la pantalla exacta de cada firma sin depender del dispositivo. Si no, plan B: mostrar el descriptor y la simulación en la Live App y ser transparentes |
 | **ENSv2 beta cambia o se cae** | Nombres o roles fallan en la demo | Fijar direcciones y ABI a una fecha; grabar la demo en video además del vivo (lo pide ENS igual) |
-| **La Wallet API no expone lo que hace falta** (p. ej. `data` arbitrario en Sepolia) | La Live App no puede firmar `ship` | Probar en fase 0 con una transacción real a un contrato en Sepolia. Plan B: firma vía WebHID (DMK) fuera de la Live App |
+| ~~**La Wallet API no expone lo que hace falta** (p. ej. `data` arbitrario en Sepolia)~~ **Cerrado el 5 sep:** `signAndBroadcast` con `data` a `TestToken.mint` desde Ledger Live, [`0x3160e91f…`](https://sepolia.etherscan.io/tx/0x3160e91f23a196f60c8dc8092c5e062ef9d97a399cd88d9a5c918c974321f392) | — | Sin plan B necesario |
 | **Sin takers, no hay fills** | Demo sin ejecución onchain | El taker de demo (§8) es tarea de fase 1, no un extra |
 | **Tiempo** | Lo de siempre | El [07](./07_plan-de-trabajo.md) recorta desde atrás: primero cae el stretch de opcodes, luego las propuestas simuladas, nunca la firma ni los permisos |
 

@@ -30,6 +30,17 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Phase 0 closed (2026-09-05).** The last verification landed: from Ledger
+  Live Desktop with a Ledger Flex, `/sign-test` signed and broadcast
+  `TestToken.mint(0xAA1aEf44DDE610F433f271C6A8749139DD5162E1, 1,000e6)` on
+  Sepolia — tx `0x3160e91f23a196f60c8dc8092c5e062ef9d97a399cd88d9a5c918c974321f392`, `status 1`, balance 1,000 tUSDC. The Wallet API carries
+  arbitrary calldata; the WebHID plan B is retired. Two items move phase by
+  design (`quote()` against a test position → phase 1; descriptors on the
+  device → phase 3 via the ERC-7730 Tester); the Key Ring on the VPS waits for
+  the host. A Ledger Live add-account finding (searching "Sepolia" returns a
+  token, not the network, and leads to an Arbitrum account) is recorded with
+  screenshots in `spec/feedback/03_ledger.md`.
+
 - **`/sign-test` in the Live App** — the phase-0 diagnostic for the Wallet API:
   request an Ethereum Sepolia account, then sign and broadcast
   `TestToken.mint(account, 1,000 tUSDC)` (`amount` 0, `data` present) through
