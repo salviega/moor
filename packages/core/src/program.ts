@@ -94,11 +94,13 @@ export interface Order {
 const USE_AQUA_INSTEAD_OF_SIGNATURE = 1n << 254n;
 /** No hooks → every data-slice index is 40 (tokenA ‖ tokenB), packed as four uint16s, shifted to bit 160. */
 const ORDER_DATA_INDEXES_NO_HOOKS = 0x0028002800280028n << 160n;
+/** The traits of every Moor order: Aqua-backed, no hooks, receiver = the maker. */
+export const ORDER_TRAITS = USE_AQUA_INSTEAD_OF_SIGNATURE | ORDER_DATA_INDEXES_NO_HOOKS;
 
 export function buildOrder(maker: Address, p: ProgramParams): Order {
 	return {
 		maker,
-		traits: USE_AQUA_INSTEAD_OF_SIGNATURE | ORDER_DATA_INDEXES_NO_HOOKS, // receiver = 0 → the maker
+		traits: ORDER_TRAITS,
 		data: concatHex([p.tokenA, p.tokenB, buildProgram(p)]),
 	};
 }

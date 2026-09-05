@@ -9,7 +9,7 @@ the Ledger decides.
 Built for ETHOnline 2026 — 1inch (Aqua/SwapVM), ENS (ENSv2) and Ledger (AI
 Agents) bounties.
 
-**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phase 2 done — `btc-dip.salviega.eth` lives on ENSv2 Sepolia, signed from the Ledger, and the agent's single permission is checkable on chain; phase 3 (the Live App) next — see [`spec/`](./spec/README.md) for the full
+**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phases 0–2 done; phase 3 in progress — the Live App has its five screens reading ENS, Aqua and Chainlink on Sepolia and signing through the Wallet API, pending the test on the device — see [`spec/`](./spec/README.md) for the full
 specification and [`spec/definicion/07_plan-de-trabajo.md`](./spec/definicion/07_plan-de-trabajo.md)
 for the phased plan and current progress.
 

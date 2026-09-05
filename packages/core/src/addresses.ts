@@ -23,7 +23,12 @@ export const ensV2Sepolia = {
 	universalResolverV2: "0x4a1817d13e9cf196f471725176355c1234b63c70",
 } as const satisfies Record<string, Address>;
 
-/** Written by `contracts:deploy`. Zero until the redeploy in phase 0 lands. */
+/** Chainlink price feeds on Sepolia (docs.chain.link). The interface's price source (04 §8). */
+export const chainlinkSepolia = {
+	btcUsd: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
+} as const satisfies Record<string, Address>;
+
+/** Written by `contracts:deploy` (phase 0) and extended by hand when a phase deploys a Moor contract. */
 export const moorSepolia = {
 	aqua: "0xB8747B3e2F90154420165FB2fc4707D638797140",
 	swapVmRouter: "0xdD026eA05C9256A1162dC3d41102579458A804Cd",

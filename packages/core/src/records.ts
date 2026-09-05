@@ -1,9 +1,9 @@
 /**
- * ENS text record keys (04 §3). Two namespaces on purpose: `moor.*` lives on
- * the position's subname and is written only by the holder; `moor.agent.*`
- * lives on the agent's own subname and is the only thing the agent can write.
- * Resolver roles are per record *type*, not per key, which is why they cannot
- * share a name (05 §7).
+ * ENS text record keys (04 §3). Two namespaces on the same name: `moor.*` is
+ * written only by the holder (MoorRegistrar refuses the agent's keys there);
+ * `moor.agent.*` are the eight keys the agent may write, granted per key with
+ * PermissionedResolver.authorizeTextRoles (05 §7). `moor.amount` arrived in
+ * phase 3: the committed amount, so the converted fraction needs no event scan.
  */
 import { z } from "zod";
 
@@ -15,6 +15,7 @@ export const positionRecordKeys = [
 	"moor.side",
 	"moor.range",
 	"moor.agent",
+	"moor.amount",
 ] as const;
 export type PositionRecordKey = (typeof positionRecordKeys)[number];
 

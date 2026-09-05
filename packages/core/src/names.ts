@@ -18,6 +18,7 @@ export const holderRecordKeys = [
 	"moor.side",
 	"moor.range",
 	"moor.agent",
+	"moor.amount",
 ] as const;
 
 /** The eight keys the agent may write, on any name of the holder's resolver. Mirrors MoorRegistrar.agentKeys(). */
@@ -94,6 +95,20 @@ export const RegistryRoles = {
 	ROLE_CAN_TRANSFER_ADMIN: (1n << 28n) << 128n,
 } as const;
 
+/** PermissionedResolverLib roles Moor hands out. */
+export const ResolverRoles = {
+	ROLE_SET_ADDR: 1n << 0n,
+	ROLE_SET_TEXT: 1n << 4n,
+	ROLE_SET_TEXT_ADMIN: (1n << 4n) << 128n,
+} as const;
+
+/** The bitmaps MoorRegistrar needs on the holder's registry and resolver (MoorRoles in MoorRegistrar.sol). */
+export const MoorRoles = {
+	REGISTRAR_ON_REGISTRY: RegistryRoles.ROLE_REGISTRAR,
+	REGISTRAR_ON_RESOLVER:
+		ResolverRoles.ROLE_SET_TEXT | ResolverRoles.ROLE_SET_ADDR | ResolverRoles.ROLE_SET_TEXT_ADMIN,
+} as const;
+
 /** Value of `moor.pair`: `tokenIn:tokenOut` addresses, lowercase. */
 export function encodePair(tokenIn: Address, tokenOut: Address): string {
 	return `${tokenIn.toLowerCase()}:${tokenOut.toLowerCase()}`;
@@ -126,7 +141,7 @@ export const labelRegisteredEvent = {
 		{ name: "label", type: "string", indexed: false },
 		{ name: "owner", type: "address", indexed: false },
 		{ name: "expiry", type: "uint64", indexed: false },
-		{ name: "sender", type: "address", indexed: false },
+		{ name: "sender", type: "address", indexed: true },
 	],
 } as const;
 
@@ -138,14 +153,14 @@ export interface RegisteredPosition {
 	blockNumber: bigint;
 }
 
-interface LabelRegisteredLog {
+export interface LabelRegisteredLog {
 	args: {
-		tokenId?: bigint;
-		labelHash?: Hex;
-		label?: string;
-		owner?: Address;
-		expiry?: bigint;
-		sender?: Address;
+		tokenId?: bigint | undefined;
+		labelHash?: Hex | undefined;
+		label?: string | undefined;
+		owner?: Address | undefined;
+		expiry?: bigint | undefined;
+		sender?: Address | undefined;
 	};
 	blockNumber: bigint | null;
 }

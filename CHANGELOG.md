@@ -30,6 +30,35 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Phase 3, first cut: the Live App has its five screens and signs through
+  the Wallet API** (04 §5; 2026-09-05). Tested in the browser with the
+  simulator against Sepolia; the device test is what closes the phase.
+  - `packages/core`: `abi.ts` (the fragments the app touches), `session.ts`
+    (`planNewPosition` → approve if needed → `ship` → `createPosition`;
+    `closeCalls` → `dock` + `unregister`; `revokeAgentCall`, `setupAgentCall`;
+    every `Call` carries the intent its ERC-7730 descriptor declares) and
+    `reads.ts` (records through `UniversalResolverV2`, Aqua balances,
+    Chainlink price, `deriveState`). **Parity pinned to Sepolia**: the plan
+    built from the form reproduces the real `ship` calldata and the
+    `strategyHash` of `0x35a9…b477` byte for byte, and the records the holder
+    signed in `createPosition` `0xdb7e1132…`. New record `moor.amount` (the
+    committed amount) so the converted share needs no event scan; the price
+    source is decided: Chainlink BTC/USD `0x1b44…Ee43`. 76 tests, 98.7 % lines.
+  - `apps/live-app`: **Positions** (names from the holder's registry via
+    `LabelRegistered` logs, state, converted share, agent pulse), **New
+    position → Review & sign** (plain-words "what will / will not happen",
+    each signature with what the Ledger shows, sequential session with receipt
+    waits), **Position detail** (range vs price, balances, expiry, agent panel
+    with validated proposal, *Close* and *Revoke agent*), **First-time setup**
+    (status of registry, resolver, roles and agent name; signatures stay in
+    `SetupHolder.s.sol` — the cut 07 allows). The holder's name is chosen in
+    the app and checked against the account (`addr(name)`); the account is
+    remembered across loads through `account.list`. `lucide-react` added;
+    components are hand-written, no shadcn.
+  - `pnpm dev` adds an `ethereum_sepolia` account (the holder's address) to the
+    simulator profile — it ships without one — so reads show the real names.
+  - `/sign-test` removed: the real screens replaced it.
+
 ### Changed
 
 ### Fixed

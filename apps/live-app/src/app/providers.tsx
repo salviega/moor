@@ -1,7 +1,10 @@
 "use client";
 
 import { WalletAPIProvider } from "@ledgerhq/wallet-api-client-react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
+import { ToastProvider } from "@/components/toast";
+import { HolderProvider } from "@/lib/holder";
 import { createTransport } from "@/lib/wallet-api";
 
 /**
@@ -11,11 +14,22 @@ import { createTransport } from "@/lib/wallet-api";
  */
 export function Providers({ children }: { children: ReactNode }) {
 	const [connection, setConnection] = useState<ReturnType<typeof createTransport> | null>(null);
+	const [queryClient] = useState(
+		() => new QueryClient({ defaultOptions: { queries: { retry: 1 } } }),
+	);
 	useEffect(() => {
 		const c = createTransport();
 		setConnection(c);
 		return c.disconnect;
 	}, []);
 	if (!connection) return null;
-	return <WalletAPIProvider transport={connection.transport}>{children}</WalletAPIProvider>;
+	return (
+		<WalletAPIProvider transport={connection.transport}>
+			<QueryClientProvider client={queryClient}>
+				<ToastProvider>
+					<HolderProvider>{children}</HolderProvider>
+				</ToastProvider>
+			</QueryClientProvider>
+		</WalletAPIProvider>
+	);
 }

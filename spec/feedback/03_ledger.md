@@ -66,6 +66,30 @@ Stack en uso: `@ledgerhq/wallet-api-client`, `@ledgerhq/wallet-api-client-react`
 
 **Reportado:** pendiente. Sugerencia: una guía "Key Ring on a headless host" con el flujo exacto de enrolamiento, ya que es uno de los dos ítems que el track destaca.
 
+### 2026-09-05 — El simulador de la Wallet API no trae cuenta de Sepolia, y una cuenta añadida a mano falla en `lastSyncDate.toISOString`
+
+**Documentado / prometido:** `@ledgerhq/wallet-api-simulator` 2.3 sirve para desarrollar una Live App sin Ledger Live; el perfil `STANDARD` trae cuentas de Bitcoin y Ethereum.
+
+**Encontrado:** ninguna cuenta con `currency: "ethereum_sepolia"`, así que `account.request({ currencyIds: ["ethereum_sepolia"] })` lanza `No account available for the requested currencies` — y el hook `useRequestAccount` se traga el error en su estado sin nada en consola: el botón "no hace nada". Al extender el perfil con una cuenta escrita a mano (`{...profiles.STANDARD, accounts: [...]}`), `serializeAccount` revienta con `TypeError: lastSyncDate.toISOString is not a function`: el perfil espera cuentas ya pasadas por `deserializeAccount` (fecha como `Date`, balances como `BigNumber`), que es lo que hace internamente con su `accounts.json`, pero no está documentado ni tipado en la firma de `getSimulatorTransport`.
+
+**Evidencia:** `node_modules/@ledgerhq/wallet-api-simulator/lib/profiles/standard/{index.js,accounts.json}`; `apps/live-app/src/lib/wallet-api.ts` (`simulatorProfile`, con `deserializeAccount` importado de `@ledgerhq/wallet-api-client`, que reexporta `wallet-api-core`).
+
+**Impacto en Moor:** ~40 minutos. Ninguna decisión cambió.
+
+**Reportado:** pendiente. Sugerencias: un perfil con cuentas de testnet (Sepolia al menos), o documentar cómo añadir una y que el tipo del perfil exija `Account` deserializado; y que `useRequestAccount` haga `console.error` en desarrollo cuando la petición falla.
+
+### 2026-09-05 — Los hooks de `wallet-api-client-react` devuelven `void`, no el resultado
+
+**Documentado / prometido:** `useSignAndBroadcastTransaction()` da `signAndBroadcastTransaction(...)` y un `transactionHash` en estado.
+
+**Encontrado:** la función devuelve `Promise<void>`; el hash llega por estado en el siguiente render. Para una sesión de varias firmas encadenadas (approve → ship → createPosition, esperando cada recibo) eso no sirve: hay que usar `useWalletAPIClient().client.transaction.signAndBroadcast(...)`, que sí devuelve el hash. Funciona, pero el camino "con hooks" del tutorial se queda corto en el primer flujo real.
+
+**Evidencia:** `node_modules/@ledgerhq/wallet-api-client-react/lib/hooks/useSignAndBroadcastTransaction.d.ts`; `apps/live-app/src/lib/session.tsx`.
+
+**Impacto en Moor:** 15 minutos. Nota, no hallazgo.
+
+**Reportado:** pendiente. Sugerencia: que las funciones de los hooks devuelvan lo mismo que el cliente.
+
 <!--
 ### AAAA-MM-DD — Título corto del hallazgo
 
