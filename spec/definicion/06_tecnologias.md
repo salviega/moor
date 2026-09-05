@@ -53,6 +53,8 @@ Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scrip
 
 **No hay conexión de wallet.** Ni wagmi, ni RainbowKit, ni WalletConnect: dentro de Ledger Live, la cuenta la da la Wallet API y la firma la hace Ledger Live. viem solo lee.
 
+**El transporte se crea solo en el navegador.** `WindowMessageTransport` toca `window`, así que `Providers` lo instancia en un `useEffect` y no renderiza nada hasta tenerlo; el prerender estático de Next queda como cascarón. `NEXT_PUBLIC_WALLET_API_SIMULATOR=1` (script `dev`) cambia al transporte del simulador con el perfil `STANDARD`.
+
 **Dos capas de emulación, dos herramientas.** El `wallet-api-simulator` reemplaza a **Ledger Live** (el host que da cuentas y firma); **Speculos** ([§6](#6-desarrollo-y-calidad)) reemplaza al **dispositivo** (corre la app de Ethereum y muestra lo que la Ledger mostraría). Desarrollo diario con el simulador; verificación de pantallas de firma con Speculos; el dispositivo real solo al cerrar cada pantalla y en la demo.
 
 **`manifest.json`** en la raíz apunta a la URL de la Live App (Vercel en producción, `localhost` en desarrollo) y declara `currencies: ["ethereum_sepolia"]` y los permisos `account.list`, `account.request`, `transaction.signAndBroadcast`. Se carga en Ledger Live con el modo desarrollador.
