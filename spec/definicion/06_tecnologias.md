@@ -13,7 +13,7 @@
 | **Node.js**    | 22 LTS  | Runtime de la Live App (build) y del agente. Fijado en `.nvmrc` y en `engines`             |
 | **TypeScript** | 5.9.3   | `strict: true`. Sin `any` en `packages/core`. 7.x existe en npm pero Next 16 declara 5.x; se queda en 5.9 |
 | **pnpm**       | 12.3    | Workspaces del monorepo. Lockfile estricto, sin dependencias fantasma. Desde la 12 bloquea build scripts (`allowBuilds`) y paquetes publicados hace muy poco (`minimumReleaseAgeExclude`); ambos configurados en `pnpm-workspace.yaml` |
-| **Foundry**    | 1.3.x   | Compilar, probar y desplegar contratos. `forge`, `cast`, `anvil`. Ya instalado localmente  |
+| **Foundry**    | 1.3.2   | Compilar, probar y desplegar contratos. `forge`, `cast`, `anvil`. **Fijado también en CI** (`foundry-toolchain` `v1.3.2`): `forge fmt` cambia entre versiones y el hook de pre-commit tiene que coincidir con el CI |
 
 Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scripts de la raíz con `pnpm -r` alcanzan. Turborepo entra si el CI empieza a tardar, no antes.
 

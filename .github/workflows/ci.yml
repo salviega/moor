@@ -39,7 +39,9 @@ jobs:
           submodules: recursive
       - uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: stable
+          # Pinned to the version on the developer machine: forge fmt output differs between
+          # releases (1.8 collapses struct literals), and the pre-commit hook must agree with CI.
+          version: v1.3.2
       - run: forge fmt --root packages/contracts --check
       - run: forge build --root packages/contracts --sizes
       - run: forge test --root packages/contracts -vvv
