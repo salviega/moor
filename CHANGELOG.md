@@ -30,6 +30,15 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Dashboard layout and account control (2026-09-06).** The home is now a
+  two-column panel: left, your name, the price with a compact ruler and the
+  positions as selectable rows; right, the selected position in panels
+  (proposal band, chart, numbers, agent and close side by side, technical
+  details) — deep-linkable as `/?position=<label>`; `/positions/<label>` keeps
+  working as a redirect. On a phone it is two views. The account chip in the
+  header opens *Switch account* and *Disconnect from this app* (Ledger Live
+  has no disconnect: the app forgets the account and stops using it here).
+  Verified in the browser at 1389 and 390 px.
 - **The Live App as a logbook (UX pass, 2026-09-06).** Designed before built:
   who arrives, the one decision per screen, the worst case (signing what was
   not understood). One accent, amber, reserved for "needs your signature";

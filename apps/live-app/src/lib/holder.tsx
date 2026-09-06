@@ -24,6 +24,8 @@ export interface Holder {
 	connecting: boolean;
 	connectError: unknown;
 	connect: () => void;
+	/** Forget the chosen account in this app (Ledger Live has no "disconnect"; the account stays in Ledger Live). */
+	disconnect: () => void;
 	/** `salviega.eth` — the parent of every position name. */
 	name: string;
 	setName: (name: string) => void;
@@ -47,7 +49,10 @@ export function HolderProvider({ children }: { children: ReactNode }) {
 		} catch {}
 	}, []);
 	// The account the holder picked, or the one they picked last time if Ledger Live still lists it.
-	const account = requested ?? listed.accounts?.find((a) => a.id === rememberedId) ?? null;
+	// …unless they told this app to forget it.
+	const [forgottenId, setForgottenId] = useState<string | null>(null);
+	const candidate = requested ?? listed.accounts?.find((a) => a.id === rememberedId) ?? null;
+	const account = candidate && candidate.id !== forgottenId ? candidate : null;
 	useEffect(() => {
 		if (requested) {
 			try {
@@ -73,7 +78,15 @@ export function HolderProvider({ children }: { children: ReactNode }) {
 			window.localStorage.setItem(NAME_KEY, clean);
 		} catch {}
 	}, []);
+	const disconnect = useCallback(() => {
+		setForgottenId(candidate?.id ?? null);
+		setRememberedId(null);
+		try {
+			window.localStorage.removeItem(ACCOUNT_KEY);
+		} catch {}
+	}, [candidate]);
 	const connect = useCallback(() => {
+		setForgottenId(null);
 		requestAccount({ currencyIds: [SEPOLIA_CURRENCY_ID] }).catch((e: unknown) => {
 			// The hook keeps the error in state; this line is what a developer sees in the console.
 			console.error("account.request failed", e);
@@ -101,6 +114,7 @@ export function HolderProvider({ children }: { children: ReactNode }) {
 				connecting: pending,
 				connectError: error,
 				connect,
+				disconnect,
 				name,
 				setName,
 				parentLabel: name.replace(/\.eth$/, ""),
