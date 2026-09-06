@@ -69,8 +69,8 @@ Two things this project's entries carry that a web app's would not:
     position", "Position name btc-dip", "Under name salviega.eth", "Agent
     address"… — and `approve` is blind-signed because it is Ledger's own ERC-20
     screen and the testnet token is not in Ledger's CAL. 55 screens and
-    `results.json` under `packages/erc7730/screens/`; a `ledger-screens` CI job
-    regenerates them and fails on any diff. Ledger Live itself still cannot
+    `results.json` under `packages/erc7730/screens/`; a manual `ledger-screens`
+    workflow (`workflow_dispatch`, ~8 min) regenerates them and fails on any diff. Ledger Live itself still cannot
     load a local descriptor, so the Flex blind-signs the demo until a registry
     PR lands (`spec/feedback/03_ledger.md`).
   - **Verified on the device (2026-09-05):** from Ledger Live Desktop with the
