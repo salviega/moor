@@ -148,7 +148,7 @@ async function cycle(): Promise<void> {
 		let proposal = view.agent.proposal;
 		let simulation = view.agent.simulation ?? "";
 		let by = "kept";
-		if (shouldPropose(triggers, view.agent)) {
+		if ((env.AGENT_FORCE_PROPOSE && triggers.length > 0) || shouldPropose(triggers, view.agent)) {
 			const p = await propose(view, price.price, now);
 			proposal = p.proposal;
 			simulation = p.simulation;

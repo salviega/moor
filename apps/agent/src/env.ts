@@ -22,6 +22,11 @@ const Env = z.object({
 	/** eth_getLogs range per request; public RPCs allow ~10k, some free tiers only 10. */
 	AGENT_LOGS_CHUNK: z.coerce.number().int().positive().default(10_000),
 	AGENT_FROM_BLOCK: z.coerce.bigint().default(11_600_000n),
+	/** Ask again even when a proposal for the same trigger is standing (a test knob; the loop never needs it). */
+	AGENT_FORCE_PROPOSE: z
+		.string()
+		.optional()
+		.transform((v) => v === "1" || v === "true"),
 	/** Read, derive, log — but send nothing. */
 	AGENT_DRY_RUN: z
 		.string()
