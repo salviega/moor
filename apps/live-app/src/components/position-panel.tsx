@@ -261,7 +261,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				/>
 			) : null}
 
-			<div className="grid grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]">
+			<div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]">
 				<Panel tone="raised" className="flex flex-col justify-center gap-3">
 					<span className="eyebrow">Price against the range · last 48 h</span>
 					<RangeRuler
@@ -272,8 +272,8 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 						side={p.side}
 					/>
 				</Panel>
-				<Panel tone="raised" className="flex flex-col gap-4">
-					<div className="grid grid-cols-2 gap-x-6 gap-y-4">
+				<Panel tone="raised" className="flex flex-col justify-center gap-4">
+					<div className="grid grid-cols-2 gap-x-6 gap-y-5">
 						<Stat
 							label={t.stats.committed}
 							value={
@@ -328,7 +328,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 			) : null}
 			{!p.amountKnown ? <p className="text-dim text-xs">{t.unknownAmount}</p> : null}
 
-			<div className="mt-auto grid grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr_2fr]">
+			<div className="grid shrink-0 grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr_2fr]">
 				<Panel className="flex flex-col gap-3">
 					<div className="flex flex-wrap items-baseline justify-between gap-2">
 						<h2 className="text-base">{t.agent.title}</h2>

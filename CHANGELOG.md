@@ -30,6 +30,18 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **A real height chain, no more scrollbar (2026-09-06).** The previous fit
+  guessed the nav's height in a `calc()`; on the holder's screen it was off by
+  a few pixels and the page still scrolled. Rebuilt on flexbox instead of a
+  guess: `body` is `h-dvh` and the only scroll container, `nav` does not
+  shrink, `main` is the one `flex-1` region — the dashboard grid gets its
+  height from that chain, not a magic number. Inside it, the range chart and
+  the numbers panel now grow to absorb whatever space the maker-mismatch and
+  unknown-amount notices leave when they are not shown, instead of leaving a
+  gap above an `mt-auto` bottom row; the position rows on the left do the same
+  with the sidebar's leftover height. Verified with
+  `document.documentElement.scrollHeight === clientHeight` on both a position
+  with a pending proposal and notices, and one without.
 - **Fit to the viewport (2026-09-06).** The dashboard uses the whole width:
   chart beside the numbers, the proposal band horizontal, agent / close /
   technical details in one row, list rows taller with their own range ruler;

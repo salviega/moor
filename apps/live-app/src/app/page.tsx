@@ -74,7 +74,7 @@ function DashboardInner() {
 	const current = selected ?? positions[0]?.label ?? null;
 
 	const list = (
-		<div className="flex flex-col gap-4">
+		<div className="flex h-full flex-col gap-4">
 			<NameField quiet />
 			<Panel tone="raised" className="flex flex-col gap-2">
 				<div className="flex items-baseline justify-between">
@@ -100,76 +100,78 @@ function DashboardInner() {
 					/>
 				) : null}
 			</Panel>
-			<div className="flex items-center justify-between">
-				<h1 className="font-semibold text-xl tracking-tight">{t.title}</h1>
-				<Link href="/new">
-					<Button className="min-h-9 px-3 py-1 text-xs">{t.open}</Button>
-				</Link>
+			<div className="flex min-h-0 flex-1 flex-col gap-3">
+				<div className="flex items-center justify-between">
+					<h1 className="font-semibold text-xl tracking-tight">{t.title}</h1>
+					<Link href="/new">
+						<Button className="min-h-9 px-3 py-1 text-xs">{t.open}</Button>
+					</Link>
+				</div>
+				{q.isLoading ? (
+					<ul className="flex flex-col gap-2" aria-busy="true" aria-label="Loading positions">
+						{[0, 1].map((i) => (
+							<li key={i} className="flex flex-col gap-2 rounded-md border border-line p-3">
+								<Skeleton className="h-4 w-40" />
+								<Skeleton className="h-3 w-24" />
+							</li>
+						))}
+					</ul>
+				) : null}
+				{q.isError ? (
+					<Notice
+						tone="error"
+						title={t.error.title}
+						action={
+							<Button variant="quiet" onClick={() => q.refetch()}>
+								{t.error.retry}
+							</Button>
+						}
+					>
+						{t.error.body}
+					</Notice>
+				) : null}
+				{q.data && !q.data.registry ? (
+					<Notice
+						tone="warn"
+						title={t.noRegistry.title}
+						action={
+							<Link href="/setup" className="underline">
+								{t.noRegistry.action}
+							</Link>
+						}
+					>
+						{t.noRegistry.body}
+					</Notice>
+				) : null}
+				{q.data?.registry && positions.length === 0 ? (
+					<section className="flex flex-col gap-3 rounded-md border border-line border-dashed p-5">
+						<h2 className="text-base">{t.empty.title}</h2>
+						<p className="text-muted text-sm">{t.empty.body}</p>
+					</section>
+				) : null}
+				{positions.length ? (
+					<ul
+						className="flex min-h-0 flex-1 flex-col divide-y divide-line overflow-y-auto rounded-md border border-line"
+						aria-label="Your positions"
+					>
+						{positions.map((p) => (
+							<Row
+								key={p.name}
+								p={p}
+								now={now}
+								price={price.data?.price}
+								active={p.label === current}
+								onPick={() => router.push(`/?position=${encodeURIComponent(p.label)}`)}
+							/>
+						))}
+					</ul>
+				) : null}
 			</div>
-			{q.isLoading ? (
-				<ul className="flex flex-col gap-2" aria-busy="true" aria-label="Loading positions">
-					{[0, 1].map((i) => (
-						<li key={i} className="flex flex-col gap-2 rounded-md border border-line p-3">
-							<Skeleton className="h-4 w-40" />
-							<Skeleton className="h-3 w-24" />
-						</li>
-					))}
-				</ul>
-			) : null}
-			{q.isError ? (
-				<Notice
-					tone="error"
-					title={t.error.title}
-					action={
-						<Button variant="quiet" onClick={() => q.refetch()}>
-							{t.error.retry}
-						</Button>
-					}
-				>
-					{t.error.body}
-				</Notice>
-			) : null}
-			{q.data && !q.data.registry ? (
-				<Notice
-					tone="warn"
-					title={t.noRegistry.title}
-					action={
-						<Link href="/setup" className="underline">
-							{t.noRegistry.action}
-						</Link>
-					}
-				>
-					{t.noRegistry.body}
-				</Notice>
-			) : null}
-			{q.data?.registry && positions.length === 0 ? (
-				<section className="flex flex-col gap-3 rounded-md border border-line border-dashed p-5">
-					<h2 className="text-base">{t.empty.title}</h2>
-					<p className="text-muted text-sm">{t.empty.body}</p>
-				</section>
-			) : null}
-			{positions.length ? (
-				<ul
-					className="flex flex-col divide-y divide-line rounded-md border border-line"
-					aria-label="Your positions"
-				>
-					{positions.map((p) => (
-						<Row
-							key={p.name}
-							p={p}
-							now={now}
-							price={price.data?.price}
-							active={p.label === current}
-							onPick={() => router.push(`/?position=${encodeURIComponent(p.label)}`)}
-						/>
-					))}
-				</ul>
-			) : null}
 		</div>
 	);
 
 	return (
-		<div className="grid grid-cols-1 gap-6 lg:min-h-[calc(100vh-80px)] lg:grid-cols-[minmax(340px,420px)_1fr]">
+		<div className="grid grid-cols-1 gap-6 lg:h-full lg:grid-cols-[minmax(340px,420px)_1fr]">
 			<aside className={selected ? "hidden lg:block" : ""}>{list}</aside>
 			<section className={`flex flex-col ${selected ? "" : "hidden lg:flex"}`} aria-live="polite">
 				{selected ? (
@@ -222,12 +224,12 @@ function Row({
 			: t.agent.ok(ago(p.agent.checkedAt, now))
 		: t.agent.silent;
 	return (
-		<li>
+		<li className="flex flex-1">
 			<button
 				type="button"
 				onClick={onPick}
 				aria-current={active ? "true" : undefined}
-				className={`flex min-h-24 w-full flex-col gap-2 p-4 text-left hover:bg-ink-1 ${active ? "border-l-2 border-l-accent bg-ink-1" : "border-l-2 border-l-transparent"}`}
+				className={`flex min-h-28 w-full flex-1 flex-col justify-center gap-2 p-5 text-left hover:bg-ink-1 ${active ? "border-l-2 border-l-accent bg-ink-1" : "border-l-2 border-l-transparent"}`}
 			>
 				<span className="flex items-center justify-between gap-3">
 					<span className="truncate text-base text-text">{p.name}</span>

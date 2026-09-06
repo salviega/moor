@@ -52,7 +52,7 @@ export function Nav() {
 		</Link>
 	);
 	return (
-		<header className="border-line border-b">
+		<header className="shrink-0 border-line border-b">
 			<div className="flex w-full flex-wrap items-center justify-between gap-2 px-5 py-1.5 lg:px-8">
 				<nav className="flex items-center gap-1" aria-label="Main">
 					<Link
