@@ -169,9 +169,9 @@ function DashboardInner() {
 	);
 
 	return (
-		<div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(340px,420px)_1fr]">
+		<div className="grid grid-cols-1 gap-6 lg:min-h-[calc(100vh-80px)] lg:grid-cols-[minmax(340px,420px)_1fr]">
 			<aside className={selected ? "hidden lg:block" : ""}>{list}</aside>
-			<section className={selected ? "" : "hidden lg:block"} aria-live="polite">
+			<section className={`flex flex-col ${selected ? "" : "hidden lg:flex"}`} aria-live="polite">
 				{selected ? (
 					<button
 						type="button"
@@ -182,7 +182,7 @@ function DashboardInner() {
 					</button>
 				) : null}
 				{current ? (
-					<div className="flex flex-col gap-4">
+					<div className="flex flex-1 flex-col">
 						<PositionPanel key={current} label={current} embedded />
 					</div>
 				) : q.isLoading ? (

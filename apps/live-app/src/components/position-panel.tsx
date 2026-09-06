@@ -224,7 +224,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 	const failed = session.steps.some((s) => s.status === "failed");
 
 	return (
-		<>
+		<div className={`flex flex-col ${embedded ? "h-full gap-3" : "gap-4"}`}>
 			{!embedded ? (
 				<Link
 					href="/"
@@ -261,7 +261,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				/>
 			) : null}
 
-			<div className="grid grid-cols-1 gap-4 xl:grid-cols-[3fr_2fr]">
+			<div className="grid grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]">
 				<Panel tone="raised" className="flex flex-col justify-center gap-3">
 					<span className="eyebrow">Price against the range · last 48 h</span>
 					<RangeRuler
@@ -322,13 +322,13 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				</Panel>
 			</div>
 			{!p.makerMatches ? (
-				<Notice tone="warn" title={t.notMaker.title}>
-					{t.notMaker.body}
-				</Notice>
+				<p className="text-accent text-xs">
+					<span className="font-medium">{t.notMaker.title}.</span> {t.notMaker.body}
+				</p>
 			) : null}
-			{!p.amountKnown ? <Notice tone="info">{t.unknownAmount}</Notice> : null}
+			{!p.amountKnown ? <p className="text-dim text-xs">{t.unknownAmount}</p> : null}
 
-			<div className="grid grid-cols-1 gap-4 xl:grid-cols-[3fr_2fr_2fr]">
+			<div className="mt-auto grid grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr_2fr]">
 				<Panel className="flex flex-col gap-3">
 					<div className="flex flex-wrap items-baseline justify-between gap-2">
 						<h2 className="text-base">{t.agent.title}</h2>
@@ -430,7 +430,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 					</a>
 				</Details>
 			</div>
-		</>
+		</div>
 	);
 }
 

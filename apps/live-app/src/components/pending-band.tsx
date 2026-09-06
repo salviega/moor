@@ -54,7 +54,7 @@ export function PendingBand({
 		>
 			<div className="flex flex-col gap-1.5">
 				<span className="eyebrow text-accent">{t.eyebrow}</span>
-				<h2 id="proposal-title" className="text-lg">
+				<h2 id="proposal-title" className="text-base">
 					{t.verbs[proposal.kind]}
 					{range ? (
 						<>
@@ -63,11 +63,15 @@ export function PendingBand({
 						</>
 					) : null}
 				</h2>
-				<p className="text-muted">{proposal.reasoning}</p>
-				{simulation ? <p className="text-dim text-sm">{simulation}</p> : null}
+				<p className="text-muted text-sm">{proposal.reasoning}</p>
+				{simulation ? (
+					<p className="truncate text-dim text-xs" title={simulation}>
+						{simulation}
+					</p>
+				) : null}
 				<p className="text-dim text-xs">{t.writtenBy(when)}</p>
 			</div>
-			<div className="flex flex-wrap items-center gap-3 xl:flex-col xl:items-stretch">
+			<div className="flex flex-wrap items-start gap-3">
 				<Button onClick={onReview} disabled={!!disabledReason} reason={disabledReason} busy={busy}>
 					{t.review} · {signatures} signature{signatures === 1 ? "" : "s"}
 				</Button>
