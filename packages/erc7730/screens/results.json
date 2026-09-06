@@ -1,0 +1,49 @@
+{
+	"device": "flex",
+	"appEthereum": "1.22.3",
+	"tester": "bb0cc89",
+	"results": [
+		{
+			"kind": "approve",
+			"ledgerShows": "Approve",
+			"status": "blind_signed",
+			"expected": "blind_signed",
+			"screens": 3
+		},
+		{
+			"kind": "ship",
+			"ledgerShows": "Open Moor position",
+			"status": "clear_signed",
+			"expected": "clear_signed",
+			"screens": 10
+		},
+		{
+			"kind": "createPosition",
+			"ledgerShows": "Name Moor position",
+			"status": "clear_signed",
+			"expected": "clear_signed",
+			"screens": 15
+		},
+		{
+			"kind": "dock",
+			"ledgerShows": "Close Moor position",
+			"status": "clear_signed",
+			"expected": "clear_signed",
+			"screens": 9
+		},
+		{
+			"kind": "unregister",
+			"ledgerShows": "Remove position name",
+			"status": "clear_signed",
+			"expected": "clear_signed",
+			"screens": 9
+		},
+		{
+			"kind": "revokeAgent",
+			"ledgerShows": "Revoke Moor agent",
+			"status": "clear_signed",
+			"expected": "clear_signed",
+			"screens": 9
+		}
+	]
+}

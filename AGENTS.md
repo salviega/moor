@@ -99,7 +99,8 @@ What a merge to `main` sets off, and what it does not:
 | Trigger              | Effect                                                                          |
 | -------------------- | ------------------------------------------------------------------------------- |
 | Push to `feature/**` | Nothing. No workflow is triggered                                               |
-| Pull request         | CI: `check`, `typecheck`, Vitest, `forge test`, Live App build, `ledger:screens` |
+| Pull request         | CI: `check`, `typecheck`, Vitest, `forge test`, Live App build                    |
+| `ledger-screens` (manual) | `pnpm ledger:screens` on an emulated Flex, diffed against the committed captures — run it when a descriptor changes |
 | Merge to `main`      | Vercel deploys the Live App to production — the URL in `manifest.json`          |
 
 **Contracts and the agent do not deploy on merge.** `pnpm contracts:deploy` is
@@ -229,8 +230,9 @@ happen.
 **Every signable function ships with its ERC-7730 descriptor and its Speculos
 capture**, in the same commit — `packages/erc7730/` for the descriptor,
 `packages/erc7730/screens/` for what the device shows. `pnpm ledger:screens`
-regenerates the captures and CI diffs them: a descriptor change that alters a
-screen fails the build, not the demo.
+regenerates the captures (Docker, Node 24, ~8 minutes) and the manual
+`ledger-screens` workflow diffs them: a descriptor change that alters a screen
+fails that run, not the demo. It is not part of the per-PR CI on purpose.
 
 **Local first, then Sepolia.** Anvil forks Sepolia for the fast loop; the phase
 does not close until the same thing happened on Sepolia itself with a hash to

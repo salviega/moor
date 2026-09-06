@@ -47,3 +47,4 @@ jobs:
       - run: forge test --root packages/contracts -vvv
       # Read, not gated (AGENTS.md, Tests come first): the three named tests are the floor.
       - run: forge coverage --root packages/contracts --report summary --ir-minimum
+

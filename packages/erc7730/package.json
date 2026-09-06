@@ -7,5 +7,9 @@
 	"scripts": {
 		"emu": "node scripts/emu.mjs",
 		"screens": "node scripts/screens.mjs"
+	},
+	"devDependencies": {
+		"@moor/core": "workspace:*",
+		"tsx": "4.23.13"
 	}
 }
