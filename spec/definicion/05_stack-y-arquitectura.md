@@ -248,7 +248,7 @@ Ordenados por cuánto daño hacen si se materializan.
 | ~~**La dirección no se puede cerrar en el programa** (§5b)~~ **Cerrado el 5 sep:** `JumpIfTokenIn` + trampa `Deadline(0)`, `CoreInvariants` en verde, verificado en Sepolia | — | Sin plan B necesario |
 | ~~**Redesplegar Aqua/SwapVM en Sepolia se complica**~~ **Cerrado el 5 sep:** desplegados y verificados en Sourcify con `exact_match` | — | Sin plan B necesario |
 | **1inch no acepta el redespliegue como "oficial"** | Descalifica el track de 1inch | Preguntar a los mentores en los primeros días, con la regla ("redeployments allowed") en la mano |
-| **Clear Signing con descriptores no publicados** | La Ledger muestra blind signing en la demo | Verificar en fase 0 que Ledger Live en modo desarrollador acepta descriptores ERC-7730 locales, y usar **Speculos** para ver la pantalla exacta de cada firma sin depender del dispositivo. Si no, plan B: mostrar el descriptor y la simulación en la Live App y ser transparentes |
+| **Clear Signing con descriptores no publicados** | La Ledger muestra blind signing en la demo | *Cerrado en fase 3, mitad y mitad:* Speculos sí muestra la pantalla exacta de cada firma con nuestros descriptores (`ledger:screens`, cinco de seis clear-signed, capturas en el repo); la Flex real sigue en blind signing porque Ledger Live solo acepta descriptores del registro. La Live App muestra en *Review & sign* lo que la Ledger mostraría ("Ledger shows: …") y es transparente al respecto |
 | **ENSv2 beta cambia o se cae** | Nombres o roles fallan en la demo | Fijar direcciones y ABI a una fecha; grabar la demo en video además del vivo (lo pide ENS igual) |
 | ~~**La Wallet API no expone lo que hace falta** (p. ej. `data` arbitrario en Sepolia)~~ **Cerrado el 5 sep:** `signAndBroadcast` con `data` a `TestToken.mint` desde Ledger Live, [`0x3160e91f…`](https://sepolia.etherscan.io/tx/0x3160e91f23a196f60c8dc8092c5e062ef9d97a399cd88d9a5c918c974321f392) | — | Sin plan B necesario |
 | **Sin takers, no hay fills** | Demo sin ejecución onchain | El taker de demo (§8) es tarea de fase 1, no un extra |
@@ -259,7 +259,7 @@ Ordenados por cuánto daño hacen si se materializan.
 ## 11. Pendientes
 
 - **Confirmar con 1inch** que Aqua y SwapVM redesplegados sin modificar en Sepolia califican como "official contracts".
-- Verificar que Ledger Live acepta descriptores ERC-7730 locales en modo desarrollador, y cómo se cargan (candidato: el ERC-7730 Tester de Ledger — [`feedback/03_ledger.md`](../feedback/03_ledger.md)).
+- ~~Verificar que Ledger Live acepta descriptores ERC-7730 locales en modo desarrollador, y cómo se cargan.~~ No los acepta: el dispositivo exige descriptores del registro de Ledger. Lo que sí existe es el *clear-signing tester* (`device-sdk-ts`), que los inyecta en Speculos — es lo que corre `ledger:screens` (fase 3). En la Flex real la demo firma a ciegas hasta que el registro los publique.
 - ~~Fuente de precio (compartida con el 04).~~ Chainlink BTC/USD, fase 3.
 - Cadencia del agente y umbrales de propuesta (compartido con el 04).
 - ~~Cómo enumera la Live App los subnombres de un `UserRegistry`.~~ Cerrado en la fase 2: el evento `LabelRegistered(tokenId, labelHash, label, owner, expiry, sender)` del registry del holder lleva el label en claro; `listPositions()` en `packages/core` hace un `eth_getLogs` desde el bloque de creación del registry (salviega: 11642925) y filtra `sender == MoorRegistrar`, menos `agent`. Sin indexador.

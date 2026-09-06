@@ -58,6 +58,21 @@ Two things this project's entries carry that a web app's would not:
   - `pnpm dev` adds an `ethereum_sepolia` account (the holder's address) to the
     simulator profile — it ships without one — so reads show the real names.
   - `/sign-test` removed: the real screens replaced it.
+  - **`pnpm ledger:screens` works** (07 phase 3; open since phase 0): Ledger's
+    clear-signing tester (`apps/clear-signing-tester` in
+    `LedgerHQ/device-sdk-ts`, pinned to `bb0cc89`, built into `.cs-tester/`)
+    starts Speculos in Docker with the prebuilt Ethereum app 1.22.3, injects our
+    four unsigned descriptors through its CAL interceptor, signs the six
+    transactions of the flow (`@moor/core`'s new `demoFlow()`) and captures
+    every screen. `ship`, `createPosition`, `dock`, `unregister` and
+    `revokeAgent` are **clear-signed** on an emulated Flex — "Open Moor
+    position", "Position name btc-dip", "Under name salviega.eth", "Agent
+    address"… — and `approve` is blind-signed because it is Ledger's own ERC-20
+    screen and the testnet token is not in Ledger's CAL. 55 screens and
+    `results.json` under `packages/erc7730/screens/`; a `ledger-screens` CI job
+    regenerates them and fails on any diff. Ledger Live itself still cannot
+    load a local descriptor, so the Flex blind-signs the demo until a registry
+    PR lands (`spec/feedback/03_ledger.md`).
   - **Verified on the device (2026-09-05):** from Ledger Live Desktop with the
     Ledger Flex, the Live App at getmoor.vercel.app created
     **`btc-dip-2.salviega.eth`** — 1,000 tUSDC buying tWBTC between 58k and 62k

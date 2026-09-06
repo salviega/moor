@@ -46,3 +46,7 @@ packages/erc7730/.speculos/
 
 # Python tooling (Speculos, erc7730) — see 06 §6
 .venv/
+
+# Ledger clear-signing tester checkout and run folders (ledger:screens)
+packages/erc7730/.cs-tester/
+packages/erc7730/flow/

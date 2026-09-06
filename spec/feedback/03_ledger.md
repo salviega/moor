@@ -42,6 +42,8 @@ Stack en uso: `@ledgerhq/wallet-api-client`, `@ledgerhq/wallet-api-client-react`
 
 **Reportado:** pendiente. Sugerencia: documentar el mecanismo del Tester (qué firma qué) y si expone una CLI/API para CI.
 
+**Resuelto (2026-09-05, fase 3):** sí es automatizable. El "ERC-7730 Tester" web tiene un hermano CLI, `apps/clear-signing-tester` en `LedgerHQ/device-sdk-ts` — ver la entrada siguiente.
+
 ### 2026-09-05 — Buscar "Sepolia" en *Add account* lleva a crear una cuenta de Arbitrum
 
 **Documentado / prometido:** para usar una Live App en Sepolia hace falta una cuenta de *Ethereum Sepolia* en Ledger Live; la moneda existe (`ethereum_sepolia`, "Ethereum Sepolia", `isTestnetFor: "ethereum"`).
@@ -89,6 +91,20 @@ Stack en uso: `@ledgerhq/wallet-api-client`, `@ledgerhq/wallet-api-client-react`
 **Impacto en Moor:** 15 minutos. Nota, no hallazgo.
 
 **Reportado:** pendiente. Sugerencia: que las funciones de los hooks devuelvan lo mismo que el cliente.
+
+### 2026-09-05 — El clear-signing tester de `device-sdk-ts` inyecta descriptores sin firmar en Speculos y guarda capturas: es `ledger:screens`
+
+**Documentado / prometido:** la guía *Validate & Submit* solo menciona el Tester web. Nada enlaza el CLI.
+
+**Encontrado:** `apps/clear-signing-tester` en `LedgerHQ/device-sdk-ts` (rama `develop`) hace exactamente lo que el track pide para CI: levanta Speculos en Docker con la app de Ethereum (`--custom-app` acepta el ELF precompilado de los releases), inyecta descriptores ERC-7730 **sin firmar** con `--erc7730-files` a través de su *CAL interceptor* (sirve descriptores y certificados a la Device Management Kit en lugar del CAL de producción), firma transacciones crudas y guarda una captura por pantalla con `--screenshot-folder-path`, con veredicto `clear_signed` / `partially_clear_signed` / `blind_signed` y código de salida. Con nuestros cuatro descriptores, cinco de las seis firmas del flujo salen **clear-signed** en un Flex emulado; `ledger:screens` lo envuelve (clon fijado a `bb0cc89`, Node 24, Docker) y CI compara las capturas.
+
+Tres cosas que costaron: (1) el paquete npm `@ledgerhq/ethereum-clear-signing-tester` es un snapshot de noviembre de 2025 sin `--erc7730-files` ni capturas — hay que compilar el monorepo (`pnpm install && pnpm build:libs`, ~3 min, Node ≥ 24); (2) `tokenAmount` con `tokenPath` muestra `1000000000 ???` para un token que no está en el CAL de Ledger (nuestros tokens de Sepolia): el descriptor es correcto, pero la pantalla no dice "1,000 tUSDC"; (3) `approve` sale a ciegas por la misma razón — es la pantalla ERC-20 propia de Ledger y necesita el token en el CAL. Lo que **no** resuelve: el dispositivo físico. Ledger Live no carga descriptores locales; la Flex firma a ciegas hasta que el registro los publique.
+
+**Evidencia:** `packages/erc7730/scripts/screens.mjs`, `packages/erc7730/screens/*/` (55 capturas) y `screens/results.json`; `ship/05.png` ("Amount committed 1000000000 ???"); `approve/` (3 pantallas, sin descriptor).
+
+**Impacto en Moor:** cierra el pendiente de `ledger:screens` (07, fase 3) que llevaba desde la fase 0, ~2 horas incluidas la búsqueda y la compilación. Cambió el 05 §10/§11 y el 06 §11.
+
+**Reportado:** pendiente. Sugerencias: enlazar el CLI desde *Validate & Submit* y publicarlo en npm con `--erc7730-files`; permitir inyectar metadata de tokens (ticker, decimales) junto a los descriptores para que `tokenAmount` no muestre `???` en testnets; y una vía de desarrollador para cargar un descriptor local en Ledger Live (aunque sea con un aviso en pantalla), que hoy no existe.
 
 <!--
 ### AAAA-MM-DD — Título corto del hallazgo

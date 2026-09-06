@@ -47,3 +47,25 @@ jobs:
       - run: forge test --root packages/contracts -vvv
       # Read, not gated (AGENTS.md, Tests come first): the three named tests are the floor.
       - run: forge coverage --root packages/contracts --report summary --ir-minimum
+
+  ledger-screens:
+    name: ledger:screens · Speculos renders every signature
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Ledger's clear-signing tester (device-sdk-ts) needs Node 24; the rest of the repo runs on .nvmrc.
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: docker pull ghcr.io/ledgerhq/speculos:latest
+      # Renders the six transactions of the flow on an emulated Flex with our ERC-7730 descriptors
+      # injected, writes packages/erc7730/screens/<kind>/*.png and results.json, and fails if a
+      # descriptor-covered transaction is not clear-signed.
+      - run: pnpm ledger:screens
+        env:
+          GH_TOKEN: ${{ github.token }}
+      # A descriptor change that alters a screen fails the build, not the demo (AGENTS.md, ritual step 4).
+      - run: git diff --exit-code --stat -- packages/erc7730/screens
