@@ -30,6 +30,18 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Landing screen when disconnected (2026-09-06).** Choosing an account was
+  the only thing the disconnected dashboard asked for, buried in an empty
+  positions list. Replaced with `src/components/landing.tsx`: the pitch, a
+  pulsing "Connect Ledger account" call to action (host-aware: "Open Moor from
+  Ledger Live" when opened outside it), three steps (sign once → the order is
+  already working → named, watched, yours to decide) and what each sponsor's
+  own tech is doing — 1inch Aqua/SwapVM hold the order and the balance, ENSv2
+  names every position with on-chain per-key permissions, Ledger's Wallet API
+  and Key Ring sign and hold the agent's one key. Fits one screen on the
+  dashboard's own flex-height chain, no page scroll on a normal desktop
+  window; a short entrance animation and the CTA's pulse respect
+  `prefers-reduced-motion`.
 - **A real height chain, no more scrollbar (2026-09-06).** The previous fit
   guessed the nav's height in a `calc()`; on the holder's screen it was off by
   a few pixels and the page still scrolled. Rebuilt on flexbox instead of a

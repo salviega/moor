@@ -10,6 +10,7 @@ import type { PositionView } from "@moor/core";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Landing } from "@/components/landing";
 import { PositionPanel } from "@/components/position-panel";
 import { RangeRuler } from "@/components/range-ruler";
 import { Button, Notice, Panel, Skeleton, StateMark } from "@/components/ui";
@@ -57,6 +58,10 @@ const t = {
 };
 
 export default function Dashboard() {
+	const h = useHolder();
+	// No account: the landing screen carries the pitch and the one thing to do next.
+	// Reading still works without one — the browsing routes (/new, /setup) stay reachable from the nav.
+	if (!h.address) return <Landing onConnect={h.connect} connecting={h.connecting} host={h.host} />;
 	return (
 		<Suspense fallback={<Skeleton className="h-40 w-full" />}>
 			<DashboardInner />
