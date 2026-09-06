@@ -60,7 +60,7 @@ Two things this project's entries carry that a web app's would not:
   - `/sign-test` removed: the real screens replaced it.
   - **`pnpm ledger:screens` works** (07 phase 3; open since phase 0): Ledger's
     clear-signing tester (`apps/clear-signing-tester` in
-    `LedgerHQ/device-sdk-ts`, pinned to `bb0cc89`, built into `.cs-tester/`)
+    `LedgerHQ/device-sdk-ts`, pinned to `bb0cc89381ca`, built into `.cs-tester/`)
     starts Speculos in Docker with the prebuilt Ethereum app 1.22.3, injects our
     four unsigned descriptors through its CAL interceptor, signs the six
     transactions of the flow (`@moor/core`'s new `demoFlow()`) and captures

@@ -39,7 +39,7 @@ const device = String(args.device ?? "flex");
 const APP_VERSION = "1.22.3";
 /** LedgerHQ/device-sdk-ts, develop — pinned to the commit this was built against. */
 const TESTER_REPO = "https://github.com/LedgerHQ/device-sdk-ts.git";
-const TESTER_COMMIT = "bb0cc89";
+const TESTER_COMMIT = "bb0cc89381ca7a4e297ed6bb801aa3e5ba9cf21f";
 const TESTER_PNPM = "pnpm@10.34.4";
 
 const fail = (msg) => {
