@@ -238,6 +238,6 @@ Fuera de Ledger Live no hay pantallas de Moor. Pero el nombre `btc-dip.salviega.
 **Pendientes**
 
 - ~~Fuente de precio del agente y de la interfaz (oráculo, DEX, ambos).~~ Decidido en la fase 3: **Chainlink BTC/USD en Sepolia** (`0x1b44…Ee43`), leído por `readPrice()` de `packages/core`; la interfaz marca el rango contra él y dice de cuándo es. El agente usa la misma función (fase 4).
-- Qué umbrales disparan una propuesta del agente (días sin operar, distancia al rango, cercanía del vencimiento).
+- ~~Qué umbrales disparan una propuesta del agente (días sin operar, distancia al rango, cercanía del vencimiento).~~ Fijados en la fase 4 (`THRESHOLDS` en `packages/core/src/agent.ts`): `farFromRange` — posición *esperando* con el rango a más del 10 % del precio; `completed`; `expiring` — menos de 24 h. Sin "durante N horas": el agente no tiene memoria y no la finge. Una propuesta por umbral: mientras siga en pie para el mismo umbral, no se vuelve a pedir; si el motivo desaparece, se borra.
 - Si la pantalla *Revisar y firmar* muestra una estimación de fees; el principio 6 sugiere que no, o que sea muy conservadora.
-- Cómo se ve el flujo de *aceptar propuesta* cuando implica cerrar y crear (dos posiciones, dos nombres): ¿el nuevo hereda el label con sufijo?
+- ~~Cómo se ve el flujo de *aceptar propuesta* cuando implica cerrar y crear (dos posiciones, dos nombres): ¿el nuevo hereda el label con sufijo?~~ Sí: `btc-dip` → `btc-dip-2` → `btc-dip-3` (`nextLabel`). *Accept proposal* es una sola sesión: `dock` + `unregister`, y para `widen`/`narrow`/`renew` `ship` + `createPosition` del sucesor con lo que quedaba por convertir (`acceptProposalCalls`, fase 4).

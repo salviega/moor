@@ -30,6 +30,29 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Phase 4, first cut: the agent watches, derives and proposes** (04 §4.4,
+  05 §8, 06 §5; 2026-09-06). `packages/core/src/agent.ts` holds everything
+  deterministic — thresholds v1 (`farFromRange` > 10 % while waiting,
+  `completed`, `expiring` < 24 h; one proposal per trigger, cleared when the
+  reason goes away), the reading, the fallback proposal (widen toward the
+  price keeping the width, renew +30 days, close), the simulation in words,
+  the prompt, the eight record values and the single `multicall` of `setText`
+  that writes them — 25 tests, 94 % branches overall. `apps/agent` is the loop:
+  registry and resolver from the name, positions from `LabelRegistered`,
+  `readPositionView` + Chainlink price, one transaction per position per
+  cycle, one pino line per position; `src/model.ts` asks Claude Opus 5
+  through `beta.messages.parse` with `betaZodOutputFormat(Proposal)`,
+  `fallbacks: "default"` and adaptive thinking, and any refusal or invalid
+  answer falls back to the deterministic proposal. `AGENT_DRY_RUN=1` reads
+  and logs without sending; dry-run against Sepolia sees `btc-dip` and
+  `btc-dip-2`, both `farFromRange`, and would propose `widen`. Live App:
+  **Accept proposal** on the detail screen (`acceptProposalCalls`: close, then
+  for widen/narrow/renew ship and name the successor `<label>-N` with what was
+  left). `apps/agent/deploy/`: systemd unit and a runner that reads the three
+  secrets from Ledger Key Ring. Not yet done: a real write on Sepolia (the
+  agent key has no ETH), the Claude call (no API key in the environment), the
+  VPS.
+
 - **Phase 3, first cut: the Live App has its five screens and signs through
   the Wallet API** (04 §5; 2026-09-05). Tested in the browser with the
   simulator against Sepolia; the device test is what closes the phase.

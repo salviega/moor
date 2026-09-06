@@ -40,6 +40,7 @@ export const permissionedResolverAbi = parseAbi([
 	"function addr(bytes32 node) view returns (address)",
 	"function setText(bytes32 node, string key, string value)",
 	"function setAddr(bytes32 node, address addr)",
+	"function multicall(bytes[] data) returns (bytes[])",
 	"function hasRoles(uint256 resource, uint256 roleBitmap, address account) view returns (bool)",
 	"function hasRootRoles(uint256 roleBitmap, address account) view returns (bool)",
 	"function grantRootRoles(uint256 roleBitmap, address account) returns (bool)",

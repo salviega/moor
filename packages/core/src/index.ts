@@ -1,5 +1,6 @@
 export * from "./abi";
 export * from "./addresses";
+export * from "./agent";
 export * from "./fees";
 export * from "./flow";
 export * from "./names";
