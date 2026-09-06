@@ -100,7 +100,7 @@ function DashboardInner() {
 					/>
 				) : null}
 			</Panel>
-			<div className="flex min-h-0 flex-1 flex-col gap-3">
+			<div className="flex flex-col gap-3">
 				<div className="flex items-center justify-between">
 					<h1 className="font-semibold text-xl tracking-tight">{t.title}</h1>
 					<Link href="/new">
@@ -151,7 +151,7 @@ function DashboardInner() {
 				) : null}
 				{positions.length ? (
 					<ul
-						className="flex min-h-0 flex-1 flex-col divide-y divide-line overflow-y-auto rounded-md border border-line"
+						className="flex flex-col divide-y divide-line rounded-md border border-line"
 						aria-label="Your positions"
 					>
 						{positions.map((p) => (
@@ -224,12 +224,12 @@ function Row({
 			: t.agent.ok(ago(p.agent.checkedAt, now))
 		: t.agent.silent;
 	return (
-		<li className="flex flex-1">
+		<li>
 			<button
 				type="button"
 				onClick={onPick}
 				aria-current={active ? "true" : undefined}
-				className={`flex min-h-28 w-full flex-1 flex-col justify-center gap-2 p-5 text-left hover:bg-ink-1 ${active ? "border-l-2 border-l-accent bg-ink-1" : "border-l-2 border-l-transparent"}`}
+				className={`flex min-h-24 w-full flex-col gap-2 p-4 text-left hover:bg-ink-1 ${active ? "border-l-2 border-l-accent bg-ink-1" : "border-l-2 border-l-transparent"}`}
 			>
 				<span className="flex items-center justify-between gap-3">
 					<span className="truncate text-base text-text">{p.name}</span>
