@@ -165,7 +165,7 @@ kind of record, and the secrets an unattended process needs:
   it anything else is a change to the product, goes through the spec first, and
   is what `08_roadmap.md` §1b exists to do properly.
 - **Secrets come from Key Ring, never from a file.** `AGENT_PRIVATE_KEY`,
-  the RPC key and `ANTHROPIC_API_KEY` are read from `wallet-cli ring` on the
+  the RPC key and `GROQ_API_KEY` are read from `wallet-cli ring` on the
   host. A `.env` holding the agent's key is a leak waiting for a `git add`.
   `DEPLOYER_PRIVATE_KEY` is local, for `contracts:deploy` only, never in CI.
 - **Every input crosses a Zod schema at the trust boundary**: position
@@ -199,7 +199,7 @@ the need is how a small project stops being small:
 | Schemas and types                      | Zod in `packages/core`; types are inferred from schemas, never written twice |
 | Icons                                  | `lucide-react`                                                              |
 | Confirming a save to the person        | One toast utility, shared — never a new inline banner                       |
-| Talking to the model                   | `@anthropic-ai/sdk`, `claude-opus-5`, `messages.parse()` against the proposal schema, `fallbacks: "default"`. One call per proposal, none per cycle |
+| Talking to the model                   | Groq's OpenAI-compatible endpoint over plain `fetch` — no SDK — `openai/gpt-oss-120b` in strict JSON Schema mode against the proposal schema (`packages/core/src/model.ts`), Zod on the way back. Free tier; one call per proposal, none per cycle |
 | Logs in the agent                      | `pino`, one structured line per cycle                                       |
 
 Most state never touches Moor: balances live in Aqua, the program in SwapVM, the

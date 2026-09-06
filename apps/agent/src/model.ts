@@ -1,31 +1,36 @@
 /**
- * The one call per proposal (06 §5): Claude Opus 5 chooses between the
- * alternatives core already simulated and explains. Structured output parsed
- * against the shared Proposal schema; server-side fallbacks so a classifier
- * refusal does not leave a cycle without a proposal; adaptive thinking.
- * Anything that does not validate is not written — the caller falls back to the
- * deterministic proposal.
+ * The one call per proposal (06 §5): a Groq chat completion asked to fill the
+ * Proposal schema in strict JSON Schema mode — plain fetch against the
+ * OpenAI-compatible endpoint, no SDK to carry. What comes back crosses Zod in
+ * core (`parseProposalAnswer`): anything that does not validate is null and the
+ * caller falls back to the deterministic proposal. Nothing here is written.
  */
-import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import { Proposal } from "@moor/core";
+import { groqProposalRequest, type Proposal, parseProposalAnswer } from "@moor/core";
 
-export async function proposeWithClaude(
-	client: Anthropic,
+export const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+export async function proposeWithGroq(
+	apiKey: string,
 	model: string,
 	prompt: { system: string; user: string },
+	fetchImpl: typeof fetch = fetch,
 ): Promise<Proposal | null> {
-	const message = await client.beta.messages.parse({
-		model,
-		max_tokens: 2048,
-		betas: ["structured-outputs-2025-11-13", "server-side-fallback-2026-07-01"],
-		fallbacks: "default",
-		thinking: { type: "adaptive" },
-		system: prompt.system,
-		messages: [{ role: "user", content: prompt.user }],
-		output_config: { format: betaZodOutputFormat(Proposal) },
+	const res = await fetchImpl(GROQ_URL, {
+		method: "POST",
+		headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+		body: JSON.stringify(groqProposalRequest(model, prompt)),
+		signal: AbortSignal.timeout(60_000),
 	});
-	if (message.stop_reason === "refusal" || !message.parsed_output) return null;
-	const parsed = Proposal.safeParse(message.parsed_output);
-	return parsed.success ? parsed.data : null;
+	if (!res.ok) {
+		// The status and the API's own first line; never the key, never the prompt (AGENTS.md, Security).
+		let detail = "";
+		try {
+			const body = (await res.json()) as { error?: { message?: string } };
+			detail = String(body.error?.message ?? "").split("\n")[0] ?? "";
+		} catch {
+			// Not JSON; the status is enough.
+		}
+		throw new Error(`groq ${res.status}${detail ? `: ${detail}` : ""}`);
+	}
+	return parseProposalAnswer(await res.json());
 }

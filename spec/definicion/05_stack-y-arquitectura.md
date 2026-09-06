@@ -216,7 +216,7 @@ Los recursos de EAC del `PermissionedResolver` son `keccak(namehash, keccak(clav
 
 | Proceso | Cada cuánto | Qué hace | Si falla |
 | --- | --- | --- | --- |
-| **Agente** | Cada 5 minutos (`AGENT_INTERVAL_SECONDS`, 300) | Lee precio (Chainlink) y balances de cada posición del holder, deriva estado, escribe las ocho `moor.agent.*` en **un** `multicall` de `setText` por posición; si un umbral se cruza, simula las alternativas en código y pide a Claude que elija — una llamada por propuesta; sin `ANTHROPIC_API_KEY`, la propuesta determinista | **Nada se rompe.** La posición sigue operando. La Live App ve `checkedAt` viejo y lo dice como aviso |
+| **Agente** | Cada 5 minutos (`AGENT_INTERVAL_SECONDS`, 300) | Lee precio (Chainlink) y balances de cada posición del holder, deriva estado, escribe las ocho `moor.agent.*` en **un** `multicall` de `setText` por posición; si un umbral se cruza, simula las alternativas en código y pide al modelo (Groq, `gpt-oss-120b`) que elija — una llamada por propuesta; sin `GROQ_API_KEY`, la propuesta determinista | **Nada se rompe.** La posición sigue operando. La Live App ve `checkedAt` viejo y lo dice como aviso |
 | **Taker de demo** | Solo durante la demo | Ejecuta `swap` contra la posición dentro del rango para mostrar fills y fees onchain | Sin él no hay fills en Sepolia (no hay takers reales). Es infraestructura de demo, no de producto |
 | **Vencimiento** | Onchain, sin proceso | `_deadline` deja de aceptar swaps; `expiry` deja el nombre disponible | No puede fallar: lo hace el protocolo |
 

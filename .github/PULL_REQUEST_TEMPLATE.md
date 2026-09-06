@@ -33,7 +33,7 @@ hand, against Sepolia only. Review the diff before running it, not after —
 - [ ] `pnpm check` (Biome) and `forge fmt --check` are clean
 - [ ] The agent's negative-role tests still pass: it cannot touch the position,
       the registry, or Aqua — only `setText` on the eight `moor.agent.*` keys
-- [ ] No private key, seed, RPC key or Anthropic API key in code, logs or commits
+- [ ] No private key, seed, RPC key or model API key in code, logs or commits
 - [ ] `spec/`, `README.md` and `AGENTS.md` are still true after this change
 - [ ] `CHANGELOG.md` has the entry, with tx hashes for anything that happened
       on Sepolia

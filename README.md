@@ -9,7 +9,7 @@ the Ledger decides.
 Built for ETHOnline 2026 — 1inch (Aqua/SwapVM), ENS (ENSv2) and Ledger (AI
 Agents) bounties.
 
-**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phases 0–3 done; phase 4 in progress — the agent reads, derives and proposes (dry-run against Sepolia), *Accept proposal* is in the Live App; the first on-chain write and the Claude call are next — see [`spec/`](./spec/README.md) for the full
+**Status:** phases 0 and 1 done — the one-directional range order runs on Sepolia and passes SwapVM's invariants; phases 0–3 done; phase 4 in progress — the agent reads, derives and proposes (dry-run against Sepolia), *Accept proposal* is in the Live App; the first on-chain write and the model call (Groq, free tier) are next — see [`spec/`](./spec/README.md) for the full
 specification and [`spec/definicion/07_plan-de-trabajo.md`](./spec/definicion/07_plan-de-trabajo.md)
 for the phased plan and current progress.
 

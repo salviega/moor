@@ -10,7 +10,6 @@
 		"loop": "tsx src/main.ts"
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "0.124.0",
 		"@moor/core": "workspace:*",
 		"pino": "10.3.1",
 		"viem": "2.56.3",
