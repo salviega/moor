@@ -13,7 +13,16 @@ import { StepRow } from "@/app/new/page";
 import { MarketChart } from "@/components/market-chart";
 import { PendingBand } from "@/components/pending-band";
 import { useToast } from "@/components/toast";
-import { Button, Details, Notice, Panel, Skeleton, Stat, StateMark } from "@/components/ui";
+import {
+	Button,
+	Details,
+	ExplorerLink,
+	Notice,
+	Panel,
+	Skeleton,
+	Stat,
+	StateMark,
+} from "@/components/ui";
 import { publicClient } from "@/lib/chain";
 import {
 	ago,
@@ -24,10 +33,9 @@ import {
 	fmtPrice,
 	fmtShort,
 	fmtUsd,
-	short,
 } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
-import { btcDemo, explorer, resolveDemoPair } from "@/lib/pair";
+import { btcDemo, resolveDemoPair } from "@/lib/pair";
 import {
 	usePosition,
 	usePrice,
@@ -321,7 +329,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 						/>
 						<Stat
 							label="Owner"
-							value={short(p.holder)}
+							value={<ExplorerLink kind="address" id={p.holder} short />}
 							sub={
 								h.address && p.holder.toLowerCase() === h.address.toLowerCase()
 									? "this account"
@@ -344,7 +352,12 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 						<h2 className="text-base">{t.agent.title}</h2>
 						<span className="num text-dim text-xs">
 							{p.agentName}
-							{agentAddr.data ? ` → ${short(agentAddr.data)}` : ""}
+							{agentAddr.data ? (
+								<>
+									{" → "}
+									<ExplorerLink kind="address" id={agentAddr.data} short />
+								</>
+							) : null}
 						</span>
 					</div>
 					<p className="text-dim text-xs">{t.agent.canOnly}</p>
@@ -426,18 +439,18 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				<Details>
 					<span>name {p.name}</span>
 					<span>strategyHash {p.strategyHash}</span>
-					<span>owner {p.holder}</span>
-					<span>registry {p.registry}</span>
-					<span>tokenIn {p.tokenIn}</span>
-					<span>tokenOut {p.tokenOut}</span>
-					<a
-						className="underline"
-						href={explorer("address", p.holder)}
-						target="_blank"
-						rel="noreferrer"
-					>
-						owner on etherscan
-					</a>
+					<span>
+						owner <ExplorerLink kind="address" id={p.holder} />
+					</span>
+					<span>
+						registry <ExplorerLink kind="address" id={p.registry} />
+					</span>
+					<span>
+						tokenIn <ExplorerLink kind="address" id={p.tokenIn} />
+					</span>
+					<span>
+						tokenOut <ExplorerLink kind="address" id={p.tokenOut} />
+					</span>
 				</Details>
 			</div>
 		</div>

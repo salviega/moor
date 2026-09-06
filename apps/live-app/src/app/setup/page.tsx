@@ -5,8 +5,7 @@
  * and what does it not. The answer is a list a holder can verify on chain.
  */
 import { Check, Circle } from "lucide-react";
-import { Details, Notice, Panel, Skeleton } from "@/components/ui";
-import { short } from "@/lib/format";
+import { Details, ExplorerLink, Notice, Panel, Skeleton } from "@/components/ui";
 import { useHolder } from "@/lib/holder";
 import { useSetupStatus } from "@/lib/queries";
 import { NameField } from "../name-field";
@@ -98,7 +97,11 @@ export default function Setup() {
 							<Circle className="h-4 w-4 text-dim" aria-label="not yet" />
 						)}
 						<span className={ok ? "text-text" : "text-muted"}>{label}</span>
-						{addr ? <span className="num text-dim text-xs">{short(addr)}</span> : null}
+						{addr ? (
+							<span className="text-dim text-xs">
+								<ExplorerLink kind="address" id={addr} short />
+							</span>
+						) : null}
 					</div>
 				))}
 			</Panel>

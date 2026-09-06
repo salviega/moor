@@ -30,6 +30,16 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Every address is a link to the block explorer (2026-09-06).** One shared
+  `ExplorerLink` in `components/ui.tsx` (dotted underline, opens Sepolia
+  Etherscan in a new tab, full address on hover when shortened) replaces every
+  plain-text address: the owner and the agent's key on the position panel, the
+  owner, registry and both tokens under *Technical details* (the separate
+  "owner on etherscan" line is gone — the address itself is the link), each
+  call's contract on *Review and sign* and in the signing steps, and the
+  registry, resolver and registrar on *Setup*. A judge can follow every one
+  without copying anything. `strategyHash` stays text: Etherscan has no page
+  for it.
 - **A live market chart, with the oracle drawn on it (2026-09-06).** The
   first attempt animated the Chainlink line — a feed that ticks every 20 to 60
   minutes on Sepolia cannot look alive, and the holder said so. Now the

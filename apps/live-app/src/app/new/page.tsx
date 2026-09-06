@@ -15,7 +15,7 @@ import { parseUnits } from "viem";
 import { MarketChart } from "@/components/market-chart";
 import { RangeRuler } from "@/components/range-ruler";
 import { useToast } from "@/components/toast";
-import { Button, Details, Field, inputClass, Notice, Panel } from "@/components/ui";
+import { Button, Details, ExplorerLink, Field, inputClass, Notice, Panel } from "@/components/ui";
 import { fmtAmount, fmtDate, fmtPrice, fmtUsd } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
 import { btcDemo, demoPairs, explorer, resolveDemoPair } from "@/lib/pair";
@@ -503,7 +503,7 @@ function Review({
 				<span>strategyHash {plan.strategyHash}</span>
 				{plan.calls.map((c) => (
 					<span key={c.kind}>
-						{c.kind} → {c.to}
+						{c.kind} → <ExplorerLink kind="address" id={c.to} />
 					</span>
 				))}
 			</Details>
@@ -561,7 +561,7 @@ export function StepRow({ i, step }: { i: number; step: Step }) {
 				</span>
 				{note ? <span className="text-muted text-xs">{note}</span> : null}
 				<span className="num text-dim text-xs">
-					{t.contract} {step.call.to}
+					{t.contract} <ExplorerLink kind="address" id={step.call.to} />
 				</span>
 			</div>
 		</li>
