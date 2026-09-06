@@ -5,7 +5,7 @@
  * leave it working. The proposal is pending and looks pending; what already
  * happened looks settled. Closing is its own row, away from the primary.
  */
-import { acceptProposalCalls, closeCalls, readAddr, revokeAgentCall } from "@moor/core";
+import { acceptProposalCalls, closeCalls, nextLabel, readAddr, revokeAgentCall } from "@moor/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -17,6 +17,8 @@ import {
 	Button,
 	Details,
 	ExplorerLink,
+	Field,
+	inputClass,
 	Notice,
 	Panel,
 	Skeleton,
@@ -91,6 +93,20 @@ const t = {
 		body: "Two signatures: stop the order on Aqua, then remove the name. Your tokens were never anywhere else. This cannot be undone; you can open a new position later.",
 		action: "Stop and close the position",
 	},
+	move: {
+		title: "New range",
+		low: "Low",
+		high: "High",
+		unit: (asset: string) => `USD per ${asset}`,
+		body: (next: string, left: string) =>
+			`Closes this order and opens ${next} with the ${left} left, same side and deadline.`,
+		action: (n: number) => `Move the range · ${n} signatures`,
+		cancel: "Cancel",
+		invalid: "The low end must be below the high end.",
+		notMaker: "Shipped by another wallet: there is nothing here to move.",
+		nothingLeft: "Nothing left to convert; close the position instead.",
+		reasoning: "Moved by the holder from the chart.",
+	},
 	needAccount: "Choose the account that owns this name to act.",
 	browser: "Open Moor from Ledger Live to sign.",
 	done: {
@@ -100,11 +116,16 @@ const t = {
 			next ? `Done. The successor is ${next}.` : "Done. Position closed.",
 	},
 	failed: "The session stopped. Nothing after the failed step was sent.",
-	session: { accept: "Signing the proposal", close: "Closing", revoke: "Revoking the agent" },
+	session: {
+		accept: "Signing the proposal",
+		close: "Closing",
+		revoke: "Revoking the agent",
+		move: "Moving the range",
+	},
 	confirm: "Confirm on your Ledger…",
 };
 
-type Act = "close" | "revoke" | "accept";
+type Act = "close" | "revoke" | "accept" | "move";
 
 export function PositionPanel({ label, embedded = false }: { label: string; embedded?: boolean }) {
 	const h = useHolder();
@@ -115,6 +136,8 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 	const qc = useQueryClient();
 	const [acting, setActing] = useState<Act | null>(null);
 	const [dismissed, setDismissed] = useState<string | null>(null);
+	// A range being drawn on the chart, as the holder's own numbers; null when nothing is being moved.
+	const [draft, setDraft] = useState<{ min: string; max: string } | null>(null);
 	const p = q.data;
 	const demo = p ? resolveDemoPair(p.tokenIn, p.tokenOut) : btcDemo;
 	const price = usePrice(demo.id);
@@ -149,6 +172,25 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 					now: Math.floor(now),
 				})
 			: null;
+	const draftMin = draft ? Number(draft.min) : Number.NaN;
+	const draftMax = draft ? Number(draft.max) : Number.NaN;
+	const draftValid = draftMin > 0 && draftMax > draftMin;
+	const moveCalls =
+		p && draft && draftValid && setup.data?.resolver
+			? acceptProposalCalls({
+					view: p,
+					proposal: {
+						kind: "widen",
+						priceMin: String(draftMin),
+						priceMax: String(draftMax),
+						reasoning: t.move.reasoning,
+					},
+					pair: demo.pair,
+					names: { registry: p.registry, resolver: setup.data.resolver },
+					allowance: acct.data?.allowance ?? 0n,
+					now: Math.floor(now),
+				})
+			: null;
 	const reason =
 		h.host === "browser"
 			? t.browser
@@ -163,24 +205,27 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 		const calls =
 			kind === "accept"
 				? (acceptCalls ?? [])
-				: kind === "close"
-					? closeCalls({
-							strategyHash: p.strategyHash,
-							tokens: [p.tokenIn, p.tokenOut],
-							registry: p.registry,
-							label: p.label,
-						})
-					: [
-							revokeAgentCall({
-								resolver: setup.data?.resolver ?? p.registry,
-								agent: agentAddr.data ?? p.holder,
-							}),
-						];
+				: kind === "move"
+					? (moveCalls ?? [])
+					: kind === "close"
+						? closeCalls({
+								strategyHash: p.strategyHash,
+								tokens: [p.tokenIn, p.tokenOut],
+								registry: p.registry,
+								label: p.label,
+							})
+						: [
+								revokeAgentCall({
+									resolver: setup.data?.resolver ?? p.registry,
+									agent: agentAddr.data ?? p.holder,
+								}),
+							];
 		const ok = await session.run(h.accountId, calls);
 		const successor =
-			kind === "accept" && calls.some((c) => c.kind === "createPosition")
-				? nextName(p.label)
+			(kind === "accept" || kind === "move") && calls.some((c) => c.kind === "createPosition")
+				? nextLabel(p.label)
 				: null;
+		if (ok && kind === "move") setDraft(null);
 		if (ok)
 			toast(
 				"ok",
@@ -283,12 +328,81 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				<Panel tone="raised" className="flex min-h-0 flex-col gap-3">
 					<MarketChart
 						asset={demo.id}
-						priceMin={lo}
-						priceMax={hi}
+						priceMin={draft && draftValid ? draftMin : lo}
+						priceMax={draft && draftValid ? draftMax : hi}
 						side={p.side}
 						oracle={price.data}
 						history={history.data ?? []}
+						reference={draft ? { min: lo, max: hi } : undefined}
+						onRangeChange={
+							p.state !== "closed"
+								? (min, max) => setDraft({ min: String(min), max: String(max) })
+								: undefined
+						}
 					/>
+					{draft ? (
+						<div className="flex shrink-0 flex-col gap-3 border-line border-t pt-3">
+							<div className="grid grid-cols-[auto_1fr_1fr] items-end gap-3">
+								<span className="eyebrow pb-3">{t.move.title}</span>
+								<Field
+									label={t.move.low}
+									unit={t.move.unit(demo.label)}
+									error={!draftValid ? t.move.invalid : undefined}
+								>
+									<input
+										className={inputClass}
+										inputMode="decimal"
+										value={draft.min}
+										onChange={(e) => setDraft({ ...draft, min: e.target.value })}
+									/>
+								</Field>
+								<Field label={t.move.high} unit={t.move.unit(demo.label)}>
+									<input
+										className={inputClass}
+										inputMode="decimal"
+										value={draft.max}
+										onChange={(e) => setDraft({ ...draft, max: e.target.value })}
+									/>
+								</Field>
+							</div>
+							<p className="text-muted text-sm">
+								{t.move.body(
+									nextLabel(p.label),
+									fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol),
+								)}
+							</p>
+							<div className="flex flex-wrap items-center gap-3">
+								<Button
+									onClick={() => act("move")}
+									disabled={
+										!canAct ||
+										!moveCalls ||
+										!p.makerMatches ||
+										p.balanceIn === 0n ||
+										session.running
+									}
+									reason={
+										reason ??
+										(!p.makerMatches
+											? t.move.notMaker
+											: p.balanceIn === 0n
+												? t.move.nothingLeft
+												: !draftValid
+													? t.move.invalid
+													: undefined)
+									}
+									busy={acting === "move" && session.running}
+								>
+									{acting === "move" && session.running
+										? t.confirm
+										: t.move.action(moveCalls?.length ?? 4)}
+								</Button>
+								<Button variant="quiet" onClick={() => setDraft(null)} disabled={session.running}>
+									{t.move.cancel}
+								</Button>
+							</div>
+						</div>
+					) : null}
 				</Panel>
 				<Panel tone="raised" className="flex flex-col justify-center gap-4">
 					<div className="grid grid-cols-2 gap-x-6 gap-y-5">
@@ -455,9 +569,4 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 			</div>
 		</div>
 	);
-}
-
-function nextName(label: string): string {
-	const m = label.match(/^(.*)-(\d+)$/);
-	return m ? `${m[1]}-${Number(m[2]) + 1}` : `${label}-2`;
 }

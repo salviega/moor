@@ -355,7 +355,10 @@ export default function NewPosition() {
 						priceMax={validRange ? hi : 1}
 						side={side}
 						oracle={price.data}
-						height={240}
+						height={260}
+						onRangeChange={(min, max) =>
+							setForm((f) => ({ ...f, priceMin: String(min), priceMax: String(max) }))
+						}
 					/>
 					<p className="text-text">
 						{validRange

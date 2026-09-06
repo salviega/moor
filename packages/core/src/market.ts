@@ -117,3 +117,37 @@ export function applyTick(
 	};
 	return { candles: [...candles, changed], changed };
 }
+
+/** Snap step for dragging a range on the chart: two orders of magnitude under the price, never under a cent. */
+export function priceStep(price: number): number {
+	if (!(price > 0)) return 0.01;
+	return Math.max(0.01, 10 ** (Math.floor(Math.log10(price)) - 2));
+}
+
+export type RangeGrab = "body" | "min" | "max";
+
+/**
+ * Where a dragged band ends up: the body moves both edges keeping the width,
+ * an edge moves alone and stops one step short of the other. Snapped to
+ * `priceStep`, never below one step.
+ */
+export function dragRange(
+	range: { min: number; max: number },
+	grab: RangeGrab,
+	delta: number,
+): { min: number; max: number } {
+	const step = priceStep(range.max);
+	const snap = (v: number) => Number((Math.round(v / step) * step).toFixed(8));
+	const d = snap(delta);
+	if (grab === "body") {
+		const min = Math.max(step, snap(range.min + d));
+		return { min, max: snap(min + (range.max - range.min)) };
+	}
+	if (grab === "min") {
+		return {
+			min: Math.min(Math.max(step, snap(range.min + d)), snap(range.max - step)),
+			max: range.max,
+		};
+	}
+	return { min: range.min, max: Math.max(snap(range.max + d), snap(range.min + step)) };
+}

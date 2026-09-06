@@ -30,6 +30,24 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Drag the range on the chart (2026-09-06).** The amber band is now a
+  control: grab its body to move it, an edge to widen or narrow it; the
+  numbers snap to a sensible step (`priceStep`: 100 for BTC, 10 for ETH) and
+  land in *Range low* / *Range high* for fine-tuning, both ways. An overlay
+  takes the pointer only while it is over the band — everywhere else the chart
+  keeps its own scroll and zoom — and the price scale is frozen for the
+  duration of a drag so the band does not run away from the cursor
+  (`dragRange` in `packages/core/src/market.ts`, 5 tests). On the form that
+  is all it is: nothing is signed until *Review*. On an open position it is a
+  real change: the range lives inside the order, so moving it means closing
+  this order and opening a successor with what is left — the same session as
+  accepting the agent's "move the range" proposal. Dragging shows the on-chain
+  range as a fainter band for reference, opens *New range* with the two
+  fields, says what will happen ("Closes this order and opens btc-dip-2 with
+  the 1,000 tUSDC left") and offers *Move the range · 4 signatures* or
+  *Cancel*; the button explains itself when it cannot act (another wallet's
+  order, nothing left to convert, no account). Touch: the first tap arms the
+  band, then drag — the fields are the precise route on a phone.
 - **Every address is a link to the block explorer (2026-09-06).** One shared
   `ExplorerLink` in `components/ui.tsx` (dotted underline, opens Sepolia
   Etherscan in a new tab, full address on hover when shortened) replaces every

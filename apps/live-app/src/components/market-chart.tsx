@@ -5,15 +5,19 @@
  * range drawn as a band and the Chainlink price — the one the position and the
  * agent actually react to — as its own marked line. Two prices on purpose,
  * each labelled, so "the market crossed but nothing traded" has an answer.
+ * With `onRangeChange` the band can be dragged: the body moves it, an edge
+ * resizes it; the numbers land in the caller's fields for fine-tuning.
  * TradingView's lightweight-charts draws; @moor/core parses and folds ticks.
  */
 import {
 	applyTick,
 	type Candle,
+	dragRange,
 	INTERVALS,
 	type Interval,
 	type MarketAsset,
 	type PricePoint,
+	type RangeGrab,
 	type Venue,
 } from "@moor/core";
 import {
@@ -51,6 +55,7 @@ const t = {
 		`${side === "buy" ? "buys" : "sells"} ${lo}–${hi} · ${pct} ${dir}`,
 	showRange: "Show range",
 	followPrice: "Follow price",
+	drag: "Drag the band to move the range; its edges to widen it.",
 };
 
 type Colors = {
@@ -79,10 +84,14 @@ function cssColors(): Colors {
 
 type Placement = "in" | "above" | "below";
 type BandOpts = { min: number; max: number; fill: string; fit: boolean };
+type Range = { min: number; max: number };
 
 /** The library labels the axis in UTC; shifting the stamps by the local offset shows wall-clock time. */
 const localTime = (t: number): UTCTimestamp =>
 	(t - new Date().getTimezoneOffset() * 60) as UTCTimestamp;
+
+/** How close to an edge, in pixels, still counts as grabbing that edge. */
+const EDGE = 7;
 
 /** The range as a band behind the candles; optionally pulls the price scale to keep it in view. */
 class RangeBand implements ISeriesPrimitive<Time> {
@@ -113,7 +122,7 @@ class RangeBand implements ISeriesPrimitive<Time> {
 	private renderer: IPrimitivePaneRenderer = {
 		draw: (target) => {
 			const p = this.param;
-			if (!p) return;
+			if (!p || this.opts.fill === "transparent") return;
 			const top = p.series.priceToCoordinate(this.opts.max);
 			const bottom = p.series.priceToCoordinate(this.opts.min);
 			if (top === null || bottom === null) return;
@@ -139,6 +148,8 @@ export function MarketChart({
 	oracle,
 	history = [],
 	height,
+	reference,
+	onRangeChange,
 }: {
 	asset: MarketAsset;
 	priceMin: number;
@@ -148,14 +159,24 @@ export function MarketChart({
 	history?: PricePoint[];
 	/** Fixed height; without it the chart fills its flex parent. */
 	height?: number;
+	/** A second, fainter band: the range as it is on chain while a new one is being drawn. */
+	reference?: Range | undefined;
+	/** Makes the band draggable; called with snapped numbers while it moves. */
+	onRangeChange?: ((min: number, max: number) => void) | undefined;
 }) {
 	const box = useRef<HTMLDivElement>(null);
 	const chart = useRef<IChartApi | null>(null);
 	const series = useRef<ISeriesApi<"Candlestick"> | null>(null);
 	const band = useRef<RangeBand | null>(null);
+	const refBand = useRef<RangeBand | null>(null);
 	const oracleLine = useRef<IPriceLine | null>(null);
 	const colors = useRef<Colors | null>(null);
 	const candles = useRef<Candle[]>([]);
+	const range = useRef<Range>({ min: priceMin, max: priceMax });
+	const onRange = useRef(onRangeChange);
+	const drag = useRef<{ grab: RangeGrab; startY: number; start: Range } | null>(null);
+	const overlay = useRef<HTMLDivElement>(null);
+	const raf = useRef(0);
 	const [interval, setInterval_] = useState<Interval>("1m");
 	const [status, setStatus] = useState<StreamStatus | "loading" | "error">("loading");
 	const [venue, setVenue] = useState<Venue>("binance");
@@ -163,6 +184,28 @@ export function MarketChart({
 	const [placement, setPlacement] = useState<Placement>("in");
 	// The range is the point of the chart: keep it in view by default; "Follow price" zooms into the candles.
 	const [fit, setFit] = useState(true);
+	const [axes, setAxes] = useState({ right: 0, bottom: 0 });
+	range.current = { min: priceMin, max: priceMax };
+	onRange.current = onRangeChange;
+
+	/** Which part of the band is under a pane-relative y, if any. */
+	const zoneAt = (y: number): RangeGrab | null => {
+		const s = series.current;
+		if (!s || !onRange.current) return null;
+		const top = s.priceToCoordinate(range.current.max);
+		const bottom = s.priceToCoordinate(range.current.min);
+		if (top === null || bottom === null) return null;
+		if (Math.abs(y - top) <= EDGE) return "max";
+		if (Math.abs(y - bottom) <= EDGE) return "min";
+		return y > top && y < bottom ? "body" : null;
+	};
+	/** Arms the overlay imperatively — through state it would miss a press that follows the hover by a frame. */
+	const arm = (zone: RangeGrab | null, dragging = false) => {
+		const el = overlay.current;
+		if (!el) return;
+		el.style.pointerEvents = zone || dragging ? "auto" : "none";
+		el.style.cursor = dragging ? "grabbing" : zone === "body" ? "grab" : "ns-resize";
+	};
 
 	// The chart itself, once.
 	useEffect(() => {
@@ -191,17 +234,32 @@ export function MarketChart({
 			wickDownColor: c.bad,
 			priceFormat: { type: "price", precision: 2, minMove: 0.01 },
 		});
-		// The range and the oracle are applied by the effects below, on mount and on every change.
+		// The ranges and the oracle are applied by the effects below, on mount and on every change.
+		const r = new RangeBand({ min: 0, max: 0, fill: "transparent", fit: false }, () => {});
 		const b = new RangeBand({ min: 0, max: 0, fill: `${c.accent}33`, fit: false }, setPlacement);
+		s.attachPrimitive(r);
 		s.attachPrimitive(b);
+		// Hovering the band arms the drag overlay; anywhere else the chart keeps the pointer.
+		ch.subscribeCrosshairMove((param) => {
+			if (drag.current) return;
+			const y = param.point?.y;
+			arm(y === undefined ? null : zoneAt(y));
+			setAxes((a) => {
+				const right = ch.priceScale("right").width();
+				const bottom = ch.timeScale().height();
+				return a.right === right && a.bottom === bottom ? a : { right, bottom };
+			});
+		});
 		chart.current = ch;
 		series.current = s;
 		band.current = b;
+		refBand.current = r;
 		return () => {
 			ch.remove();
 			chart.current = null;
 			series.current = null;
 			band.current = null;
+			refBand.current = null;
 			oracleLine.current = null;
 		};
 	}, []);
@@ -224,6 +282,15 @@ export function MarketChart({
 		});
 		return () => s.removePriceLine(edge);
 	}, [priceMin, priceMax, side, fit]);
+	useEffect(() => {
+		const c = colors.current;
+		refBand.current?.set({
+			min: reference?.min ?? 0,
+			max: reference?.max ?? 0,
+			fill: reference && c ? `${c.accent}14` : "transparent",
+			fit: !!reference && fit,
+		});
+	}, [reference, fit]);
 	useEffect(() => {
 		const s = series.current;
 		const c = colors.current;
@@ -295,6 +362,56 @@ export function MarketChart({
 			clearTimeout(flush);
 		};
 	}, [asset, interval]);
+
+	// Dragging: the overlay only exists while the pointer is over the band, so the chart keeps
+	// its own scroll and zoom everywhere else. The price scale is frozen for the duration.
+	const paneY = (e: React.PointerEvent<HTMLDivElement>) =>
+		e.clientY - e.currentTarget.getBoundingClientRect().top;
+	/** Where the band lands for a pointer at pane-relative `y`, given where the drag began. */
+	const dragged = (d: { grab: RangeGrab; startY: number; start: Range }, y: number) => {
+		const s = series.current;
+		if (!s) return null;
+		const p0 = s.coordinateToPrice(d.startY);
+		const p1 = s.coordinateToPrice(y);
+		if (p0 === null || p1 === null) return null;
+		return dragRange(d.start, d.grab, p1 - p0);
+	};
+	const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+		const ch = chart.current;
+		const y = paneY(e);
+		const grab = zoneAt(y);
+		if (!ch || !grab) return;
+		drag.current = { grab, startY: y, start: { ...range.current } };
+		e.currentTarget.setPointerCapture(e.pointerId);
+		ch.priceScale("right").applyOptions({ autoScale: false });
+		ch.applyOptions({ handleScroll: false, handleScale: false });
+		arm(grab, true);
+	};
+	const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+		const y = paneY(e);
+		const d = drag.current;
+		if (!d) {
+			arm(zoneAt(y));
+			return;
+		}
+		const next = dragged(d, y);
+		if (!next) return;
+		cancelAnimationFrame(raf.current);
+		raf.current = requestAnimationFrame(() => onRange.current?.(next.min, next.max));
+	};
+	const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
+		const d = drag.current;
+		if (!d) return;
+		// The release position is the one that counts, whether or not a move preceded it.
+		const next = dragged(d, paneY(e));
+		cancelAnimationFrame(raf.current);
+		if (next) onRange.current?.(next.min, next.max);
+		drag.current = null;
+		const ch = chart.current;
+		ch?.priceScale("right").applyOptions({ autoScale: true });
+		ch?.applyOptions({ handleScroll: true, handleScale: true });
+		arm(zoneAt(paneY(e)));
+	};
 
 	if (status === "error")
 		return (
@@ -406,12 +523,37 @@ export function MarketChart({
 				) : null}
 			</div>
 			<div
-				ref={box}
-				role="img"
-				aria-label={`${symbol} candles, ${interval}; ${side === "buy" ? "buys" : "sells"} between ${fmtShort(priceMin)} and ${fmtShort(priceMax)}`}
-				className="min-h-[200px] w-full flex-1"
+				className={height ? "relative w-full" : "relative min-h-[200px] w-full flex-1"}
 				style={height ? { height } : undefined}
-			/>
+			>
+				<div
+					ref={box}
+					role="img"
+					aria-label={`${symbol} candles, ${interval}; ${side === "buy" ? "buys" : "sells"} between ${fmtShort(priceMin)} and ${fmtShort(priceMax)}`}
+					className="absolute inset-0"
+				/>
+				{onRangeChange ? (
+					<div
+						aria-hidden
+						onPointerDown={onDown}
+						onPointerMove={onMove}
+						onPointerUp={onUp}
+						onPointerCancel={onUp}
+						onPointerLeave={() => {
+							if (!drag.current) arm(null);
+						}}
+						ref={overlay}
+						className="absolute top-0 left-0 z-10"
+						style={{
+							right: axes.right,
+							bottom: axes.bottom,
+							pointerEvents: "none",
+							touchAction: "none",
+						}}
+					/>
+				) : null}
+			</div>
+			{onRangeChange ? <p className="text-dim text-xs">{t.drag}</p> : null}
 		</div>
 	);
 }
