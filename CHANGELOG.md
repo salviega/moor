@@ -30,6 +30,11 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Fit to the viewport (2026-09-06).** The dashboard uses the whole width:
+  chart beside the numbers, the proposal band horizontal, agent / close /
+  technical details in one row, list rows taller with their own range ruler;
+  at 1512 × 785 everything of a position is visible without scrolling. The
+  form and setup pages keep a reading width.
 - **Dashboard layout and account control (2026-09-06).** The home is now a
   two-column panel: left, your name, the price with a compact ruler and the
   positions as selectable rows; right, the selected position in panels

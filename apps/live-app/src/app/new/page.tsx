@@ -186,7 +186,7 @@ export default function NewPosition() {
 	if (plan) return <Review plan={plan} price={p} onBack={() => setPlan(null)} />;
 
 	return (
-		<>
+		<div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
 			<h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
 			<NameField />
 			{setup.data && (!setup.data.registry || !setup.data.resolver) ? (
@@ -328,7 +328,7 @@ export default function NewPosition() {
 					{where ? <p className="text-muted text-sm">{where}</p> : null}
 				</Panel>
 			</form>
-		</>
+		</div>
 	);
 }
 

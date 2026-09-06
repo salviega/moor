@@ -53,7 +53,7 @@ export function Nav() {
 	);
 	return (
 		<header className="border-line border-b">
-			<div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2">
+			<div className="flex w-full flex-wrap items-center justify-between gap-2 px-5 py-1.5 lg:px-8">
 				<nav className="flex items-center gap-1" aria-label="Main">
 					<Link
 						href="/"

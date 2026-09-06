@@ -101,7 +101,7 @@ function DashboardInner() {
 				) : null}
 			</Panel>
 			<div className="flex items-center justify-between">
-				<h1 className="font-semibold text-lg tracking-tight">{t.title}</h1>
+				<h1 className="font-semibold text-xl tracking-tight">{t.title}</h1>
 				<Link href="/new">
 					<Button className="min-h-9 px-3 py-1 text-xs">{t.open}</Button>
 				</Link>
@@ -158,6 +158,7 @@ function DashboardInner() {
 							key={p.name}
 							p={p}
 							now={now}
+							price={price.data?.price}
 							active={p.label === current}
 							onPick={() => router.push(`/?position=${encodeURIComponent(p.label)}`)}
 						/>
@@ -168,9 +169,9 @@ function DashboardInner() {
 	);
 
 	return (
-		<div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(300px,1fr)_2.2fr]">
+		<div className="grid grid-cols-1 gap-6 lg:min-h-[calc(100vh-80px)] lg:grid-cols-[minmax(340px,420px)_1fr]">
 			<aside className={selected ? "hidden lg:block" : ""}>{list}</aside>
-			<section className={selected ? "" : "hidden lg:block"} aria-live="polite">
+			<section className={`flex flex-col ${selected ? "" : "hidden lg:flex"}`} aria-live="polite">
 				{selected ? (
 					<button
 						type="button"
@@ -181,7 +182,7 @@ function DashboardInner() {
 					</button>
 				) : null}
 				{current ? (
-					<div className="flex flex-col gap-4">
+					<div className="flex flex-1 flex-col">
 						<PositionPanel key={current} label={current} embedded />
 					</div>
 				) : q.isLoading ? (
@@ -205,11 +206,13 @@ function Row({
 	now,
 	active,
 	onPick,
+	price,
 }: {
 	p: PositionView;
 	now: number;
 	active: boolean;
 	onPick: () => void;
+	price: number | undefined;
 }) {
 	const tokenIn = p.side === "buy" ? demoPair.quote : demoPair.base;
 	const pending = p.agent.proposal && p.agent.proposal.kind !== "none";
@@ -224,14 +227,21 @@ function Row({
 				type="button"
 				onClick={onPick}
 				aria-current={active ? "true" : undefined}
-				className={`flex w-full flex-col gap-1.5 p-3 text-left hover:bg-ink-1 ${active ? "border-l-2 border-l-accent bg-ink-1" : "border-l-2 border-l-transparent"}`}
+				className={`flex min-h-24 w-full flex-col gap-2 p-4 text-left hover:bg-ink-1 ${active ? "border-l-2 border-l-accent bg-ink-1" : "border-l-2 border-l-transparent"}`}
 			>
-				<span className="flex items-center justify-between gap-2">
-					<span className="truncate text-text">{p.name}</span>
+				<span className="flex items-center justify-between gap-3">
+					<span className="truncate text-base text-text">{p.name}</span>
 					<StateMark state={p.state} />
 				</span>
+				<RangeRuler
+					compact
+					priceMin={Number(p.priceMin)}
+					priceMax={Number(p.priceMax)}
+					price={price}
+					side={p.side}
+				/>
 				<span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-					<span className="num text-dim text-xs">
+					<span className="num text-muted text-sm">
 						{p.side === "buy" ? "Buy" : "Sell"} {fmtPrice(Number(p.priceMin))}–
 						{fmtPrice(Number(p.priceMax))} ·{" "}
 						{p.amountKnown
@@ -240,7 +250,7 @@ function Row({
 						{p.amountKnown && p.converted > 0 ? ` · ${fmtPct(p.converted)} done` : ""}
 					</span>
 					{pending ? (
-						<span className="rounded-sm border border-accent/60 px-1.5 py-0.5 text-accent text-xs">
+						<span className="rounded-sm border border-accent/60 px-2 py-0.5 text-accent text-xs">
 							{t.needsYou}
 						</span>
 					) : null}
