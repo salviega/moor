@@ -52,20 +52,22 @@ export function PendingBand({
 			className="flex flex-col gap-3 rounded-md border border-accent/50 border-l-4 border-l-accent bg-ink-1 p-4"
 			aria-labelledby="proposal-title"
 		>
-			<span className="eyebrow text-accent">{t.eyebrow}</span>
-			<h2 id="proposal-title" className="text-lg">
-				{t.verbs[proposal.kind]}
-				{range ? (
-					<>
-						{" to "}
-						<span className="num">{range}</span>
-					</>
-				) : null}
-			</h2>
-			<p className="text-muted">{proposal.reasoning}</p>
-			{simulation ? <p className="text-dim text-sm">{simulation}</p> : null}
-			<p className="text-dim text-xs">{t.writtenBy(when)}</p>
-			<div className="flex flex-wrap items-center gap-3">
+			<div className="flex flex-col gap-1.5">
+				<span className="eyebrow text-accent">{t.eyebrow}</span>
+				<h2 id="proposal-title" className="text-lg">
+					{t.verbs[proposal.kind]}
+					{range ? (
+						<>
+							{" to "}
+							<span className="num">{range}</span>
+						</>
+					) : null}
+				</h2>
+				<p className="text-muted">{proposal.reasoning}</p>
+				{simulation ? <p className="text-dim text-sm">{simulation}</p> : null}
+				<p className="text-dim text-xs">{t.writtenBy(when)}</p>
+			</div>
+			<div className="flex flex-wrap items-center gap-3 xl:flex-col xl:items-stretch">
 				<Button onClick={onReview} disabled={!!disabledReason} reason={disabledReason} busy={busy}>
 					{t.review} · {signatures} signature{signatures === 1 ? "" : "s"}
 				</Button>

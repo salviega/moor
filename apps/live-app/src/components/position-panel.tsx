@@ -15,7 +15,17 @@ import { RangeRuler } from "@/components/range-ruler";
 import { useToast } from "@/components/toast";
 import { Button, Details, Notice, Panel, Skeleton, Stat, StateMark } from "@/components/ui";
 import { publicClient } from "@/lib/chain";
-import { ago, daysLeft, fmtAmount, fmtDate, fmtPct, fmtPrice, fmtUsd, short } from "@/lib/format";
+import {
+	ago,
+	daysLeft,
+	fmtAmount,
+	fmtDate,
+	fmtPct,
+	fmtPrice,
+	fmtShort,
+	fmtUsd,
+	short,
+} from "@/lib/format";
 import { useHolder } from "@/lib/holder";
 import { demoPair, explorer } from "@/lib/pair";
 import {
@@ -251,61 +261,66 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				/>
 			) : null}
 
-			<Panel tone="raised" className="flex flex-col gap-4">
-				<RangeRuler
-					priceMin={lo}
-					priceMax={hi}
-					price={cur}
-					history={history.data ?? []}
-					side={p.side}
-				/>
-				<div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-					<Stat
-						label={t.stats.committed}
-						value={
-							p.amountKnown ? fmtAmount(p.amountIn ?? 0n, tokenIn.decimals, tokenIn.symbol) : "—"
-						}
-						sub={
-							p.amountKnown && cur
-								? `≈ ${fmtUsd(p.amountIn ?? 0n, tokenIn.decimals, p.side === "buy" ? 1 : cur)}`
-								: undefined
-						}
+			<div className="grid grid-cols-1 gap-4 xl:grid-cols-[3fr_2fr]">
+				<Panel tone="raised" className="flex flex-col justify-center gap-3">
+					<span className="eyebrow">Price against the range · last 48 h</span>
+					<RangeRuler
+						priceMin={lo}
+						priceMax={hi}
+						price={cur}
+						history={history.data ?? []}
+						side={p.side}
 					/>
-					<Stat
-						label={t.stats.left}
-						value={fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)}
-						sub={p.amountKnown ? `${fmtPct(p.converted)} converted` : undefined}
-					/>
-					<Stat
-						label={t.stats.received}
-						value={fmtAmount(p.balanceOut, tokenOut.decimals, tokenOut.symbol)}
-						sub={
-							cur && p.balanceOut > 0n
-								? `≈ ${fmtUsd(p.balanceOut, tokenOut.decimals, p.side === "buy" ? cur : 1)}`
-								: undefined
-						}
-					/>
-					<Stat
-						label={t.stats.expires}
-						value={p.expiry ? fmtDate(p.expiry) : "—"}
-						sub={p.expiry ? `${daysLeft(p.expiry, now)} days left` : undefined}
-					/>
-					<Stat
-						label="Range"
-						value={`${fmtPrice(lo)} – ${fmtPrice(hi)}`}
-						sub={`${p.side === "buy" ? "buys" : "sells"} BTC · USD per BTC`}
-					/>
-					<Stat
-						label="Owner"
-						value={short(p.holder)}
-						sub={
-							h.address && p.holder.toLowerCase() === h.address.toLowerCase()
-								? "this account"
-								: undefined
-						}
-					/>
-				</div>
-			</Panel>
+				</Panel>
+				<Panel tone="raised" className="flex flex-col gap-4">
+					<div className="grid grid-cols-2 gap-x-6 gap-y-4">
+						<Stat
+							label={t.stats.committed}
+							value={
+								p.amountKnown ? fmtAmount(p.amountIn ?? 0n, tokenIn.decimals, tokenIn.symbol) : "—"
+							}
+							sub={
+								p.amountKnown && cur
+									? `≈ ${fmtUsd(p.amountIn ?? 0n, tokenIn.decimals, p.side === "buy" ? 1 : cur)}`
+									: undefined
+							}
+						/>
+						<Stat
+							label={t.stats.left}
+							value={fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)}
+							sub={p.amountKnown ? `${fmtPct(p.converted)} converted` : undefined}
+						/>
+						<Stat
+							label={t.stats.received}
+							value={fmtAmount(p.balanceOut, tokenOut.decimals, tokenOut.symbol)}
+							sub={
+								cur && p.balanceOut > 0n
+									? `≈ ${fmtUsd(p.balanceOut, tokenOut.decimals, p.side === "buy" ? cur : 1)}`
+									: undefined
+							}
+						/>
+						<Stat
+							label={t.stats.expires}
+							value={p.expiry ? fmtDate(p.expiry) : "—"}
+							sub={p.expiry ? `${daysLeft(p.expiry, now)} days left` : undefined}
+						/>
+						<Stat
+							label="Range"
+							value={`${fmtPrice(lo)} – ${fmtPrice(hi)}`}
+							sub={`${p.side === "buy" ? "buys" : "sells"} BTC · USD per BTC`}
+						/>
+						<Stat
+							label="Owner"
+							value={short(p.holder)}
+							sub={
+								h.address && p.holder.toLowerCase() === h.address.toLowerCase()
+									? "this account"
+									: undefined
+							}
+						/>
+					</div>
+				</Panel>
+			</div>
 			{!p.makerMatches ? (
 				<Notice tone="warn" title={t.notMaker.title}>
 					{t.notMaker.body}
@@ -313,7 +328,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 			) : null}
 			{!p.amountKnown ? <Notice tone="info">{t.unknownAmount}</Notice> : null}
 
-			<div className="grid grid-cols-1 gap-4 xl:grid-cols-[3fr_2fr]">
+			<div className="grid grid-cols-1 gap-4 xl:grid-cols-[3fr_2fr_2fr]">
 				<Panel className="flex flex-col gap-3">
 					<div className="flex flex-wrap items-baseline justify-between gap-2">
 						<h2 className="text-base">{t.agent.title}</h2>
@@ -397,24 +412,24 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 						</div>
 					</Panel>
 				) : null}
-			</div>
 
-			<Details>
-				<span>name {p.name}</span>
-				<span>strategyHash {p.strategyHash}</span>
-				<span>owner {p.holder}</span>
-				<span>registry {p.registry}</span>
-				<span>tokenIn {p.tokenIn}</span>
-				<span>tokenOut {p.tokenOut}</span>
-				<a
-					className="underline"
-					href={explorer("address", p.holder)}
-					target="_blank"
-					rel="noreferrer"
-				>
-					owner on etherscan
-				</a>
-			</Details>
+				<Details>
+					<span>name {p.name}</span>
+					<span>strategyHash {p.strategyHash}</span>
+					<span>owner {p.holder}</span>
+					<span>registry {p.registry}</span>
+					<span>tokenIn {p.tokenIn}</span>
+					<span>tokenOut {p.tokenOut}</span>
+					<a
+						className="underline"
+						href={explorer("address", p.holder)}
+						target="_blank"
+						rel="noreferrer"
+					>
+						owner on etherscan
+					</a>
+				</Details>
+			</div>
 		</>
 	);
 }

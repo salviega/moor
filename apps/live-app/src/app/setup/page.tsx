@@ -65,7 +65,7 @@ export default function Setup() {
 		: [];
 	const complete = rows.length > 0 && rows.every(([, ok]) => ok);
 	return (
-		<>
+		<div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
 			<h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
 			<NameField quiet />
 			<p className="max-w-prose text-muted">{t.intro}</p>
@@ -116,6 +116,6 @@ export default function Setup() {
 					$SEPOLIA_RPC_URL --ledger --hd-paths "m/44'/60'/0'/0/0" --broadcast
 				</span>
 			</Details>
-		</>
+		</div>
 	);
 }
