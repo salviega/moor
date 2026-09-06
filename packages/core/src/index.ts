@@ -3,6 +3,7 @@ export * from "./addresses";
 export * from "./agent";
 export * from "./fees";
 export * from "./flow";
+export * from "./history";
 export * from "./names";
 export * from "./position";
 export * from "./program";

@@ -48,7 +48,7 @@ Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scrip
 | **`@ledgerhq/wallet-api-client-react`** | 1.4     | Hooks sobre el cliente: `useAccounts`, `useSignTransaction`. Menos plomería en los componentes             |
 | **`@ledgerhq/wallet-api-simulator`**    | 2.3     | Simula Ledger Live en el navegador para desarrollar **sin abrir Ledger Live ni conectar el dispositivo**. Solo desarrollo |
 | **Tailwind CSS**                        | 4.x     | Estilos. Configuración por CSS                                                                            |
-| **lucide-react**                        | 1.41    | Iconos. Los componentes (botón, tarjeta, campo, aviso, badge de estado, toast) son seis funciones propias en `src/components/`; no hizo falta shadcn/ui |
+| **lucide-react**                        | 1.41    | Iconos. Los componentes (botón con motivo de deshabilitado, panel, campo con unidad, aviso con acción, marca de estado, detalles técnicos, skeleton, gráfico de rango, banda de propuesta, toast) son funciones propias en `src/components/`; no hizo falta shadcn/ui. Tokens en `globals.css` (`@theme`): un acento ámbar para "requiere tu firma", monoespaciada para cifras |
 | **TanStack Query**                      | 5.x     | Polling de balances, estado y records del agente. Caché y reintentos sin escribirlos                     |
 
 **No hay conexión de wallet.** Ni wagmi, ni RainbowKit, ni WalletConnect: dentro de Ledger Live, la cuenta la da la Wallet API y la firma la hace Ledger Live. viem solo lee.

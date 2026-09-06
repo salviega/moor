@@ -1,112 +1,209 @@
 "use client";
 
-/** Positions (04 §5): every name under the holder's registry, with state, converted share and the agent's pulse. */
-import { Plus } from "lucide-react";
+/**
+ * Positions — the logbook. A holder comes back to answer one question: do I
+ * have to do anything today? Every row says its state, where the price sits
+ * against the range, what is left, and whether the agent is alive. Nothing
+ * here is stored by Moor: it is ENS, Aqua and Chainlink, read now.
+ */
+import type { PositionView } from "@moor/core";
 import Link from "next/link";
-import { Button, Card, Notice, StateBadge } from "@/components/ui";
+import { RangeRuler } from "@/components/range-ruler";
+import { Button, Notice, Skeleton, StateMark } from "@/components/ui";
 import { ago, fmtAmount, fmtPct, fmtPrice } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
 import { demoPair } from "@/lib/pair";
-import { usePositions, usePrice } from "@/lib/queries";
+import { usePositions, usePrice, usePriceHistory } from "@/lib/queries";
 import { NameField } from "./name-field";
 
 const t = {
 	title: "Positions",
-	subtitle: (name: string) =>
-		`Names under ${name}, read from ENS and Aqua. Nothing here is stored by Moor.`,
-	price: (p: string, when: string) => `BTC/USD ${p} · Chainlink, ${when}`,
-	empty: "No positions yet. A position is a name under yours that already contains the order.",
-	noRegistry: "This name has no Moor registry yet — run first-time setup once.",
-	setup: "First-time setup",
-	newPosition: "New position",
-	loading: "Reading ENS and Aqua…",
-	error: "Could not read positions.",
-	range: (side: string, min: string, max: string) => `${side} between ${min} and ${max}`,
-	converted: "converted",
-	committed: "committed",
-	unknownAmount: "committed amount not on the name (named before phase 3)",
-	agentSilent: "agent has never reported",
-	agentStale: (when: string) => `agent last reported ${when} — stale`,
-	agentOk: (when: string) => `agent reported ${when}`,
-	notMaker: "shipped by another wallet",
+	price: (p: string) => `BTC · ${p} USD`,
+	priceWhen: (when: string, stale: boolean) =>
+		stale ? `Chainlink, ${when} — older than usual` : `Chainlink, ${when}`,
+	open: "Open a position",
+	empty: {
+		title: "No positions under this name yet",
+		body: "A position is a name under yours that already holds the order: it buys or sells BTC only when the price enters the range you chose, earns a fee on each trade, and your tokens never leave your wallet.",
+	},
+	noRegistry: {
+		title: "This name is not set up for Moor yet",
+		body: "Once per name, Moor's registrar is allowed to create position names under it — and nothing else.",
+		action: "See what setup does",
+	},
+	error: {
+		title: "Could not read your positions",
+		body: "Sepolia did not answer. Nothing is wrong with your positions; the read failed.",
+		retry: "Try again",
+	},
+	cols: { position: "Position", range: "Range · price", left: "Left to convert", agent: "Agent" },
+	needsYou: "Needs your signature",
+	agent: {
+		silent: "never reported",
+		stale: (w: string) => `quiet since ${w}`,
+		ok: (w: string) => `reported ${w}`,
+	},
+	pending: "pending",
 };
 
 export default function Positions() {
 	const h = useHolder();
 	const price = usePrice();
+	const history = usePriceHistory();
 	const q = usePositions(h.name, h.parentLabel);
 	const now = Date.now() / 1000;
+	const stale = price.data ? now - price.data.updatedAt > 5400 : false;
 
 	return (
 		<>
-			<header className="flex flex-wrap items-end justify-between gap-3">
-				<div>
+			<header className="flex flex-wrap items-end justify-between gap-4">
+				<div className="flex flex-col gap-1">
 					<h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
-					<p className="text-neutral-400 text-sm">{t.subtitle(h.name)}</p>
 					{price.data ? (
-						<p className="mt-1 text-neutral-500 text-xs">
-							{t.price(fmtPrice(price.data.price), ago(price.data.updatedAt, now))}
+						<p className="num text-muted text-sm">
+							{t.price(fmtPrice(price.data.price))}{" "}
+							<span className="text-dim">
+								· {t.priceWhen(ago(price.data.updatedAt, now), stale)}
+							</span>
 						</p>
-					) : null}
+					) : (
+						<Skeleton className="h-4 w-56" />
+					)}
 				</div>
 				<Link href="/new">
-					<Button>
-						<Plus className="h-4 w-4" aria-hidden /> {t.newPosition}
-					</Button>
+					<Button>{t.open}</Button>
 				</Link>
 			</header>
-			<NameField />
-			{q.isLoading ? <p className="text-neutral-400 text-sm">{t.loading}</p> : null}
+			<NameField quiet />
+
+			{q.isLoading ? (
+				<ul className="flex flex-col gap-2" aria-busy="true" aria-label="Loading positions">
+					{[0, 1].map((i) => (
+						<li key={i} className="flex flex-col gap-3 rounded-md border border-line p-4">
+							<Skeleton className="h-5 w-48" />
+							<Skeleton className="h-7 w-full" />
+							<Skeleton className="h-4 w-64" />
+						</li>
+					))}
+				</ul>
+			) : null}
 			{q.isError ? (
-				<Notice kind="error">
-					{t.error} {q.error instanceof Error ? q.error.message.split("\n")[0] : ""}
+				<Notice
+					tone="error"
+					title={t.error.title}
+					action={
+						<Button variant="quiet" onClick={() => q.refetch()}>
+							{t.error.retry}
+						</Button>
+					}
+				>
+					{t.error.body}
 				</Notice>
 			) : null}
 			{q.data && !q.data.registry ? (
-				<Notice kind="warn">
-					{t.noRegistry}{" "}
-					<Link className="underline" href="/setup">
-						{t.setup}
-					</Link>
+				<Notice
+					tone="warn"
+					title={t.noRegistry.title}
+					action={
+						<Link href="/setup" className="underline">
+							{t.noRegistry.action}
+						</Link>
+					}
+				>
+					{t.noRegistry.body}
 				</Notice>
 			) : null}
-			{q.data?.registry && q.data.positions.length === 0 ? <Notice>{t.empty}</Notice> : null}
-			<ul className="flex flex-col gap-3">
-				{q.data?.positions.map((p) => {
-					const tokenIn = p.side === "buy" ? demoPair.quote : demoPair.base;
-					const agent = p.agent.checkedAt
-						? now - p.agent.checkedAt > 3600
-							? t.agentStale(ago(p.agent.checkedAt, now))
-							: t.agentOk(ago(p.agent.checkedAt, now))
-						: t.agentSilent;
-					return (
-						<li key={p.name}>
-							<Link href={`/positions/${p.label}`}>
-								<Card className="flex flex-col gap-2 hover:border-neutral-600">
-									<div className="flex items-center justify-between gap-2">
-										<span className="font-medium">{p.name}</span>
-										<StateBadge state={p.state} />
-									</div>
-									<p className="text-neutral-300 text-sm">
-										{t.range(
-											p.side === "buy" ? "Buy" : "Sell",
-											fmtPrice(Number(p.priceMin)),
-											fmtPrice(Number(p.priceMax)),
-										)}
-									</p>
-									<p className="text-neutral-400 text-sm">
-										{p.amountKnown
-											? `${fmtAmount(p.amountIn ?? 0n, tokenIn.decimals, tokenIn.symbol)} ${t.committed} · ${fmtPct(p.converted)} ${t.converted}`
-											: t.unknownAmount}
-										{p.makerMatches ? "" : ` · ${t.notMaker}`}
-									</p>
-									<p className="text-neutral-500 text-xs">{agent}</p>
-								</Card>
-							</Link>
-						</li>
-					);
-				})}
-			</ul>
+			{q.data?.registry && q.data.positions.length === 0 ? (
+				<section className="flex flex-col gap-3 rounded-md border border-line border-dashed p-6">
+					<h2 className="text-lg">{t.empty.title}</h2>
+					<p className="max-w-prose text-muted">{t.empty.body}</p>
+					<Link href="/new" className="self-start">
+						<Button>{t.open}</Button>
+					</Link>
+				</section>
+			) : null}
+
+			{q.data?.positions.length ? (
+				<ul
+					className="flex flex-col divide-y divide-line rounded-md border border-line"
+					aria-label="Your positions"
+				>
+					{q.data.positions.map((p) => (
+						<Row
+							key={p.name}
+							p={p}
+							price={price.data?.price}
+							history={history.data ?? []}
+							now={now}
+						/>
+					))}
+				</ul>
+			) : null}
 		</>
+	);
+}
+
+function Row({
+	p,
+	price,
+	history,
+	now,
+}: {
+	p: PositionView;
+	price: number | undefined;
+	history: { price: number; updatedAt: number }[];
+	now: number;
+}) {
+	const tokenIn = p.side === "buy" ? demoPair.quote : demoPair.base;
+	const pending = p.agent.proposal && p.agent.proposal.kind !== "none";
+	const agent = p.agent.checkedAt
+		? now - p.agent.checkedAt > 3600
+			? t.agent.stale(ago(p.agent.checkedAt, now))
+			: t.agent.ok(ago(p.agent.checkedAt, now))
+		: t.agent.silent;
+	return (
+		<li>
+			<Link
+				href={`/positions/${p.label}`}
+				className="grid grid-cols-1 gap-3 p-4 hover:bg-ink-1 sm:grid-cols-[1.2fr_1.4fr_1fr] sm:items-center sm:gap-6"
+			>
+				<div className="flex min-w-0 flex-col gap-1">
+					<span className="truncate text-base text-text">{p.name}</span>
+					<span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+						<StateMark state={p.state} />
+						{pending ? (
+							<span className="rounded-sm border border-accent/60 px-1.5 py-0.5 text-accent text-xs">
+								{t.needsYou}
+							</span>
+						) : null}
+					</span>
+				</div>
+				<div className="flex flex-col gap-1">
+					<RangeRuler
+						compact
+						priceMin={Number(p.priceMin)}
+						priceMax={Number(p.priceMax)}
+						price={price}
+						history={history}
+						side={p.side}
+					/>
+					<span className="num text-dim text-xs">
+						{p.side === "buy" ? "Buy" : "Sell"} {fmtPrice(Number(p.priceMin))} –{" "}
+						{fmtPrice(Number(p.priceMax))}
+					</span>
+				</div>
+				<div className="flex flex-col gap-0.5 sm:text-right">
+					<span className="num text-text">
+						{p.amountKnown
+							? fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)
+							: "amount unknown"}
+					</span>
+					{p.amountKnown ? (
+						<span className="num text-dim text-xs">{fmtPct(p.converted)} converted</span>
+					) : null}
+					<span className="text-dim text-xs">agent {agent}</span>
+				</div>
+			</Link>
+		</li>
 	);
 }

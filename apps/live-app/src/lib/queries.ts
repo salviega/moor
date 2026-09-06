@@ -15,12 +15,23 @@ import {
 	permissionedResolverAbi,
 	readPositionView,
 	readPrice,
+	readPriceHistory,
 } from "@moor/core";
 import { useQuery } from "@tanstack/react-query";
 import type { Address } from "viem";
 import { logsClient, publicClient } from "./chain";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
+
+/** Where the price has been: the last 48 Chainlink rounds (one per hour on Sepolia), one multicall. */
+export function usePriceHistory() {
+	return useQuery({
+		queryKey: ["price-history"],
+		queryFn: () => readPriceHistory(publicClient, { rounds: 48 }),
+		staleTime: 10 * 60_000,
+		refetchInterval: 10 * 60_000,
+	});
+}
 
 export function usePrice() {
 	return useQuery({
