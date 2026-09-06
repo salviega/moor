@@ -35,9 +35,12 @@ Two things this project's entries carry that a web app's would not:
   numbers snap to a sensible step (`priceStep`: 100 for BTC, 10 for ETH) and
   land in *Range low* / *Range high* for fine-tuning, both ways. An overlay
   takes the pointer only while it is over the band — everywhere else the chart
-  keeps its own scroll and zoom — and the price scale is frozen for the
-  duration of a drag so the band does not run away from the cursor
-  (`dragRange` in `packages/core/src/market.ts`, 5 tests). On the form that
+  keeps its own scroll and zoom. **The scale follows the drag**: autoscale
+  stays on, so as the band nears the market price the chart zooms in for
+  precision and as it moves away the scale opens up; the point that was
+  grabbed is re-anchored under the cursor against the live scale on every
+  move, which is what keeps the band from running away while the scale
+  changes under it (`dragRange` in `packages/core/src/market.ts`, 5 tests). On the form that
   is all it is: nothing is signed until *Review*. On an open position it is a
   real change: the range lives inside the order, so moving it means closing
   this order and opening a successor with what is left — the same session as

@@ -174,7 +174,7 @@ export function MarketChart({
 	const candles = useRef<Candle[]>([]);
 	const range = useRef<Range>({ min: priceMin, max: priceMax });
 	const onRange = useRef(onRangeChange);
-	const drag = useRef<{ grab: RangeGrab; startY: number; start: Range } | null>(null);
+	const drag = useRef<{ grab: RangeGrab; off: number; start: Range } | null>(null);
 	const overlay = useRef<HTMLDivElement>(null);
 	const raf = useRef(0);
 	const [interval, setInterval_] = useState<Interval>("1m");
@@ -288,9 +288,11 @@ export function MarketChart({
 			min: reference?.min ?? 0,
 			max: reference?.max ?? 0,
 			fill: reference && c ? `${c.accent}14` : "transparent",
-			fit: !!reference && fit,
+			// The old band is context, drawn but never holding the scale open: the chart zooms on
+			// the new range and the price, which is where the holder is looking.
+			fit: false,
 		});
-	}, [reference, fit]);
+	}, [reference]);
 	useEffect(() => {
 		const s = series.current;
 		const c = colors.current;
@@ -367,24 +369,34 @@ export function MarketChart({
 	// its own scroll and zoom everywhere else. The price scale is frozen for the duration.
 	const paneY = (e: React.PointerEvent<HTMLDivElement>) =>
 		e.clientY - e.currentTarget.getBoundingClientRect().top;
-	/** Where the band lands for a pointer at pane-relative `y`, given where the drag began. */
-	const dragged = (d: { grab: RangeGrab; startY: number; start: Range }, y: number) => {
+	/**
+	 * Where the band lands for a pointer at pane-relative `y`: the point that was grabbed follows
+	 * the cursor under whatever the scale is *now* — so the scale is free to zoom in as the band
+	 * nears the price and out as it leaves, and the band still stays under the hand.
+	 */
+	const dragged = (d: { grab: RangeGrab; off: number; start: Range }, y: number) => {
 		const s = series.current;
 		if (!s) return null;
-		const p0 = s.coordinateToPrice(d.startY);
 		const p1 = s.coordinateToPrice(y);
-		if (p0 === null || p1 === null) return null;
-		return dragRange(d.start, d.grab, p1 - p0);
+		if (p1 === null) return null;
+		const anchor = d.grab === "max" ? d.start.max : d.start.min;
+		return dragRange(d.start, d.grab, p1 - d.off - anchor);
 	};
 	const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
 		const ch = chart.current;
+		const s = series.current;
 		const y = paneY(e);
 		const grab = zoneAt(y);
-		if (!ch || !grab) return;
-		drag.current = { grab, startY: y, start: { ...range.current } };
+		const p0 = s?.coordinateToPrice(y) ?? null;
+		if (!ch || !grab || p0 === null) return;
+		const start = { ...range.current };
+		drag.current = { grab, off: p0 - (grab === "max" ? start.max : start.min), start };
 		e.currentTarget.setPointerCapture(e.pointerId);
-		ch.priceScale("right").applyOptions({ autoScale: false });
+		// Autoscale stays on: the band and the candles set the scale together, so it tightens as
+		// they approach and widens as they part. Only the chart's own pan and zoom pause.
+		ch.priceScale("right").applyOptions({ autoScale: true });
 		ch.applyOptions({ handleScroll: false, handleScale: false });
+		setFit(true);
 		arm(grab, true);
 	};
 	const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -407,9 +419,7 @@ export function MarketChart({
 		cancelAnimationFrame(raf.current);
 		if (next) onRange.current?.(next.min, next.max);
 		drag.current = null;
-		const ch = chart.current;
-		ch?.priceScale("right").applyOptions({ autoScale: true });
-		ch?.applyOptions({ handleScroll: true, handleScale: true });
+		chart.current?.applyOptions({ handleScroll: true, handleScale: true });
 		arm(zoneAt(paneY(e)));
 	};
 
