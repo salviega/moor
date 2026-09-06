@@ -30,6 +30,24 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **A second demo asset: ETH alongside BTC (2026-09-06).** Opening a position now
+  starts with a "Which asset" choice — BTC or ETH — before buy/sell, each with its
+  own icon; every unit label and the plain-words preview ("If ETH drops below…")
+  follow the choice. `packages/core/src/pairs.ts` adds `ethPair` next to `btcPair`
+  and `resolveDemoPair(tokenIn, tokenOut)`, which derives which pair an *existing*
+  position actually is from its own on-chain token addresses rather than assuming
+  BTC — used by the dashboard rows, the position detail panel and, in
+  `apps/agent`, the proposal and simulation calls, so an ETH position is never
+  read or written as if it were BTC. `moorSepolia.testWeth` (already deployed,
+  WETH9-style: `deposit()`/`withdraw()` against real ETH, not open-mint like the
+  other test tokens) is now in `addresses.ts`. Real sponsor and coin logos
+  (`apps/live-app/public/sponsor-1inch.png`, `sponsor-ens.png`,
+  `sponsor-ledger.png`, `token-btc.png`, `token-eth.png`, `token-usdc.png`)
+  replace the landing page's text-only sponsor wordmarks and appear next to every
+  amount in the rows, the detail panel and the form. Opening a position in ETH
+  shows the holder's real (possibly zero) tWETH balance; there is no in-app wrap
+  flow yet — funding tWETH happens outside Moor, same as any other test token,
+  until a wrap step is asked for.
 - **Landing screen when disconnected (2026-09-06).** Choosing an account was
   the only thing the disconnected dashboard asked for, buried in an empty
   positions list. Replaced with `src/components/landing.tsx`: the pitch, a

@@ -16,7 +16,7 @@ import { RangeRuler } from "@/components/range-ruler";
 import { Button, Notice, Panel, Skeleton, StateMark } from "@/components/ui";
 import { ago, fmtAmount, fmtPct, fmtPrice } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
-import { demoPair } from "@/lib/pair";
+import { resolveDemoPair } from "@/lib/pair";
 import { usePositions, usePrice, usePriceHistory } from "@/lib/queries";
 import { NameField } from "./name-field";
 
@@ -238,7 +238,9 @@ function Row({
 	onPick: () => void;
 	price: number | undefined;
 }) {
-	const tokenIn = p.side === "buy" ? demoPair.quote : demoPair.base;
+	const demo = resolveDemoPair(p.tokenIn, p.tokenOut);
+	const tokenIn = p.side === "buy" ? demo.pair.quote : demo.pair.base;
+	const icon = p.side === "buy" ? "/token-usdc.png" : demo.icon;
 	const pending = p.agent.proposal && p.agent.proposal.kind !== "none";
 	const agent = p.agent.checkedAt
 		? now - p.agent.checkedAt > 3600
@@ -254,7 +256,16 @@ function Row({
 				className={`flex min-h-24 w-full flex-col gap-2 p-4 text-left hover:bg-ink-1 ${active ? "border-l-2 border-l-accent bg-ink-1" : "border-l-2 border-l-transparent"}`}
 			>
 				<span className="flex items-center justify-between gap-3">
-					<span className="truncate text-base text-text">{p.name}</span>
+					<span className="flex min-w-0 items-center gap-2">
+						<img
+							src={icon}
+							alt=""
+							width={20}
+							height={20}
+							className="h-5 w-5 shrink-0 rounded-full"
+						/>
+						<span className="truncate text-base text-text">{p.name}</span>
+					</span>
 					<StateMark state={p.state} />
 				</span>
 				<RangeRuler

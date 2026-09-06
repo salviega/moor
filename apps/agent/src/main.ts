@@ -12,7 +12,6 @@ import {
 	agentRecordValues,
 	agentSetTextCall,
 	buildReading,
-	demoPair,
 	detectTriggers,
 	deterministicProposal,
 	ensV2Sepolia,
@@ -27,6 +26,7 @@ import {
 	proposalPrompt,
 	readPositionView,
 	readPrice,
+	resolveDemoPair,
 	shouldPropose,
 	simulate,
 } from "@moor/core";
@@ -83,6 +83,7 @@ async function propose(
 	price: number,
 	now: number,
 ): Promise<{ proposal: Proposal; simulation: string; by: "claude" | "deterministic" }> {
+	const pair = resolveDemoPair(view.tokenIn, view.tokenOut);
 	const triggers = detectTriggers(view, price, now);
 	const fallback = deterministicProposal(triggers[0] ?? "farFromRange", view, price, now);
 	if (anthropic) {
@@ -90,11 +91,11 @@ async function propose(
 			const answer = await proposeWithClaude(
 				anthropic,
 				env.AGENT_MODEL,
-				proposalPrompt(view, price, now, triggers, demoPair),
+				proposalPrompt(view, price, now, triggers, pair),
 			);
 			if (answer) {
 				const proposal = { ...answer, trigger: answer.trigger ?? triggers[0] };
-				return { proposal, simulation: simulate(view, price, proposal, demoPair), by: "claude" };
+				return { proposal, simulation: simulate(view, price, proposal, pair), by: "claude" };
 			}
 			log.warn(
 				{ name: view.name },
@@ -111,7 +112,7 @@ async function propose(
 	}
 	return {
 		proposal: fallback,
-		simulation: simulate(view, price, fallback, demoPair),
+		simulation: simulate(view, price, fallback, pair),
 		by: "deterministic",
 	};
 }

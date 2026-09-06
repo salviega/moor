@@ -17,7 +17,7 @@ import { useToast } from "@/components/toast";
 import { Button, Details, Field, inputClass, Notice, Panel } from "@/components/ui";
 import { fmtAmount, fmtDate, fmtPrice, fmtUsd } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
-import { demoPair, explorer } from "@/lib/pair";
+import { btcDemo, demoPairs, explorer, resolveDemoPair } from "@/lib/pair";
 import { usePrice, usePriceHistory, useSetupStatus, useTokenAccount } from "@/lib/queries";
 import { type Step, useSignSession } from "@/lib/session";
 import { NameField } from "../name-field";
@@ -25,14 +25,15 @@ import { NameField } from "../name-field";
 const t = {
 	title: "Open a position",
 	review: "Review and sign",
+	asset: "Which asset",
 	side: "What do you want to do",
-	buy: "Buy BTC if it dips",
-	sell: "Sell BTC if it rises",
+	buy: (asset: string) => `Buy ${asset} if it dips`,
+	sell: (asset: string) => `Sell ${asset} if it rises`,
 	amount: (sym: string) => `Amount of ${sym} to commit`,
 	balance: (b: string) => `In your wallet: ${b}. It stays there.`,
 	low: "Range low",
 	high: "Range high",
-	unitPrice: "USD per BTC",
+	unitPrice: (asset: string) => `USD per ${asset}`,
 	fee: "Fee per trade",
 	feeHint: "30 bps = 0.30 %. Takers pay it; it stays in your position.",
 	days: "Runs for",
@@ -44,10 +45,10 @@ const t = {
 	back: "Back to the form",
 	preview: {
 		eyebrow: "What you are setting up",
-		buy: (amt: string, hi: string, lo: string) =>
-			`If BTC drops below ${hi}, ${amt} start buying, a little at a time, until ${lo}. Above ${hi} nothing happens and your tokens stay in your wallet.`,
-		sell: (amt: string, lo: string, hi: string) =>
-			`If BTC rises above ${lo}, ${amt} start selling, a little at a time, until ${hi}. Below ${lo} nothing happens and your tokens stay in your wallet.`,
+		buy: (asset: string, amt: string, hi: string, lo: string) =>
+			`If ${asset} drops below ${hi}, ${amt} start buying, a little at a time, until ${lo}. Above ${hi} nothing happens and your tokens stay in your wallet.`,
+		sell: (asset: string, amt: string, lo: string, hi: string) =>
+			`If ${asset} rises above ${lo}, ${amt} start selling, a little at a time, until ${hi}. Below ${lo} nothing happens and your tokens stay in your wallet.`,
 		far: (pct: string, dir: string) =>
 			`Today the price is ${pct} ${dir} the range: the position would wait.`,
 		inRange:
@@ -121,8 +122,10 @@ export default function NewPosition() {
 	const price = usePrice();
 	const history = usePriceHistory();
 	const setup = useSetupStatus(h.parentLabel);
+	const [assetId, setAssetId] = useState<"btc" | "eth">("btc");
+	const demo = demoPairs.find((d) => d.id === assetId) ?? btcDemo;
 	const [side, setSide] = useState<"buy" | "sell">("buy");
-	const tokenIn = side === "buy" ? demoPair.quote : demoPair.base;
+	const tokenIn = side === "buy" ? demo.pair.quote : demo.pair.base;
 	const acct = useTokenAccount(h.address, tokenIn.address);
 	const [form, setForm] = useState<Form>({
 		amount: "1000",
@@ -163,7 +166,7 @@ export default function NewPosition() {
 			setPlan(
 				planNewPosition({
 					holder: h.address,
-					pair: demoPair,
+					pair: demo.pair,
 					allowance: acct.data?.allowance ?? 0n,
 					names: { registry: setup.data.registry, resolver: setup.data.resolver },
 					params: {
@@ -205,6 +208,30 @@ export default function NewPosition() {
 			<form onSubmit={review} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
 				<Panel className="flex flex-col gap-5">
 					<fieldset className="flex flex-col gap-2">
+						<legend className="text-muted text-sm">{t.asset}</legend>
+						<div className="flex gap-2" role="radiogroup" aria-label={t.asset}>
+							{demoPairs.map((d) => (
+								<button
+									key={d.id}
+									type="button"
+									role="radio"
+									aria-checked={assetId === d.id}
+									onClick={() => setAssetId(d.id)}
+									className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border px-3 text-sm ${assetId === d.id ? "border-accent text-text" : "border-line-strong text-muted hover:text-text"}`}
+								>
+									<img
+										src={d.icon}
+										alt=""
+										width={18}
+										height={18}
+										className="h-[18px] w-[18px] rounded-full"
+									/>
+									{d.label}
+								</button>
+							))}
+						</div>
+					</fieldset>
+					<fieldset className="flex flex-col gap-2">
 						<legend className="text-muted text-sm">{t.side}</legend>
 						<div className="flex gap-2" role="radiogroup" aria-label={t.side}>
 							{(["buy", "sell"] as const).map((s) => (
@@ -216,7 +243,7 @@ export default function NewPosition() {
 									onClick={() => setSide(s)}
 									className={`min-h-11 flex-1 rounded-md border px-3 text-sm ${side === s ? "border-accent text-text" : "border-line-strong text-muted hover:text-text"}`}
 								>
-									{s === "buy" ? t.buy : t.sell}
+									{s === "buy" ? t.buy(demo.label) : t.sell(demo.label)}
 								</button>
 							))}
 						</div>
@@ -241,7 +268,7 @@ export default function NewPosition() {
 					<div className="grid grid-cols-2 gap-3">
 						<Field
 							label={t.low}
-							unit={t.unitPrice}
+							unit={t.unitPrice(demo.label)}
 							error={!validRange ? t.invalid.range : undefined}
 						>
 							<input
@@ -251,7 +278,7 @@ export default function NewPosition() {
 								onChange={set("priceMin")}
 							/>
 						</Field>
-						<Field label={t.high} unit={t.unitPrice}>
+						<Field label={t.high} unit={t.unitPrice(demo.label)}>
 							<input
 								className={inputClass}
 								inputMode="decimal"
@@ -321,8 +348,8 @@ export default function NewPosition() {
 					<p className="text-text">
 						{validRange
 							? side === "buy"
-								? t.preview.buy(amt, fmtPrice(hi), fmtPrice(lo))
-								: t.preview.sell(amt, fmtPrice(lo), fmtPrice(hi))
+								? t.preview.buy(demo.label, amt, fmtPrice(hi), fmtPrice(lo))
+								: t.preview.sell(demo.label, amt, fmtPrice(lo), fmtPrice(hi))
 							: t.invalid.range}
 					</p>
 					{where ? <p className="text-muted text-sm">{where}</p> : null}
@@ -347,6 +374,7 @@ function Review({
 	const qc = useQueryClient();
 	const [done, setDone] = useState(false);
 	const { side, priceMin: lo, priceMax: hi, feeBps, deadline } = plan.params;
+	const demo = resolveDemoPair(plan.tokenIn.address, plan.tokenOut.address);
 	const raw = BigInt(plan.params.amountIn);
 	const amount = fmtAmount(raw, plan.tokenIn.decimals, plan.tokenIn.symbol);
 	const usd = price ? fmtUsd(raw, plan.tokenIn.decimals, side === "buy" ? 1 : price) : null;
@@ -389,7 +417,16 @@ function Review({
 			<Panel tone="raised" className="grid grid-cols-1 gap-5 sm:grid-cols-[1fr_1fr]">
 				<div className="flex flex-col gap-1">
 					<span className="eyebrow">{t.head.asset}</span>
-					<span className="num text-3xl text-text">{amount}</span>
+					<span className="flex items-center gap-2">
+						<img
+							src={side === "buy" ? "/token-usdc.png" : demo.icon}
+							alt=""
+							width={22}
+							height={22}
+							className="h-[22px] w-[22px] shrink-0 rounded-full"
+						/>
+						<span className="num text-3xl text-text">{amount}</span>
+					</span>
 					<span className="num text-dim text-sm">
 						{usd ? `≈ ${usd} · ` : ""}
 						{t.head.stays}
@@ -399,8 +436,8 @@ function Review({
 					<span className="eyebrow">{t.head.condition}</span>
 					<span className="text-text">
 						{side === "buy"
-							? `BTC is below ${fmtPrice(Number(hi))} USD`
-							: `BTC is above ${fmtPrice(Number(lo))} USD`}
+							? `${demo.label} is below ${fmtPrice(Number(hi))} USD`
+							: `${demo.label} is above ${fmtPrice(Number(lo))} USD`}
 					</span>
 					<span className="text-dim text-sm">
 						until {fmtPrice(Number(side === "buy" ? lo : hi))} · fee {(feeBps / 100).toFixed(2)} %

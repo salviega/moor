@@ -27,7 +27,7 @@ import {
 	short,
 } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
-import { demoPair, explorer } from "@/lib/pair";
+import { btcDemo, explorer, resolveDemoPair } from "@/lib/pair";
 import {
 	usePosition,
 	usePrice,
@@ -110,8 +110,9 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 	const [acting, setActing] = useState<Act | null>(null);
 	const [dismissed, setDismissed] = useState<string | null>(null);
 	const p = q.data;
-	const tokenIn = p ? (p.side === "buy" ? demoPair.quote : demoPair.base) : demoPair.quote;
-	const tokenOut = p ? (p.side === "buy" ? demoPair.base : demoPair.quote) : demoPair.base;
+	const demo = p ? resolveDemoPair(p.tokenIn, p.tokenOut) : btcDemo;
+	const tokenIn = p ? (p.side === "buy" ? demo.pair.quote : demo.pair.base) : demo.pair.quote;
+	const tokenOut = p ? (p.side === "buy" ? demo.pair.base : demo.pair.quote) : demo.pair.base;
 	const acct = useTokenAccount(h.address, tokenIn.address);
 	const agentAddr = useQuery({
 		queryKey: ["addr", p?.agentName],
@@ -134,7 +135,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 			? acceptProposalCalls({
 					view: p,
 					proposal,
-					pair: demoPair,
+					pair: demo.pair,
 					names: { registry: p.registry, resolver: setup.data.resolver },
 					allowance: acct.data?.allowance ?? 0n,
 					now: Math.floor(now),
@@ -234,7 +235,16 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				</Link>
 			) : null}
 			<header className="flex flex-col gap-2">
-				<h1 className={`font-semibold tracking-tight ${embedded ? "text-xl" : "text-2xl"}`}>
+				<h1
+					className={`flex items-center gap-2 font-semibold tracking-tight ${embedded ? "text-xl" : "text-2xl"}`}
+				>
+					<img
+						src={p.side === "buy" ? "/token-usdc.png" : demo.icon}
+						alt=""
+						width={24}
+						height={24}
+						className="h-6 w-6 shrink-0 rounded-full"
+					/>
 					{p.name}
 				</h1>
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-1">

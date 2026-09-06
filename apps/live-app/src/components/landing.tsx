@@ -43,16 +43,19 @@ const t = {
 	sponsors: [
 		{
 			name: "1inch",
+			logo: "/sponsor-1inch.png",
 			role: "Aqua & SwapVM",
 			body: "hold the order and the balance — no Moor contract ever touches your funds.",
 		},
 		{
 			name: "ENS",
+			logo: "/sponsor-ens.png",
 			role: "ENSv2",
 			body: "gives every position a name anyone can read, with on-chain, per-key permissions.",
 		},
 		{
 			name: "Ledger",
+			logo: "/sponsor-ledger.png",
 			role: "Wallet API & Key Ring",
 			body: "sign on the device; the agent's one narrow key never touches a disk.",
 		},
@@ -104,10 +107,19 @@ export function Landing({
 
 			<div className="animate-in-3 grid grid-cols-1 gap-3 border-line border-t pt-4 sm:grid-cols-3 sm:gap-4 sm:pt-6">
 				{t.sponsors.map((s) => (
-					<div key={s.name} className="flex flex-col gap-1">
-						<span className="font-semibold text-lg text-text">{s.name}</span>
-						<span className="eyebrow text-dim">{s.role}</span>
-						<p className="text-muted text-sm">{s.body}</p>
+					<div key={s.name} className="flex items-start gap-3">
+						<img
+							src={s.logo}
+							alt=""
+							width={40}
+							height={40}
+							className="h-10 w-10 shrink-0 rounded-md border border-line object-cover"
+						/>
+						<div className="flex flex-col gap-1">
+							<span className="font-semibold text-lg text-text">{s.name}</span>
+							<span className="eyebrow text-dim">{s.role}</span>
+							<p className="text-muted text-sm">{s.body}</p>
+						</div>
 					</div>
 				))}
 			</div>

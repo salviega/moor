@@ -5,6 +5,7 @@ export * from "./fees";
 export * from "./flow";
 export * from "./history";
 export * from "./names";
+export * from "./pairs";
 export * from "./position";
 export * from "./program";
 export * from "./reads";
