@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import type { Address } from "viem";
 import { publicClient } from "./chain";
-import { SEPOLIA_CURRENCY_ID } from "./wallet-api";
+import { SEPOLIA_CURRENCY_ID, useSimulator } from "./wallet-api";
 
 const NAME_KEY = "moor.holderName";
 const ACCOUNT_KEY = "moor.accountId";
@@ -31,6 +31,8 @@ export interface Holder {
 	/** addr(name) on chain, once read; null while loading. */
 	nameAddress: Address | null | undefined;
 	nameMatches: boolean | undefined;
+	/** "ledger-live" inside the host, "simulator" under pnpm dev, "browser" when opened directly (reads only). */
+	host: "ledger-live" | "simulator" | "browser" | undefined;
 }
 
 const Ctx = createContext<Holder | null>(null);
@@ -53,6 +55,10 @@ export function HolderProvider({ children }: { children: ReactNode }) {
 			} catch {}
 		}
 	}, [requested]);
+	const [host, setHost] = useState<Holder["host"]>(undefined);
+	useEffect(() => {
+		setHost(useSimulator ? "simulator" : window.self !== window.top ? "ledger-live" : "browser");
+	}, []);
 	const [name, setNameState] = useState(DEFAULT_NAME);
 	useEffect(() => {
 		try {
@@ -100,6 +106,7 @@ export function HolderProvider({ children }: { children: ReactNode }) {
 				parentLabel: name.replace(/\.eth$/, ""),
 				nameAddress: nameAddr.data ?? (nameAddr.isLoading ? null : undefined),
 				nameMatches,
+				host,
 			}}
 		>
 			{children}

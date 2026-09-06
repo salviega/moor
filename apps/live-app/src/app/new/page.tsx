@@ -1,66 +1,101 @@
 "use client";
 
 /**
- * New position → Review & sign (04 §4.1, §5). One form, validated by the shared
- * Zod schema through `planNewPosition`; the review says in plain words what will
- * and will not happen, lists every signature, then runs the session.
+ * Open a position → Review and sign (04 §4.1). One decision: what to buy or
+ * sell, with how much, between which prices, until when. The range is drawn
+ * while the holder types; the review says in plain words what will happen,
+ * what will not, and what each of the signatures on the Ledger does.
  */
 import { type NewPositionPlan, planNewPosition } from "@moor/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Check, CircleAlert, Loader2 } from "lucide-react";
+import { Check, CircleAlert, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { parseUnits } from "viem";
+import { RangeRuler } from "@/components/range-ruler";
 import { useToast } from "@/components/toast";
-import { Button, Card, Field, inputClass, Notice } from "@/components/ui";
-import { fmtAmount, fmtPrice } from "@/lib/format";
+import { Button, Details, Field, inputClass, Notice, Panel } from "@/components/ui";
+import { fmtAmount, fmtDate, fmtPrice, fmtUsd } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
 import { demoPair, explorer } from "@/lib/pair";
-import { usePrice, useSetupStatus, useTokenAccount } from "@/lib/queries";
+import { usePrice, usePriceHistory, useSetupStatus, useTokenAccount } from "@/lib/queries";
 import { type Step, useSignSession } from "@/lib/session";
 import { NameField } from "../name-field";
 
 const t = {
-	title: "New position",
-	review: "Review & sign",
-	side: "What do you want to do?",
-	buy: "Buy BTC on a dip",
-	sell: "Sell BTC on a rise",
+	title: "Open a position",
+	review: "Review and sign",
+	side: "What do you want to do",
+	buy: "Buy BTC if it dips",
+	sell: "Sell BTC if it rises",
 	amount: (sym: string) => `Amount of ${sym} to commit`,
-	balance: (b: string) => `Balance: ${b}`,
-	priceMin: "Range: low (USDC per BTC)",
-	priceMax: "Range: high (USDC per BTC)",
-	priceNow: (p: string) =>
-		`Current price ${p} (Chainlink). A range below it buys as the price falls; above it, the reverse.`,
-	fee: "Your fee per trade (basis points)",
-	feeHint: "30 = 0.30 %. Charged to takers on what they bring; it stays in your position.",
-	days: "Runs for (days)",
-	daysHint: "The order and the name expire together.",
+	balance: (b: string) => `In your wallet: ${b}. It stays there.`,
+	low: "Range low",
+	high: "Range high",
+	unitPrice: "USD per BTC",
+	fee: "Fee per trade",
+	feeHint: "30 bps = 0.30 %. Takers pay it; it stays in your position.",
+	days: "Runs for",
+	daysUnit: "days",
+	daysHint: (d: string) => `Order and name expire together on ${d}.`,
 	label: "Name",
-	labelHint: (parent: string) => `Becomes <name>.${parent}. Lowercase letters, digits, hyphens.`,
-	next: "Review",
-	back: "Back",
-	sign: "Sign with Ledger",
+	labelHint: (parent: string) => `Becomes ⟨name⟩.${parent} — lowercase letters, digits, hyphens.`,
+	next: "Review before signing",
+	back: "Back to the form",
+	preview: {
+		eyebrow: "What you are setting up",
+		buy: (amt: string, hi: string, lo: string) =>
+			`If BTC drops below ${hi}, ${amt} start buying, a little at a time, until ${lo}. Above ${hi} nothing happens and your tokens stay in your wallet.`,
+		sell: (amt: string, lo: string, hi: string) =>
+			`If BTC rises above ${lo}, ${amt} start selling, a little at a time, until ${hi}. Below ${lo} nothing happens and your tokens stay in your wallet.`,
+		far: (pct: string, dir: string) =>
+			`Today the price is ${pct} ${dir} the range: the position would wait.`,
+		inRange:
+			"The price is inside the range today: the position would start working with the first trade.",
+	},
+	needSetup: {
+		title: "This name is not set up for Moor yet",
+		body: "Run first-time setup once; it takes a few minutes and a few signatures.",
+		action: "See setup",
+	},
+	notYours:
+		"The account you chose does not own this name, so signing would fail on chain. Choose the account that owns it.",
+	connect: "Choose the Ledger Live account that owns this name to sign.",
+	invalid: {
+		label: "Use lowercase letters, digits and hyphens.",
+		range: "The low end must be below the high end.",
+		amount: "Enter an amount above zero.",
+	},
+	sign: "Sign and open the position",
 	signing: "Confirm on your Ledger…",
-	done: "Position created",
-	viewIt: "Open the position",
-	needSetup: "First-time setup has not run for this name: no registry or resolver under it yet.",
-	setup: "Go to setup",
-	notYours: "The connected account does not own this name; signing would fail on chain.",
-	connect: "Connect the Ledger Live account that owns this name to sign.",
-	willHappen: "What will happen",
-	wontHappen: "What will not happen",
-	signatures: "Signatures, in order",
-	ledger: "Ledger shows",
-	explain: (amt: string, side: "buy" | "sell", lo: string, hi: string, fee: string) =>
-		side === "buy"
-			? `Your ${amt} stay in your wallet. When BTC drops below ${hi}, the position starts buying and earns ${fee} on each trade. If it reaches ${lo}, everything is converted to BTC — and stays BTC even if the price comes back up. If it never drops, nothing happens and you can close any time.`
-			: `Your ${amt} stay in your wallet. When BTC rises above ${lo}, the position starts selling and earns ${fee} on each trade. If it reaches ${hi}, everything is converted to USDC — and stays USDC even if the price comes back down. If it never rises, nothing happens and you can close any time.`,
-	wont: [
-		"Nobody else can move these tokens: not Moor, not the agent. Aqua only holds a virtual balance; no Moor contract is ever the maker.",
-		"The position only trades in one direction. Whatever it converts stays converted.",
-		"The name expires with the order, and cannot be transferred.",
+	done: "Position open",
+	viewIt: "Open its page",
+	failed:
+		"The session stopped. Nothing after the failed step was sent; what was sent is listed above.",
+	head: {
+		asset: "You commit",
+		stays: "stays in your wallet",
+		condition: "Trades only when",
+		never: "Never",
+	},
+	never: [
+		"Sells back what it bought. Whatever converts stays converted, even if the price returns.",
+		"Moves your tokens anywhere. Aqua keeps a virtual balance; no Moor contract is ever the maker.",
+		"Transfers the name. It belongs to this account and expires with the order.",
 	],
+	signatures: (n: number) => `${n} signatures, in this order`,
+	ledger: "On your Ledger",
+	blind: {
+		title: "Your Ledger will show raw data for these signatures",
+		body: "Moor's clear-signing descriptors exist and render on an emulated Ledger, but Ledger only shows them on a device once they are published in its registry. Until then, compare the contract address on the device with the one listed here before you approve.",
+	},
+	approvePermanent:
+		"A standing permission: Aqua may move this token from your wallet when a trade fills. You can withdraw it any time from any wallet app.",
+	reversible: {
+		approve: "reversible (revoke the permission)",
+		ship: "reversible (close the position)",
+		createPosition: "reversible (remove the name)",
+	},
 	status: {
 		pending: "waiting",
 		signing: "confirm on your Ledger",
@@ -68,18 +103,28 @@ const t = {
 		confirmed: "confirmed",
 		failed: "failed",
 	},
+	contract: "Contract",
 };
 
 const DAY = 86_400;
+type Form = {
+	amount: string;
+	priceMin: string;
+	priceMax: string;
+	feeBps: string;
+	days: string;
+	label: string;
+};
 
 export default function NewPosition() {
 	const h = useHolder();
 	const price = usePrice();
+	const history = usePriceHistory();
 	const setup = useSetupStatus(h.parentLabel);
 	const [side, setSide] = useState<"buy" | "sell">("buy");
 	const tokenIn = side === "buy" ? demoPair.quote : demoPair.base;
 	const acct = useTokenAccount(h.address, tokenIn.address);
-	const [form, setForm] = useState({
+	const [form, setForm] = useState<Form>({
 		amount: "1000",
 		priceMin: "58000",
 		priceMax: "62000",
@@ -89,74 +134,102 @@ export default function NewPosition() {
 	});
 	const [plan, setPlan] = useState<NewPositionPlan | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+	const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
 		setForm({ ...form, [k]: e.target.value });
+
+	const lo = Number(form.priceMin);
+	const hi = Number(form.priceMax);
+	const validRange = lo > 0 && hi > lo;
+	const validLabel = /^[a-z0-9-]+$/.test(form.label.trim());
+	const validAmount = Number(form.amount) > 0;
+	const deadline = Math.floor(Date.now() / 1000) + Number(form.days || 0) * DAY;
+	const p = price.data?.price;
+	const amt = validAmount ? `${form.amount} ${tokenIn.symbol}` : `your ${tokenIn.symbol}`;
+	const where =
+		p && validRange
+			? p > hi
+				? t.preview.far(`${((p / hi - 1) * 100).toFixed(0)}%`, "above")
+				: p < lo
+					? t.preview.far(`${((1 - p / lo) * 100).toFixed(0)}%`, "below")
+					: t.preview.inRange
+			: "";
 
 	const review = (e: React.FormEvent) => {
 		e.preventDefault();
 		setError(null);
 		if (!h.address) return setError(t.connect);
-		if (!setup.data?.registry || !setup.data.resolver) return setError(t.needSetup);
+		if (!setup.data?.registry || !setup.data.resolver) return setError(t.needSetup.body);
 		try {
-			const p = planNewPosition({
-				holder: h.address,
-				pair: demoPair,
-				allowance: acct.data?.allowance ?? 0n,
-				names: { registry: setup.data.registry, resolver: setup.data.resolver },
-				params: {
-					parentName: h.name,
-					label: form.label.trim(),
-					side,
-					priceMin: form.priceMin,
-					priceMax: form.priceMax,
-					amountIn: parseUnits(form.amount, tokenIn.decimals).toString(),
-					feeBps: Number(form.feeBps),
-					deadline: Math.floor(Date.now() / 1000) + Number(form.days) * DAY,
-				},
-			});
-			setPlan(p);
+			setPlan(
+				planNewPosition({
+					holder: h.address,
+					pair: demoPair,
+					allowance: acct.data?.allowance ?? 0n,
+					names: { registry: setup.data.registry, resolver: setup.data.resolver },
+					params: {
+						parentName: h.name,
+						label: form.label.trim(),
+						side,
+						priceMin: form.priceMin,
+						priceMax: form.priceMax,
+						amountIn: parseUnits(form.amount, tokenIn.decimals).toString(),
+						feeBps: Number(form.feeBps),
+						deadline,
+					},
+				}),
+			);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : String(err));
+			setError(err instanceof Error ? (err.message.split("\n")[0] ?? "") : String(err));
 		}
 	};
 
-	if (plan) return <Review plan={plan} onBack={() => setPlan(null)} />;
+	if (plan) return <Review plan={plan} price={p} onBack={() => setPlan(null)} />;
 
 	return (
 		<>
 			<h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
 			<NameField />
 			{setup.data && (!setup.data.registry || !setup.data.resolver) ? (
-				<Notice kind="warn">
-					{t.needSetup}{" "}
-					<Link className="underline" href="/setup">
-						{t.setup}
-					</Link>
+				<Notice
+					tone="warn"
+					title={t.needSetup.title}
+					action={
+						<Link href="/setup" className="underline">
+							{t.needSetup.action}
+						</Link>
+					}
+				>
+					{t.needSetup.body}
 				</Notice>
 			) : null}
-			<form onSubmit={review} className="flex flex-col gap-4">
-				<Card className="flex flex-col gap-4">
-					<Field label={t.side}>
-						<div className="flex gap-2">
+			<form onSubmit={review} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
+				<Panel className="flex flex-col gap-5">
+					<fieldset className="flex flex-col gap-2">
+						<legend className="text-muted text-sm">{t.side}</legend>
+						<div className="flex gap-2" role="radiogroup" aria-label={t.side}>
 							{(["buy", "sell"] as const).map((s) => (
 								<button
 									key={s}
 									type="button"
+									role="radio"
+									aria-checked={side === s}
 									onClick={() => setSide(s)}
-									className={`rounded-md border px-3 py-2 text-sm ${side === s ? "border-emerald-400 text-emerald-300" : "border-neutral-700 text-neutral-300"}`}
+									className={`min-h-11 flex-1 rounded-md border px-3 text-sm ${side === s ? "border-accent text-text" : "border-line-strong text-muted hover:text-text"}`}
 								>
 									{s === "buy" ? t.buy : t.sell}
 								</button>
 							))}
 						</div>
-					</Field>
+					</fieldset>
 					<Field
 						label={t.amount(tokenIn.symbol)}
+						unit={tokenIn.symbol}
 						hint={
 							acct.data
 								? t.balance(fmtAmount(acct.data.balance, tokenIn.decimals, tokenIn.symbol))
 								: undefined
 						}
+						error={!validAmount ? t.invalid.amount : undefined}
 					>
 						<input
 							className={inputClass}
@@ -166,7 +239,11 @@ export default function NewPosition() {
 						/>
 					</Field>
 					<div className="grid grid-cols-2 gap-3">
-						<Field label={t.priceMin}>
+						<Field
+							label={t.low}
+							unit={t.unitPrice}
+							error={!validRange ? t.invalid.range : undefined}
+						>
 							<input
 								className={inputClass}
 								inputMode="decimal"
@@ -174,7 +251,7 @@ export default function NewPosition() {
 								onChange={set("priceMin")}
 							/>
 						</Field>
-						<Field label={t.priceMax}>
+						<Field label={t.high} unit={t.unitPrice}>
 							<input
 								className={inputClass}
 								inputMode="decimal"
@@ -183,11 +260,8 @@ export default function NewPosition() {
 							/>
 						</Field>
 					</div>
-					{price.data ? (
-						<p className="text-neutral-500 text-xs">{t.priceNow(fmtPrice(price.data.price))}</p>
-					) : null}
 					<div className="grid grid-cols-2 gap-3">
-						<Field label={t.fee} hint={t.feeHint}>
+						<Field label={t.fee} unit="bps" hint={t.feeHint}>
 							<input
 								className={inputClass}
 								inputMode="numeric"
@@ -195,7 +269,7 @@ export default function NewPosition() {
 								onChange={set("feeBps")}
 							/>
 						</Field>
-						<Field label={t.days} hint={t.daysHint}>
+						<Field label={t.days} unit={t.daysUnit} hint={t.daysHint(fmtDate(deadline))}>
 							<input
 								className={inputClass}
 								inputMode="numeric"
@@ -204,119 +278,223 @@ export default function NewPosition() {
 							/>
 						</Field>
 					</div>
-					<Field label={t.label} hint={t.labelHint(h.name)}>
+					<Field
+						label={t.label}
+						hint={t.labelHint(h.name)}
+						error={form.label && !validLabel ? t.invalid.label : undefined}
+					>
 						<input
-							className={inputClass}
+							className={`${inputClass} font-sans`}
 							value={form.label}
 							onChange={set("label")}
 							placeholder="btc-dip"
+							autoCapitalize="none"
+							spellCheck={false}
 						/>
 					</Field>
-				</Card>
-				{error ? <Notice kind="error">{error}</Notice> : null}
-				<div className="flex justify-end">
-					<Button type="submit">
-						{t.next} <ArrowRight className="h-4 w-4" aria-hidden />
-					</Button>
-				</div>
+					{error ? <Notice tone="error">{error}</Notice> : null}
+					<div className="flex justify-end">
+						<Button
+							type="submit"
+							disabled={!validRange || !validLabel || !validAmount}
+							reason={
+								!validLabel
+									? "Choose a name first."
+									: !validRange
+										? "Fix the range first."
+										: undefined
+							}
+						>
+							{t.next}
+						</Button>
+					</div>
+				</Panel>
+				<Panel tone="raised" className="flex flex-col gap-4 self-start">
+					<span className="eyebrow">{t.preview.eyebrow}</span>
+					<RangeRuler
+						priceMin={validRange ? lo : 0}
+						priceMax={validRange ? hi : 1}
+						price={p}
+						history={history.data ?? []}
+						side={side}
+					/>
+					<p className="text-text">
+						{validRange
+							? side === "buy"
+								? t.preview.buy(amt, fmtPrice(hi), fmtPrice(lo))
+								: t.preview.sell(amt, fmtPrice(lo), fmtPrice(hi))
+							: t.invalid.range}
+					</p>
+					{where ? <p className="text-muted text-sm">{where}</p> : null}
+				</Panel>
 			</form>
 		</>
 	);
 }
 
-function Review({ plan, onBack }: { plan: NewPositionPlan; onBack: () => void }) {
+function Review({
+	plan,
+	price,
+	onBack,
+}: {
+	plan: NewPositionPlan;
+	price: number | undefined;
+	onBack: () => void;
+}) {
 	const h = useHolder();
 	const session = useSignSession();
 	const toast = useToast();
 	const qc = useQueryClient();
 	const [done, setDone] = useState(false);
-	const amt = fmtAmount(BigInt(plan.params.amountIn), plan.tokenIn.decimals, plan.tokenIn.symbol);
-	const { side, priceMin: lo, priceMax: hi, feeBps } = plan.params;
+	const { side, priceMin: lo, priceMax: hi, feeBps, deadline } = plan.params;
+	const raw = BigInt(plan.params.amountIn);
+	const amount = fmtAmount(raw, plan.tokenIn.decimals, plan.tokenIn.symbol);
+	const usd = price ? fmtUsd(raw, plan.tokenIn.decimals, side === "buy" ? 1 : price) : null;
+	const canSign = !!h.accountId && h.nameMatches !== false && h.host !== "browser";
+	const reason =
+		h.host === "browser"
+			? "Open Moor from Ledger Live to sign."
+			: !h.accountId
+				? t.connect
+				: h.nameMatches === false
+					? t.notYours
+					: undefined;
 
 	const sign = async () => {
 		if (!h.accountId) return;
 		const ok = await session.run(h.accountId, plan.calls);
 		if (ok) {
 			setDone(true);
-			toast("ok", `${plan.name} created`);
+			toast("ok", `${plan.name} is open`);
 			await qc.invalidateQueries({ queryKey: ["positions"] });
-		} else toast("error", "The session stopped; nothing after the failed step was sent.");
+		}
 	};
-
-	const canSign = !!h.accountId && h.nameMatches !== false;
+	const steps = session.steps.length
+		? session.steps
+		: plan.calls.map((call): Step => ({ call, status: "pending" }));
+	const failed = session.steps.some((s) => s.status === "failed");
 
 	return (
 		<>
+			<button
+				type="button"
+				onClick={onBack}
+				disabled={session.running}
+				className="min-h-11 self-start text-muted text-sm hover:text-text"
+			>
+				← {t.back}
+			</button>
 			<h1 className="font-semibold text-2xl tracking-tight">{t.review}</h1>
-			<Card className="flex flex-col gap-2">
-				<h2 className="font-medium">{t.willHappen}</h2>
-				<p className="text-neutral-300 text-sm">
-					{t.explain(
-						amt,
-						side,
-						fmtPrice(Number(lo)),
-						fmtPrice(Number(hi)),
-						`${(feeBps / 100).toFixed(2)} %`,
-					)}
-				</p>
-				<h2 className="mt-2 font-medium">{t.wontHappen}</h2>
-				<ul className="list-disc pl-5 text-neutral-300 text-sm">
-					{t.wont.map((w) => (
-						<li key={w}>{w}</li>
+
+			<Panel tone="raised" className="grid grid-cols-1 gap-5 sm:grid-cols-[1fr_1fr]">
+				<div className="flex flex-col gap-1">
+					<span className="eyebrow">{t.head.asset}</span>
+					<span className="num text-3xl text-text">{amount}</span>
+					<span className="num text-dim text-sm">
+						{usd ? `≈ ${usd} · ` : ""}
+						{t.head.stays}
+					</span>
+				</div>
+				<div className="flex flex-col gap-1">
+					<span className="eyebrow">{t.head.condition}</span>
+					<span className="text-text">
+						{side === "buy"
+							? `BTC is below ${fmtPrice(Number(hi))} USD`
+							: `BTC is above ${fmtPrice(Number(lo))} USD`}
+					</span>
+					<span className="text-dim text-sm">
+						until {fmtPrice(Number(side === "buy" ? lo : hi))} · fee {(feeBps / 100).toFixed(2)} %
+						per trade · until {fmtDate(deadline)}
+					</span>
+				</div>
+				<div className="sm:col-span-2">
+					<RangeRuler priceMin={Number(lo)} priceMax={Number(hi)} price={price} side={side} />
+				</div>
+			</Panel>
+
+			<Panel className="flex flex-col gap-2">
+				<span className="eyebrow">{t.head.never}</span>
+				<ul className="flex flex-col gap-1.5 text-muted">
+					{t.never.map((n) => (
+						<li key={n} className="flex gap-2">
+							<span aria-hidden className="text-dim">
+								·
+							</span>
+							{n}
+						</li>
 					))}
 				</ul>
-			</Card>
-			<Card className="flex flex-col gap-3">
-				<h2 className="font-medium">{t.signatures}</h2>
-				<ol className="flex flex-col gap-2">
-					{(session.steps.length
-						? session.steps
-						: plan.calls.map((call): Step => ({ call, status: "pending" }))
-					).map((s, i) => (
+			</Panel>
+
+			<Panel className="flex flex-col gap-4">
+				<span className="eyebrow">{t.signatures(plan.calls.length)}</span>
+				<ol className="flex flex-col gap-3">
+					{steps.map((s, i) => (
 						<StepRow key={s.call.kind} i={i} step={s} />
 					))}
 				</ol>
-			</Card>
-			{h.nameMatches === false ? <Notice kind="warn">{t.notYours}</Notice> : null}
-			{!h.accountId ? <Notice>{t.connect}</Notice> : null}
-			<div className="flex justify-between">
-				<Button variant="ghost" onClick={onBack} disabled={session.running}>
-					{t.back}
-				</Button>
+				<Notice tone="warn" title={t.blind.title}>
+					{t.blind.body}
+				</Notice>
+			</Panel>
+
+			{failed ? <Notice tone="error">{t.failed}</Notice> : null}
+			<div className="flex flex-wrap items-center justify-end gap-3">
 				{done ? (
-					<Link href={`/positions/${plan.name.split(".")[0]}`}>
+					<Link href={`/positions/${plan.params.label}`}>
 						<Button>{t.viewIt}</Button>
 					</Link>
 				) : (
-					<Button onClick={sign} busy={session.running} disabled={!canSign}>
+					<Button onClick={sign} busy={session.running} disabled={!canSign} reason={reason}>
 						{session.running ? t.signing : t.sign}
 					</Button>
 				)}
 			</div>
+			<Details>
+				<span>strategyHash {plan.strategyHash}</span>
+				{plan.calls.map((c) => (
+					<span key={c.kind}>
+						{c.kind} → {c.to}
+					</span>
+				))}
+			</Details>
 		</>
 	);
 }
 
+const verbs: Record<Step["call"]["kind"], string> = {
+	approve: "Allow Aqua to spend this token",
+	ship: "Open the position",
+	createPosition: "Name it on ENS and write its records",
+	dock: "Stop the order",
+	unregister: "Remove the name",
+	revokeAgent: "Revoke the agent",
+	setupAgent: "Register the agent",
+};
+
 export function StepRow({ i, step }: { i: number; step: Step }) {
 	const icon =
 		step.status === "confirmed" ? (
-			<Check className="h-4 w-4 text-emerald-300" aria-hidden />
+			<Check className="h-4 w-4 text-good" aria-hidden />
 		) : step.status === "failed" ? (
-			<CircleAlert className="h-4 w-4 text-red-300" aria-hidden />
+			<CircleAlert className="h-4 w-4 text-bad" aria-hidden />
 		) : step.status === "pending" ? (
-			<span className="inline-block h-4 w-4 rounded-full border border-neutral-600" />
+			<span className="num inline-block h-4 w-4 text-center text-dim text-xs leading-4">
+				{i + 1}
+			</span>
 		) : (
-			<Loader2 className="h-4 w-4 animate-spin text-neutral-300" aria-hidden />
+			<Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
 		);
+	const note = step.call.kind === "approve" ? t.approvePermanent : null;
+	const rev = (t.reversible as Record<string, string>)[step.call.kind];
 	return (
-		<li className="flex items-start gap-3 text-sm">
-			<span className="mt-0.5">{icon}</span>
-			<div className="flex flex-col">
-				<span>
-					{i + 1}. {step.call.intent}
-				</span>
-				<span className="text-neutral-500 text-xs">
+		<li className="flex items-start gap-3">
+			<span className="mt-1 w-4 shrink-0">{icon}</span>
+			<div className="flex min-w-0 flex-col gap-0.5">
+				<span className="text-text">{verbs[step.call.kind]}</span>
+				<span className="text-dim text-xs">
 					{t.ledger}: “{step.call.ledgerShows}” · {t.status[step.status]}
+					{rev ? ` · ${rev}` : ""}
 					{step.hash ? (
 						<>
 							{" · "}
@@ -326,11 +504,15 @@ export function StepRow({ i, step }: { i: number; step: Step }) {
 								target="_blank"
 								rel="noreferrer"
 							>
-								tx
+								transaction
 							</a>
 						</>
 					) : null}
-					{step.error ? ` · ${step.error}` : null}
+					{step.error ? <span className="text-bad"> · {step.error}</span> : null}
+				</span>
+				{note ? <span className="text-muted text-xs">{note}</span> : null}
+				<span className="num text-dim text-xs">
+					{t.contract} {step.call.to}
 				</span>
 			</div>
 		</li>

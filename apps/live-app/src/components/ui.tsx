@@ -1,42 +1,64 @@
 "use client";
 
 import type { PositionState } from "@moor/core";
-import { Loader2 } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
+/**
+ * Six components, one accent. Primary is amber and means "this signs on your
+ * Ledger". Quiet is for everything else. Danger is never next to primary.
+ */
 export function Button({
 	variant = "primary",
 	busy,
+	reason,
 	className = "",
 	children,
 	...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
-	variant?: "primary" | "ghost" | "danger";
-	busy?: boolean;
+	variant?: "primary" | "quiet" | "danger" | undefined;
+	busy?: boolean | undefined;
+	/** Why it is disabled — shown next to it, never left to guesswork. */
+	reason?: string | undefined;
 }) {
 	const base =
-		"inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
+		"inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40";
 	const look = {
-		primary: "bg-emerald-400 text-neutral-950 hover:bg-emerald-300",
-		ghost: "border border-neutral-700 text-neutral-100 hover:bg-neutral-800",
-		danger: "border border-red-800 text-red-200 hover:bg-red-950",
+		primary: "bg-accent text-accent-ink hover:brightness-110",
+		quiet: "border border-line-strong text-text hover:bg-ink-2",
+		danger: "border border-line-strong text-bad hover:bg-ink-2",
 	}[variant];
+	const disabled = busy || rest.disabled;
 	return (
-		<button
-			type="button"
-			className={`${base} ${look} ${className}`}
-			disabled={busy || rest.disabled}
-			{...rest}
-		>
-			{busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-			{children}
-		</button>
+		<span className="inline-flex flex-col items-end gap-1">
+			<button
+				type="button"
+				className={`${base} ${look} ${className}`}
+				disabled={disabled}
+				aria-disabled={disabled}
+				{...rest}
+			>
+				{busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+				{children}
+			</button>
+			{disabled && reason ? <span className="text-dim text-xs">{reason}</span> : null}
+		</span>
 	);
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Panel({
+	children,
+	className = "",
+	tone = "flat",
+}: {
+	children: ReactNode;
+	className?: string;
+	tone?: "flat" | "raised";
+}) {
 	return (
-		<section className={`rounded-lg border border-neutral-800 bg-neutral-900/40 p-4 ${className}`}>
+		<section
+			className={`rounded-md border border-line ${tone === "raised" ? "bg-ink-1" : ""} p-4 ${className}`}
+		>
 			{children}
 		</section>
 	);
@@ -44,54 +66,120 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 
 export function Field({
 	label,
+	unit,
 	hint,
+	error,
 	children,
 }: {
 	label: string;
+	unit?: string | undefined;
 	hint?: string | undefined;
+	error?: string | undefined;
 	children: ReactNode;
 }) {
 	return (
-		<label className="flex flex-col gap-1 text-sm">
-			<span className="text-neutral-300">{label}</span>
+		<label className="flex flex-col gap-1.5">
+			<span className="flex items-baseline justify-between">
+				<span className="text-muted text-sm">{label}</span>
+				{unit ? <span className="eyebrow">{unit}</span> : null}
+			</span>
 			{children}
-			{hint ? <span className="text-xs text-neutral-500">{hint}</span> : null}
+			{error ? (
+				<span className="text-bad text-xs">{error}</span>
+			) : hint ? (
+				<span className="text-dim text-xs">{hint}</span>
+			) : null}
 		</label>
 	);
 }
 
 export const inputClass =
-	"rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 outline-none focus:border-emerald-400";
+	"num min-h-11 w-full rounded-md border border-line-strong bg-ink-0 px-3 py-2 text-base text-text outline-none placeholder:text-dim focus:border-accent";
 
-const stateLook: Record<PositionState, string> = {
-	waiting: "border-neutral-600 text-neutral-300",
-	working: "border-emerald-600 text-emerald-300",
-	completed: "border-sky-600 text-sky-300",
-	expired: "border-amber-700 text-amber-300",
-	closed: "border-neutral-700 text-neutral-500",
+const stateMeta: Record<PositionState, { dot: string; text: string; word: string }> = {
+	waiting: { dot: "bg-dim", text: "text-muted", word: "Waiting" },
+	working: { dot: "bg-good", text: "text-good", word: "Working" },
+	completed: { dot: "bg-good", text: "text-good", word: "Completed" },
+	expired: { dot: "bg-accent", text: "text-accent", word: "Expired" },
+	closed: { dot: "bg-line-strong", text: "text-dim", word: "Closed" },
 };
 
-export function StateBadge({ state }: { state: PositionState }) {
+/** State is the product: a dot and a word, never only a colour. */
+export function StateMark({ state }: { state: PositionState }) {
+	const m = stateMeta[state];
 	return (
-		<span
-			className={`rounded-full border px-2 py-0.5 text-xs uppercase tracking-wide ${stateLook[state]}`}
-		>
-			{state}
+		<span className={`inline-flex items-center gap-1.5 text-sm ${m.text}`}>
+			<span className={`inline-block h-2 w-2 rounded-full ${m.dot}`} aria-hidden />
+			{m.word}
 		</span>
 	);
 }
 
 export function Notice({
-	kind = "info",
+	tone = "info",
+	title,
 	children,
+	action,
 }: {
-	kind?: "info" | "warn" | "error";
+	tone?: "info" | "warn" | "error";
+	title?: string;
 	children: ReactNode;
+	action?: ReactNode;
 }) {
 	const look = {
-		info: "border-neutral-700 text-neutral-300",
-		warn: "border-amber-800 bg-amber-950/40 text-amber-200",
-		error: "border-red-800 bg-red-950/40 text-red-200",
-	}[kind];
-	return <div className={`rounded-md border px-3 py-2 text-sm ${look}`}>{children}</div>;
+		info: "border-line text-muted",
+		warn: "border-accent/60 text-text",
+		error: "border-bad/60 text-text",
+	}[tone];
+	return (
+		<div
+			className={`flex flex-col gap-2 rounded-md border px-3 py-2.5 text-sm ${look}`}
+			role={tone === "error" ? "alert" : undefined}
+		>
+			{title ? (
+				<span
+					className={`font-medium ${tone === "error" ? "text-bad" : tone === "warn" ? "text-accent" : "text-text"}`}
+				>
+					{title}
+				</span>
+			) : null}
+			<div>{children}</div>
+			{action ? <div>{action}</div> : null}
+		</div>
+	);
+}
+
+/** Debugging data lives here, one click away, never by default. */
+export function Details({
+	summary = "Technical details",
+	children,
+}: {
+	summary?: string;
+	children: ReactNode;
+}) {
+	return (
+		<details className="group rounded-md border border-line">
+			<summary className="flex min-h-11 items-center justify-between px-3 text-muted text-sm hover:text-text">
+				{summary}
+				<ChevronRight className="h-4 w-4 transition group-open:rotate-90" aria-hidden />
+			</summary>
+			<div className="num flex flex-col gap-1.5 break-all border-line border-t px-3 py-3 text-dim text-xs">
+				{children}
+			</div>
+		</details>
+	);
+}
+
+export function Skeleton({ className = "" }: { className?: string }) {
+	return <span className={`skeleton block ${className}`} aria-hidden />;
+}
+
+export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+	return (
+		<div className="flex min-w-0 flex-col gap-0.5">
+			<span className="eyebrow">{label}</span>
+			<span className="num truncate text-base text-text">{value}</span>
+			{sub ? <span className="num text-dim text-xs">{sub}</span> : null}
+		</div>
+	);
 }

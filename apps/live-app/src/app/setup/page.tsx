@@ -1,33 +1,54 @@
 "use client";
 
 /**
- * First-time setup (04 §4.0): what exists under the holder's name and what does
- * not. The two proxies (registry, resolver) are paid for by anyone and created
- * by scripts in this phase; the holder's own signatures — pointing the name at
- * them, authorizing Moor, naming the agent — are SetupHolder.s.sol on the Ledger
- * until this screen signs them (the cut 07 allows for phase 3).
+ * First-time setup (04 §4.0). The decision: what does Moor get over my name,
+ * and what does it not. The answer is a list a holder can verify on chain.
  */
 import { Check, Circle } from "lucide-react";
-import { Card, Notice } from "@/components/ui";
+import { Details, Notice, Panel, Skeleton } from "@/components/ui";
 import { short } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
 import { useSetupStatus } from "@/lib/queries";
 import { NameField } from "../name-field";
 
 const t = {
-	title: "First-time setup",
+	title: "Setup",
 	intro:
-		"Positions live under your name, not under Moor's. Once per name, your name grows a registry (for the position names) and a resolver (for their records), Moor's registrar is allowed to create names there — and nothing else — and the agent gets its identity with a single permission.",
+		"Positions live under your name, not under Moor's. Once per name, three things are created and one is allowed:",
+	gets: [
+		[
+			"A registry under your name",
+			"Position names are created here. You are its root; you can take everything back.",
+		],
+		[
+			"A resolver of your own",
+			"Position records live here. Only you write them — plus the agent, on its eight lines.",
+		],
+		[
+			"Moor's registrar may create names",
+			"That is the only permission Moor holds: create a name and write its first records. It cannot move tokens, transfer or remove a name, or change a record afterwards.",
+		],
+		[
+			"The agent's identity",
+			"agent.⟨your name⟩, with one permission: write moor.agent.* on your positions.",
+		],
+	],
+	never:
+		"Moor never holds your tokens, never gets an approval, is never the maker of your orders. The setup is a set of on-chain roles anyone can read.",
+	status: "For this name",
 	steps: {
-		registry: "A registry under your name",
-		resolver: "A resolver of your own",
-		moorRegistry: "Moor may create names in your registry (ROLE_REGISTRAR)",
-		moorResolver: "Moor may write position records and hand the agent its keys",
-		agent: "agent.<your name> exists with its eight moor.agent.* keys",
+		registry: "Registry under your name",
+		resolver: "Resolver of your own",
+		moorRegistry: "Moor may create names (ROLE_REGISTRAR)",
+		moorResolver: "Moor may write first records and hand the agent its keys",
+		agent: "agent.⟨name⟩ exists with its eight keys",
 	},
-	done: "Everything is in place.",
-	howto: "Not there yet. Run once, from the repository:",
-	loading: "Checking…",
+	done: "Everything is in place. You can open positions.",
+	howto: {
+		title: "Not set up yet",
+		body: "In this version the setup signatures run from the repository with your Ledger. It takes about five minutes.",
+	},
+	commands: "Commands",
 };
 
 export default function Setup() {
@@ -46,33 +67,55 @@ export default function Setup() {
 	return (
 		<>
 			<h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
-			<p className="text-neutral-300 text-sm">{t.intro}</p>
-			<NameField />
-			<Card className="flex flex-col gap-2 text-sm">
-				{s.isLoading ? <p className="text-neutral-400">{t.loading}</p> : null}
+			<NameField quiet />
+			<p className="max-w-prose text-muted">{t.intro}</p>
+			<ol className="flex flex-col gap-3">
+				{t.gets.map(([head, body], i) => (
+					<li key={head} className="flex gap-3">
+						<span className="num w-5 shrink-0 text-dim">{i + 1}</span>
+						<div className="flex flex-col">
+							<span className="text-text">{head}</span>
+							<span className="text-muted text-sm">{body}</span>
+						</div>
+					</li>
+				))}
+			</ol>
+			<p className="max-w-prose text-dim text-sm">{t.never}</p>
+
+			<Panel tone="raised" className="flex flex-col gap-2">
+				<span className="eyebrow">{t.status}</span>
+				{s.isLoading ? (
+					<>
+						<Skeleton className="h-5 w-64" />
+						<Skeleton className="h-5 w-56" />
+					</>
+				) : null}
 				{rows.map(([label, ok, addr]) => (
-					<div key={label} className="flex items-center gap-2">
+					<div key={label} className="flex min-h-8 items-center gap-2">
 						{ok ? (
-							<Check className="h-4 w-4 text-emerald-300" aria-hidden />
+							<Check className="h-4 w-4 text-good" aria-label="done" />
 						) : (
-							<Circle className="h-4 w-4 text-neutral-600" aria-hidden />
+							<Circle className="h-4 w-4 text-dim" aria-label="not yet" />
 						)}
-						<span>{label}</span>
-						{addr ? (
-							<span className="font-mono text-neutral-500 text-xs">{short(addr)}</span>
-						) : null}
+						<span className={ok ? "text-text" : "text-muted"}>{label}</span>
+						{addr ? <span className="num text-dim text-xs">{short(addr)}</span> : null}
 					</div>
 				))}
-			</Card>
-			{complete ? <Notice>{t.done}</Notice> : null}
+			</Panel>
+			{complete ? <Notice tone="info">{t.done}</Notice> : null}
 			{s.data && !complete ? (
-				<Notice kind="warn">
-					{t.howto}
-					<pre className="mt-2 overflow-x-auto text-xs">{`MOOR_HOLDER=${h.address ?? "<your account>"} pnpm contracts:deploy:registrar
-pnpm contracts:deploy:resolver
-MOOR_AGENT=<agent key> forge script script/SetupHolder.s.sol --rpc-url $SEPOLIA_RPC_URL --ledger --hd-paths "m/44'/60'/0'/0/0" --broadcast`}</pre>
+				<Notice tone="warn" title={t.howto.title}>
+					{t.howto.body}
 				</Notice>
 			) : null}
+			<Details summary={t.commands}>
+				<span>MOOR_HOLDER={h.address ?? "<your account>"} pnpm contracts:deploy:registrar</span>
+				<span>pnpm contracts:deploy:resolver</span>
+				<span>
+					MOOR_AGENT=&lt;agent key&gt; forge script script/SetupHolder.s.sol --rpc-url
+					$SEPOLIA_RPC_URL --ledger --hd-paths "m/44'/60'/0'/0/0" --broadcast
+				</span>
+			</Details>
 		</>
 	);
 }

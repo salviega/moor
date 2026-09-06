@@ -30,6 +30,24 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **The Live App as a logbook (UX pass, 2026-09-06).** Designed before built:
+  who arrives, the one decision per screen, the worst case (signing what was
+  not understood). One accent, amber, reserved for "needs your signature";
+  green and red only mean what they mean; numbers in a monospace face;
+  hierarchy by size and space. Every screen enumerates its states (skeleton,
+  empty, network error with retry, stale price, silent or stale agent, read-only
+  browser outside Ledger Live, pending transaction). The **range chart**
+  (price over the last 48 h from Chainlink rounds, the range as a band —
+  `readPriceHistory` in core, one Multicall3 call) replaces the sentence
+  "above the range"; the rows carry a compact ruler. The **proposal band** is
+  pending and looks pending: amber edge, "awaiting your signature", two verbs,
+  dismissable locally. **Review and sign** shows asset and amount first, the
+  condition, what never happens, each signature with a concrete verb, what is
+  reversible, the standing nature of the token permission and the blind-signing
+  notice; contract addresses and hashes live behind "Technical details".
+  Copy without protocol jargon (no ship/dock/allowance/calldata). Verified in
+  the browser at 1440 and 390 px.
+
 - **Phase 4, first cut: the agent watches, derives and proposes** (04 §4.4,
   05 §8, 06 §5; 2026-09-06). `packages/core/src/agent.ts` holds everything
   deterministic — thresholds v1 (`farFromRange` > 10 % while waiting,

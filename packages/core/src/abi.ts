@@ -62,5 +62,6 @@ export const permissionedRegistryAbi = parseAbi([
 /** Chainlink AggregatorV3. */
 export const aggregatorV3Abi = parseAbi([
 	"function latestRoundData() view returns (uint80, int256, uint256, uint256, uint80)",
+	"function getRoundData(uint80 roundId) view returns (uint80, int256, uint256, uint256, uint80)",
 	"function decimals() view returns (uint8)",
 ]);

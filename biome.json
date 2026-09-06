@@ -43,5 +43,10 @@
 		"formatter": {
 			"enabled": true
 		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
 	}
 }

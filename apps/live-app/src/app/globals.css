@@ -1,1 +1,92 @@
 @import "tailwindcss";
+
+/*
+ * Moor — logbook (direction A). One accent (amber) reserved for "needs your
+ * signature"; green and red only mean what they mean; hierarchy by size and
+ * space; numbers in a monospace face. Dark first: the app lives inside Ledger Live.
+ */
+@theme {
+	--color-ink-0: #0c0e12;
+	--color-ink-1: #121620;
+	--color-ink-2: #171c27;
+	--color-line: #232a37;
+	--color-line-strong: #34405a;
+	--color-text: #e7eaf0;
+	--color-muted: #9aa3b4;
+	--color-dim: #6a7387;
+	--color-accent: #f0b64a;
+	--color-accent-ink: #0c0e12;
+	--color-good: #59c98f;
+	--color-bad: #ef6b73;
+	--font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+	--font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+	color-scheme: dark;
+}
+
+body {
+	background: var(--color-ink-0);
+	color: var(--color-text);
+	font-family: var(--font-sans);
+	font-size: 14px;
+	line-height: 1.45;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Numbers never wobble the layout. */
+.num {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
+}
+
+/* Eyebrow labels: small, spaced, quiet. */
+.eyebrow {
+	font-size: 11px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--color-dim);
+}
+
+/* Focus is visible everywhere, for everything, in the accent. */
+:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+/* Skeleton shimmer, respectful of reduced motion. */
+.skeleton {
+	background: linear-gradient(
+		90deg,
+		var(--color-ink-2) 25%,
+		var(--color-line) 50%,
+		var(--color-ink-2) 75%
+	);
+	background-size: 200% 100%;
+	animation: shimmer 1.4s ease-in-out infinite;
+	border-radius: 4px;
+}
+@keyframes shimmer {
+	from {
+		background-position: 200% 0;
+	}
+	to {
+		background-position: -200% 0;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.skeleton {
+		animation: none;
+	}
+}
+
+details > summary {
+	cursor: pointer;
+	list-style: none;
+}
+details > summary::-webkit-details-marker {
+	display: none;
+}
