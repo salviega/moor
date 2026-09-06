@@ -33,7 +33,7 @@ Ocho documentos, en orden. Cada uno asume el anterior.
 - **Una sola cadena: Sepolia.** Aqua y SwapVM redesplegados sin modificar; ENSv2 en su beta oficial.
 - **Ledger:** humano en el loop como núcleo, Key Ring para los secretos del agente, Clear Signing con ERC-7730 para todo lo que se firma. x402 no.
 - **Sin estado propio.** Todo vive en Aqua, SwapVM y ENS. Sin base de datos.
-- **Monorepo** con pnpm: Foundry para contratos, Next.js para la Live App, TypeScript + Claude Opus 5 para el agente.
+- **Monorepo** con pnpm: Foundry para contratos, Next.js para la Live App, TypeScript + Groq (`gpt-oss-120b`, tier gratuito) para el agente.
 
 ---
 

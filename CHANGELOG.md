@@ -198,9 +198,35 @@ Two things this project's entries carry that a web app's would not:
 
 ### Changed
 
+- **The agent's model is Groq's `openai/gpt-oss-120b`, on the free tier
+  (2026-09-06).** The one call per proposal went to Claude Opus 5 through
+  `@anthropic-ai/sdk`; it now goes to Groq's OpenAI-compatible endpoint over
+  plain `fetch` — no SDK — in strict JSON Schema mode, so the agent runs without
+  spending anything for the length of the hackathon (30 requests a minute,
+  1,000 a day, no card). `packages/core/src/model.ts` derives the strict schema
+  from the shared `Proposal` Zod schema, never written twice: optional fields
+  become nullable, every key required, `additionalProperties: false`, and the
+  keywords strict mode does not accept (`pattern`, lengths, bounds) dropped —
+  Zod enforces those on the way back, because Zod stays the trust boundary. The
+  answer is parsed there too: the model's `null`s are dropped, anything that
+  does not validate is `null`, and `null` is never written — the deterministic
+  proposal is, as before. Eight tests in `packages/core/test/model.test.ts`
+  (schema shape, request shape, valid answers, every way an answer is refused).
+  `apps/agent/src/model.ts` is the `fetch`: 60 s timeout; on a non-2xx the
+  error carries the status and the API's first line, never the key or the
+  prompt. `GROQ_API_KEY` replaces `ANTHROPIC_API_KEY` (`ANTHROPIC_WORKSPACE_ID`
+  goes away), `AGENT_MODEL` defaults to `openai/gpt-oss-120b`, and
+  `deploy/run.sh` reads `moor/groq-api-key` from the ring. Prompt, thresholds,
+  the eight records, the one multicall and the fallback are unchanged. Still
+  pending: the first real call — the key is not in the ring yet.
+
 ### Fixed
 
 ### Removed
+
+- `@anthropic-ai/sdk` from `apps/agent`, and the `minimumReleaseAgeExclude`
+  entry it needed in `pnpm-workspace.yaml`. One dependency fewer in the process
+  that holds a hot key.
 
 ## [0.4.0] - 2026-09-05
 

@@ -7,7 +7,6 @@
  * signs or sends anything to Aqua, the registry or the holder's records, and
  * there is no code path here that could.
  */
-import Anthropic from "@anthropic-ai/sdk";
 import {
 	agentRecordValues,
 	agentSetTextCall,
@@ -35,7 +34,7 @@ import { type Address, createPublicClient, createWalletClient, type Hex, http } 
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 import { loadEnv } from "./env";
-import { proposeWithClaude } from "./model";
+import { proposeWithGroq } from "./model";
 
 const log = pino({ name: "moor-agent" });
 const once = process.argv.includes("--once");
@@ -47,14 +46,6 @@ const walletClient = createWalletClient({
 	chain: sepolia,
 	transport: http(env.SEPOLIA_RPC_URL),
 });
-const anthropic = env.ANTHROPIC_API_KEY
-	? new Anthropic({
-			apiKey: env.ANTHROPIC_API_KEY,
-			...(env.ANTHROPIC_WORKSPACE_ID
-				? { defaultHeaders: { "anthropic-workspace-id": env.ANTHROPIC_WORKSPACE_ID } }
-				: {}),
-		})
-	: null;
 const parentLabel = env.AGENT_PARENT_NAME.replace(/\.eth$/, "");
 
 /** eth_getLogs in chunks: the holder's registry is young and small, the RPC's range limit is the constraint. */
@@ -82,20 +73,20 @@ async function propose(
 	view: PositionView,
 	price: number,
 	now: number,
-): Promise<{ proposal: Proposal; simulation: string; by: "claude" | "deterministic" }> {
+): Promise<{ proposal: Proposal; simulation: string; by: "groq" | "deterministic" }> {
 	const pair = resolveDemoPair(view.tokenIn, view.tokenOut);
 	const triggers = detectTriggers(view, price, now);
 	const fallback = deterministicProposal(triggers[0] ?? "farFromRange", view, price, now);
-	if (anthropic) {
+	if (env.GROQ_API_KEY) {
 		try {
-			const answer = await proposeWithClaude(
-				anthropic,
+			const answer = await proposeWithGroq(
+				env.GROQ_API_KEY,
 				env.AGENT_MODEL,
 				proposalPrompt(view, price, now, triggers, pair),
 			);
 			if (answer) {
 				const proposal = { ...answer, trigger: answer.trigger ?? triggers[0] };
-				return { proposal, simulation: simulate(view, price, proposal, pair), by: "claude" };
+				return { proposal, simulation: simulate(view, price, proposal, pair), by: "groq" };
 			}
 			log.warn(
 				{ name: view.name },
@@ -191,7 +182,7 @@ async function main(): Promise<void> {
 			agent: account.address,
 			parent: env.AGENT_PARENT_NAME,
 			intervalSeconds: env.AGENT_INTERVAL_SECONDS,
-			model: anthropic ? env.AGENT_MODEL : "none (deterministic)",
+			model: env.GROQ_API_KEY ? env.AGENT_MODEL : "none (deterministic)",
 			once,
 			dryRun: env.AGENT_DRY_RUN,
 		},
