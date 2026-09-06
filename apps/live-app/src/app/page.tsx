@@ -29,6 +29,10 @@ const t = {
 		title: "No positions under this name yet",
 		body: "A position is a name under yours that already holds the order: it buys or sells BTC only when the price enters the range you chose, earns a fee on each trade, and your tokens never leave your wallet.",
 	},
+	notYours: {
+		title: "None of these positions belong to the connected account",
+		body: "This name has positions, but the account you chose owns none of them. Switch to the account that owns them, or change the name above.",
+	},
 	noRegistry: {
 		title: "This name is not set up for Moor yet",
 		body: "Once per name, Moor's registrar is allowed to create position names under it — and nothing else.",
@@ -70,8 +74,16 @@ function DashboardInner() {
 	const q = usePositions(h.name, h.parentLabel);
 	const now = Date.now() / 1000;
 	const stale = price.data ? now - price.data.updatedAt > 5400 : false;
-	const positions = q.data?.positions ?? [];
-	const current = selected ?? positions[0]?.label ?? null;
+	const allPositions = q.data?.positions ?? [];
+	// A name's positions can only ever be created by its root holder, but the account connected right
+	// now might not be that holder (wrong account chosen, or switched away) — show only what it owns.
+	const positions = h.address
+		? allPositions.filter((p) => p.holder.toLowerCase() === h.address?.toLowerCase())
+		: allPositions;
+	const current =
+		selected && positions.some((p) => p.label === selected)
+			? selected
+			: (positions[0]?.label ?? null);
 
 	const list = (
 		<div className="flex h-full flex-col gap-4">
@@ -143,11 +155,16 @@ function DashboardInner() {
 						{t.noRegistry.body}
 					</Notice>
 				) : null}
-				{q.data?.registry && positions.length === 0 ? (
+				{q.data?.registry && allPositions.length === 0 ? (
 					<section className="flex flex-col gap-3 rounded-md border border-line border-dashed p-5">
 						<h2 className="text-base">{t.empty.title}</h2>
 						<p className="text-muted text-sm">{t.empty.body}</p>
 					</section>
+				) : null}
+				{q.data?.registry && allPositions.length > 0 && positions.length === 0 ? (
+					<Notice tone="warn" title={t.notYours.title}>
+						{t.notYours.body}
+					</Notice>
 				) : null}
 				{positions.length ? (
 					<ul
