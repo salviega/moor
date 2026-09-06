@@ -12,13 +12,14 @@ import { Check, CircleAlert, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { parseUnits } from "viem";
+import { MarketChart } from "@/components/market-chart";
 import { RangeRuler } from "@/components/range-ruler";
 import { useToast } from "@/components/toast";
 import { Button, Details, Field, inputClass, Notice, Panel } from "@/components/ui";
 import { fmtAmount, fmtDate, fmtPrice, fmtUsd } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
 import { btcDemo, demoPairs, explorer, resolveDemoPair } from "@/lib/pair";
-import { usePrice, usePriceHistory, useSetupStatus, useTokenAccount } from "@/lib/queries";
+import { usePrice, useSetupStatus, useTokenAccount } from "@/lib/queries";
 import { type Step, useSignSession } from "@/lib/session";
 import { NameField } from "../name-field";
 
@@ -108,6 +109,11 @@ const t = {
 };
 
 const DAY = 86_400;
+/** A range that means something for each asset on the day the form opens; the holder's own numbers win. */
+const defaultRange: Record<"btc" | "eth", { priceMin: string; priceMax: string }> = {
+	btc: { priceMin: "58000", priceMax: "62000" },
+	eth: { priceMin: "2200", priceMax: "2400" },
+};
 type Form = {
 	amount: string;
 	priceMin: string;
@@ -119,22 +125,27 @@ type Form = {
 
 export default function NewPosition() {
 	const h = useHolder();
-	const price = usePrice();
-	const history = usePriceHistory();
 	const setup = useSetupStatus(h.parentLabel);
 	const [assetId, setAssetId] = useState<"btc" | "eth">("btc");
 	const demo = demoPairs.find((d) => d.id === assetId) ?? btcDemo;
+	const price = usePrice(assetId);
 	const [side, setSide] = useState<"buy" | "sell">("buy");
 	const tokenIn = side === "buy" ? demo.pair.quote : demo.pair.base;
 	const acct = useTokenAccount(h.address, tokenIn.address);
 	const [form, setForm] = useState<Form>({
 		amount: "1000",
-		priceMin: "58000",
-		priceMax: "62000",
+		...defaultRange.btc,
 		feeBps: "30",
 		days: "30",
 		label: "",
 	});
+	const chooseAsset = (next: "btc" | "eth") => {
+		const prev = defaultRange[assetId];
+		// Untouched defaults follow the asset; anything the holder typed stays.
+		if (form.priceMin === prev.priceMin && form.priceMax === prev.priceMax)
+			setForm({ ...form, ...defaultRange[next] });
+		setAssetId(next);
+	};
 	const [plan, setPlan] = useState<NewPositionPlan | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -216,7 +227,7 @@ export default function NewPosition() {
 									type="button"
 									role="radio"
 									aria-checked={assetId === d.id}
-									onClick={() => setAssetId(d.id)}
+									onClick={() => chooseAsset(d.id)}
 									className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border px-3 text-sm ${assetId === d.id ? "border-accent text-text" : "border-line-strong text-muted hover:text-text"}`}
 								>
 									<img
@@ -314,7 +325,7 @@ export default function NewPosition() {
 							className={`${inputClass} font-sans`}
 							value={form.label}
 							onChange={set("label")}
-							placeholder="btc-dip"
+							placeholder={`${assetId}-dip`}
 							autoCapitalize="none"
 							spellCheck={false}
 						/>
@@ -338,12 +349,13 @@ export default function NewPosition() {
 				</Panel>
 				<Panel tone="raised" className="flex flex-col gap-4 self-start">
 					<span className="eyebrow">{t.preview.eyebrow}</span>
-					<RangeRuler
+					<MarketChart
+						asset={assetId}
 						priceMin={validRange ? lo : 0}
 						priceMax={validRange ? hi : 1}
-						price={p}
-						history={history.data ?? []}
 						side={side}
+						oracle={price.data}
+						height={240}
 					/>
 					<p className="text-text">
 						{validRange

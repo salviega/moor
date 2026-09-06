@@ -6,9 +6,11 @@
  */
 import {
 	AGENT_LABEL,
+	chainlinkFeed,
 	ensV2Sepolia,
 	erc20Abi,
 	listPositions,
+	type MarketAsset,
 	MoorRoles,
 	moorSepolia,
 	permissionedRegistryAbi,
@@ -23,20 +25,21 @@ import { logsClient, publicClient } from "./chain";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 
-/** Where the price has been: the last 48 Chainlink rounds (one per hour on Sepolia), one multicall. */
-export function usePriceHistory() {
+/** Where the oracle has been: the last 48 Chainlink rounds (one per hour on Sepolia), one multicall. */
+export function usePriceHistory(asset: MarketAsset = "btc") {
 	return useQuery({
-		queryKey: ["price-history"],
-		queryFn: () => readPriceHistory(publicClient, { rounds: 48 }),
+		queryKey: ["price-history", asset],
+		queryFn: () => readPriceHistory(publicClient, { rounds: 48, feed: chainlinkFeed(asset) }),
 		staleTime: 10 * 60_000,
 		refetchInterval: 10 * 60_000,
 	});
 }
 
-export function usePrice() {
+/** The oracle price of one asset — the number a position of that asset is judged by. */
+export function usePrice(asset: MarketAsset = "btc") {
 	return useQuery({
-		queryKey: ["price"],
-		queryFn: () => readPrice(publicClient),
+		queryKey: ["price", asset],
+		queryFn: () => readPrice(publicClient, chainlinkFeed(asset)),
 		// Chainlink's Sepolia feed itself doesn't tick every second, but polling
 		// tighter than the old 60s makes the chart's dot feel watched, not stale.
 		refetchInterval: 20_000,

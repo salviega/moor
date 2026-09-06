@@ -10,8 +10,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { StepRow } from "@/app/new/page";
+import { MarketChart } from "@/components/market-chart";
 import { PendingBand } from "@/components/pending-band";
-import { RangeRuler } from "@/components/range-ruler";
 import { useToast } from "@/components/toast";
 import { Button, Details, Notice, Panel, Skeleton, Stat, StateMark } from "@/components/ui";
 import { publicClient } from "@/lib/chain";
@@ -101,8 +101,6 @@ type Act = "close" | "revoke" | "accept";
 export function PositionPanel({ label, embedded = false }: { label: string; embedded?: boolean }) {
 	const h = useHolder();
 	const q = usePosition(h.name, label);
-	const price = usePrice();
-	const history = usePriceHistory();
 	const setup = useSetupStatus(h.parentLabel);
 	const session = useSignSession();
 	const toast = useToast();
@@ -111,6 +109,8 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 	const [dismissed, setDismissed] = useState<string | null>(null);
 	const p = q.data;
 	const demo = p ? resolveDemoPair(p.tokenIn, p.tokenOut) : btcDemo;
+	const price = usePrice(demo.id);
+	const history = usePriceHistory(demo.id);
 	const tokenIn = p ? (p.side === "buy" ? demo.pair.quote : demo.pair.base) : demo.pair.quote;
 	const tokenOut = p ? (p.side === "buy" ? demo.pair.base : demo.pair.quote) : demo.pair.base;
 	const acct = useTokenAccount(h.address, tokenIn.address);
@@ -272,14 +272,14 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 			) : null}
 
 			<div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]">
-				<Panel tone="raised" className="flex flex-col justify-center gap-3">
-					<span className="eyebrow">Price against the range · last 48 h</span>
-					<RangeRuler
+				<Panel tone="raised" className="flex min-h-0 flex-col gap-3">
+					<MarketChart
+						asset={demo.id}
 						priceMin={lo}
 						priceMax={hi}
-						price={cur}
-						history={history.data ?? []}
 						side={p.side}
+						oracle={price.data}
+						history={history.data ?? []}
 					/>
 				</Panel>
 				<Panel tone="raised" className="flex flex-col justify-center gap-4">

@@ -30,17 +30,43 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
-- **The price chart feels watched (2026-09-06).** Considered embedding a
-  TradingView-style widget for a truly live tick; declined it — that would
-  show a real exchange's BTC/ETH price next to a position that only ever reacts
-  to Chainlink's Sepolia testnet feed, and the two numbers would disagree.
-  Instead, `usePrice` polls every 20 s instead of 60, the current-price dot
-  slides to its new spot with a CSS transition instead of jumping, and rings
-  once on each tick (`price-dot`/`price-pulse` in `globals.css`, both a no-op
-  under `prefers-reduced-motion`). The chart is also interactive now: hovering
-  or touching the line shows a crosshair and a tooltip with the exact price and
-  time at that point, flipping sides near the chart's edge so it never runs off
-  screen.
+- **A live market chart, with the oracle drawn on it (2026-09-06).** The
+  first attempt animated the Chainlink line — a feed that ticks every 20 to 60
+  minutes on Sepolia cannot look alive, and the holder said so. Now the
+  position panel and the form preview carry a real trading chart:
+  `lightweight-charts` (TradingView's open-source library, the one new
+  dependency) draws candles from a real venue, trade by trade over a
+  WebSocket — Binance first, Coinbase Exchange when Binance is unreachable (it
+  geo-blocks whole countries) and the other again if a socket keeps dropping —
+  at 1m / 15m / 1h / 1d, with crosshair, zoom and pan, the time axis in the
+  holder's local time. The position's range is a band behind the candles (a
+  series primitive, `RangeBand`) with its working edge labelled ("buys
+  58.0k–62.0k"), and **the scale keeps the band in view by default** — the
+  holder asked for exactly that; *Follow price* zooms into the candles and,
+  from there, the header says how far the range is ("buys 58.0k–62.0k · 27%
+  below") with *Show range* to come back. The form's default range follows the
+  asset (58k–62k for BTC, 2.2k–2.4k for ETH) until the holder types their own.
+  **Two prices on purpose, each
+  labelled**: the venue's live price in the header, and the Chainlink price as
+  a dashed *oracle* line with its age — "the price your position reacts to" —
+  so "the market crossed but nothing traded" has an answer instead of a
+  mystery. Everything the venues send crosses Zod in
+  `packages/core/src/market.ts` (`parseBinanceKlines`, `parseCoinbaseCandles`,
+  the two tick parsers, `applyTick` folding trades into the current candle
+  without rewriting history — 12 tests); `apps/live-app/src/lib/market.ts`
+  only moves bytes and reconnects. `chainlinkSepolia.ethUsd`
+  (`0x694A…5306`, verified on chain: "ETH / USD", 8 decimals) joins `btcUsd`,
+  and `usePrice(asset)` / `usePriceHistory(asset)` read the feed of the
+  position's own asset, so an ETH position marks its own oracle. If no venue
+  answers, the panel falls back to the Chainlink 48-hour ruler and says so.
+  Known gap, deliberately left for its own commit: `deriveState` for an ETH
+  position is still fed the BTC oracle by `usePositions`, `usePosition` and
+  the agent — no ETH position exists on chain yet.
+- **The oracle ruler got a crosshair (2026-09-06).** Kept for the review
+  screen and as the no-network fallback: `usePrice` polls every 20 s instead
+  of 60, the dot slides to its new spot and rings once on a tick (a no-op
+  under `prefers-reduced-motion`), and hovering shows the exact price and time
+  at that point.
 - **A second demo asset: ETH alongside BTC (2026-09-06).** Opening a position now
   starts with a "Which asset" choice — BTC or ETH — before buy/sell, each with its
   own icon; every unit label and the plain-words preview ("If ETH drops below…")

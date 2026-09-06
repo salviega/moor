@@ -4,6 +4,7 @@ export * from "./agent";
 export * from "./fees";
 export * from "./flow";
 export * from "./history";
+export * from "./market";
 export * from "./names";
 export * from "./pairs";
 export * from "./position";
