@@ -5,7 +5,7 @@
  * name — and the agent's panel: last reading and proposal, if any. Two actions,
  * both signed on the Ledger: Close (dock + unregister) and Revoke agent.
  */
-import { closeCalls, readAddr, revokeAgentCall } from "@moor/core";
+import { acceptProposalCalls, closeCalls, readAddr, revokeAgentCall } from "@moor/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
@@ -17,7 +17,7 @@ import { publicClient } from "@/lib/chain";
 import { ago, fmtAmount, fmtDate, fmtPct, fmtPrice, short } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
 import { demoPair, explorer } from "@/lib/pair";
-import { usePosition, usePrice, useSetupStatus } from "@/lib/queries";
+import { usePosition, usePrice, useSetupStatus, useTokenAccount } from "@/lib/queries";
 import { useSignSession } from "@/lib/session";
 import { StepRow } from "../../new/page";
 
@@ -50,6 +50,11 @@ const t = {
 	proposal: "Proposal",
 	none: "No proposal.",
 	invalid: "The agent wrote a proposal that does not validate; ignored.",
+	accept: "Accept proposal",
+	acceptHint: (n: number) =>
+		`${n} signature${n === 1 ? "" : "s"}: the agent proposed; you decide, on the Ledger.`,
+	accepted: (next: string | null) =>
+		next ? `Done — the successor is ${next}` : "Done — position closed.",
 	revoke: "Revoke agent",
 	revokeHint: "One signature. The agent loses its only permission; the position keeps working.",
 	close: "Close position",
@@ -71,8 +76,24 @@ export default function PositionDetail() {
 	const session = useSignSession();
 	const toast = useToast();
 	const qc = useQueryClient();
-	const [acting, setActing] = useState<"close" | "revoke" | null>(null);
+	const [acting, setActing] = useState<"close" | "revoke" | "accept" | null>(null);
 	const p = q.data;
+	const tokenInAddr = p
+		? (p.side === "buy" ? demoPair.quote : demoPair.base).address
+		: demoPair.quote.address;
+	const acct = useTokenAccount(h.address, tokenInAddr);
+	const proposal = p?.agent.proposal && p.agent.proposal.kind !== "none" ? p.agent.proposal : null;
+	const acceptCalls =
+		p && proposal && setup.data?.resolver
+			? acceptProposalCalls({
+					view: p,
+					proposal,
+					pair: demoPair,
+					names: { registry: p.registry, resolver: setup.data.resolver },
+					allowance: acct.data?.allowance ?? 0n,
+					now: Math.floor(Date.now() / 1000),
+				})
+			: null;
 	const agentAddr = useQuery({
 		queryKey: ["addr", p?.agentName],
 		queryFn: () => readAddr(publicClient, p?.agentName ?? ""),
@@ -81,25 +102,41 @@ export default function PositionDetail() {
 	const now = Date.now() / 1000;
 	const canAct = !!h.accountId && h.nameMatches === true;
 
-	const act = async (kind: "close" | "revoke") => {
+	const act = async (kind: "close" | "revoke" | "accept") => {
 		if (!p || !h.accountId) return;
 		setActing(kind);
 		const calls =
-			kind === "close"
-				? closeCalls({
-						strategyHash: p.strategyHash,
-						tokens: [p.tokenIn, p.tokenOut],
-						registry: p.registry,
-						label: p.label,
-					})
-				: [
-						revokeAgentCall({
-							resolver: setup.data?.resolver ?? p.registry,
-							agent: agentAddr.data ?? p.holder,
-						}),
-					];
+			kind === "accept"
+				? (acceptCalls ?? [])
+				: kind === "close"
+					? closeCalls({
+							strategyHash: p.strategyHash,
+							tokens: [p.tokenIn, p.tokenOut],
+							registry: p.registry,
+							label: p.label,
+						})
+					: [
+							revokeAgentCall({
+								resolver: setup.data?.resolver ?? p.registry,
+								agent: agentAddr.data ?? p.holder,
+							}),
+						];
 		const ok = await session.run(h.accountId, calls);
-		toast(ok ? "ok" : "error", ok ? (kind === "close" ? t.closed : t.revoked) : t.failed);
+		const successor = calls.find((c) => c.kind === "createPosition")
+			? calls.length > 2
+				? nextName(p.label)
+				: null
+			: null;
+		toast(
+			ok ? "ok" : "error",
+			ok
+				? kind === "close"
+					? t.closed
+					: kind === "revoke"
+						? t.revoked
+						: t.accepted(successor)
+				: t.failed,
+		);
 		await qc.invalidateQueries({ queryKey: ["position", h.name, label] });
 		await qc.invalidateQueries({ queryKey: ["positions"] });
 	};
@@ -208,6 +245,14 @@ export default function PositionDetail() {
 			) : null}
 			{!canAct ? <Notice>{t.needAccount}</Notice> : null}
 			<div className="flex flex-wrap justify-end gap-3">
+				{acceptCalls ? (
+					<div className="flex flex-col items-end gap-1">
+						<Button onClick={() => act("accept")} disabled={!canAct || session.running}>
+							{acting === "accept" && session.running ? t.confirm : t.accept}
+						</Button>
+						<span className="text-neutral-500 text-xs">{t.acceptHint(acceptCalls.length)}</span>
+					</div>
+				) : null}
 				<div className="flex flex-col items-end gap-1">
 					<Button
 						variant="ghost"
@@ -231,6 +276,11 @@ export default function PositionDetail() {
 			</div>
 		</>
 	);
+}
+
+function nextName(label: string): string {
+	const m = label.match(/^(.*)-(\d+)$/);
+	return m ? `${m[1]}-${Number(m[2]) + 1}` : `${label}-2`;
 }
 
 function Row({ k, v }: { k: string; v: string }) {

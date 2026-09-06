@@ -141,8 +141,11 @@ Validadas con zod al arrancar cada app; si falta una, no arranca. Ninguna vive e
 | `WETH_ADDRESS`                    | Foundry      | Opcional. Si falta, `Deploy.s.sol` despliega un `TestWETH`                      |
 | `SEPOLIA_RPC_URL`                 | Agente       | Distinta llave que la de la Live App. Sale de Key Ring                         |
 | `AGENT_PRIVATE_KEY`               | Agente       | La llave caliente. **Sale de Key Ring, nunca de un `.env`**                     |
-| `ANTHROPIC_API_KEY`               | Agente       | Sale de Key Ring                                                               |
+| `ANTHROPIC_API_KEY`               | Agente       | Sale de Key Ring. Opcional: sin ella el agente corre con la propuesta determinista |
 | `AGENT_INTERVAL_SECONDS`          | Agente       | Cadencia del ciclo. Por defecto 300                                            |
+| `AGENT_PARENT_NAME`, `AGENT_MODEL` | Agente      | Nombre del holder (`salviega.eth`) y modelo (`claude-opus-5`)                  |
+| `AGENT_LOGS_CHUNK`, `AGENT_FROM_BLOCK` | Agente  | Tramo de `eth_getLogs` (10 000; Alchemy gratis solo permite 10) y bloque inicial (11 600 000). El RPC del agente debe permitir rangos amplios: PublicNode sirve |
+| `AGENT_DRY_RUN`                   | Agente       | `1`: lee, deriva y registra, pero no envía nada                                |
 | `DEPLOYER_PRIVATE_KEY`            | Foundry      | Solo para scripts de despliegue; local, nunca en CI                            |
 | `MOOR_HOLDER`, `MOOR_SALT`        | Foundry      | `DeployRegistrar.s.sol`: dueño del nombre y salt del proxy del registry (default 1) |
 | `MOOR_AGENT`                      | Foundry      | `SetupHolder.s.sol`: la dirección de la llave del agente que se autoriza       |
@@ -160,8 +163,8 @@ Desde la raíz, con `pnpm`:
 | ------------------- | ----------------------------------------------------------------------------------- |
 | `dev`               | Live App con el simulador de Wallet API; no requiere Ledger Live                   |
 | `dev:ledger`        | Live App en `localhost` para cargarla en Ledger Live con el manifest local          |
-| `agent`             | Un ciclo del agente y sale. Para probar                                             |
-| `agent:loop`        | El agente en bucle, como corre en el VPS                                            |
+| `agent`             | Un ciclo del agente y sale. Para probar (`AGENT_DRY_RUN=1` para no enviar)          |
+| `agent:loop`        | El agente en bucle, como corre en el VPS (`apps/agent/deploy/moor-agent.service` + `run.sh`, que lee los secretos del Key Ring) |
 | `check`             | Biome sobre todo el monorepo                                                        |
 | `test`              | Vitest en `packages/core`, con `--coverage` — falla si el cubrimiento baja de 90%    |
 | `contracts:test`    | `forge test` en `packages/contracts`                                                |

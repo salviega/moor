@@ -30,6 +30,39 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Phase 4, first cut: the agent watches, derives and proposes** (04 §4.4,
+  05 §8, 06 §5; 2026-09-06). `packages/core/src/agent.ts` holds everything
+  deterministic — thresholds v1 (`farFromRange` > 10 % while waiting,
+  `completed`, `expiring` < 24 h; one proposal per trigger, cleared when the
+  reason goes away), the reading, the fallback proposal (widen toward the
+  price keeping the width, renew +30 days, close), the simulation in words,
+  the prompt, the eight record values and the single `multicall` of `setText`
+  that writes them — 25 tests, 94 % branches overall. `apps/agent` is the loop:
+  registry and resolver from the name, positions from `LabelRegistered`,
+  `readPositionView` + Chainlink price, one transaction per position per
+  cycle, one pino line per position; `src/model.ts` asks Claude Opus 5
+  through `beta.messages.parse` with `betaZodOutputFormat(Proposal)`,
+  `fallbacks: "default"` and adaptive thinking, and any refusal or invalid
+  answer falls back to the deterministic proposal. `AGENT_DRY_RUN=1` reads
+  and logs without sending; dry-run against Sepolia sees `btc-dip` and
+  `btc-dip-2`, both `farFromRange`, and would propose `widen`. Live App:
+  **Accept proposal** on the detail screen (`acceptProposalCalls`: close, then
+  for widen/narrow/renew ship and name the successor `<label>-N` with what was
+  left). `apps/agent/deploy/`: systemd unit and a runner that reads the three
+  secrets from Ledger Key Ring.
+  **First real cycle on Sepolia** (agent key `0xf98d…4B32`, funded by the
+  holder): one multicall per position — `btc-dip.salviega.eth`
+  `0x699c334de0827e6d87e43126b431484201a86a5d3472087cf0c2478ab39fa5b0` (block
+  11648313), `btc-dip-2.salviega.eth`
+  `0xe76bfcefba87f1e2acb06507c075f11a15a21c641945602a4b7cb55a02e273d8`
+  (11648315); `UniversalResolverV2` resolves `moor.agent.checkedAt`, `price
+  79647.24`, `state waiting`, `filled 0.0%`, and a `widen` proposal to
+  74,054–78,054 with its reasoning and simulation. The Claude call returned
+  400 — the key is not scoped to a workspace and the API wants
+  `anthropic-workspace-id` — so both proposals are the deterministic ones;
+  `ANTHROPIC_WORKSPACE_ID` is now supported (env, Key Ring runner,
+  `.env.example`). Still to do: the Claude path with a workspace id, the VPS.
+
 - **Phase 3, first cut: the Live App has its five screens and signs through
   the Wallet API** (04 §5; 2026-09-05). Tested in the browser with the
   simulator against Sepolia; the device test is what closes the phase.

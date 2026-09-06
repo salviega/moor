@@ -51,11 +51,22 @@ export function decodeStrategyRecord(value: string): StrategyRecord {
 }
 
 /** What the agent is allowed to propose (04 §3). Validated before it is ever written. */
+export const Trigger = z.enum(["completed", "expiring", "farFromRange"]);
+export type Trigger = z.infer<typeof Trigger>;
+
 export const Proposal = z.object({
 	kind: z.enum(["none", "widen", "narrow", "close", "renew"]),
-	priceMin: z.string().optional(),
-	priceMax: z.string().optional(),
+	priceMin: z
+		.string()
+		.regex(/^\d+(\.\d+)?$/)
+		.optional(),
+	priceMax: z
+		.string()
+		.regex(/^\d+(\.\d+)?$/)
+		.optional(),
 	deadline: z.number().int().positive().optional(),
 	reasoning: z.string().max(280),
+	/** Which threshold the agent answered; a proposal is made once per trigger. */
+	trigger: Trigger.optional(),
 });
 export type Proposal = z.infer<typeof Proposal>;

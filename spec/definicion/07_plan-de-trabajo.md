@@ -32,7 +32,7 @@ Lo que sorprende de la documentación de un sponsor frente a lo que hace su cód
 | ~~0~~ | ~~Andamiaje y Sepolia~~ cerrada el 5 sep     | 1.5  | 5–6 sep      |
 | ~~1~~ | ~~El programa y la regla que no puede fallar~~ cerrada el 5 sep | 2    | 6–8 sep      |
 | ~~2~~ | ~~El nombre y los permisos~~ cerrada el 5 sep | 1.5  | 8–9 sep      |
-| 3    | La Live App                                  | 2    | 9–11 sep     |
+| ~~3~~ | ~~La Live App~~ cerrada el 6 sep (clear signing en la Flex real queda en negativo, aceptado) | 2    | 9–11 sep     |
 | 4    | El agente                                    | 1    | 11–12 sep    |
 | 5    | Demo y submission                            | 1    | 12–13 sep    |
 | —    | Stretch: opcode propio                       | —    | solo si sobra |
@@ -122,10 +122,10 @@ Cualquier sorpresa en este paso —de la Wallet API, de Speculos, del redesplieg
 
 **Objetivo:** un proceso headless en un VPS, sin USB, que vigila, escribe en su subnombre, propone una vez, y que verificablemente no puede hacer más.
 
-- `apps/agent`: bucle cada 300 s. Precio desde el feed **Chainlink BTC/USD en Sepolia** — decisión que cierra el pendiente compartido del [04 §8](./04_diseno-de-solucion.md#8-decisiones-tomadas-y-pendientes), [05 §11](./05_stack-y-arquitectura.md#11-pendientes) y [06 §11](./06_tecnologias.md#11-pendientes). `deriveState()` de `packages/core`; `setText` de `moor.agent.*` con viem.
-- **Umbrales v1**, fijos y documentados en el código: precio a más de un porcentaje del rango durante más de N horas; posición `completada`; vencimiento a menos de 24 h. Al cruzar uno: **una** llamada a `claude-opus-5` con `messages.parse()` contra el esquema zod de la propuesta ([04 §3](./04_diseno-de-solucion.md#3-modelo-de-datos)), thinking adaptativo, `fallbacks: "default"`. Si la salida no valida, no se escribe.
-- Secretos por **Key Ring** (`wallet-cli ring`) en el VPS: llave del agente, RPC, `ANTHROPIC_API_KEY`. `systemd` para el bucle.
-- Live App: **panel del agente** en *Position detail* (última lectura con su antigüedad, propuesta si la hay); **Accept proposal** → sesión `dock` + `ship` + `createPosition`; **Revoke agent** → `revokeRoles`.
+- ~~`apps/agent`: bucle cada 300 s. Precio desde el feed **Chainlink BTC/USD en Sepolia**. `deriveState()` de `packages/core`; `setText` de `moor.agent.*` con viem.~~ Hecho el 6 sep: `apps/agent/src/main.ts` lee registry y resolver del nombre, enumera las posiciones (`LabelRegistered`), `readPositionView()` + `readPrice()`, y escribe las ocho claves en un solo `multicall` por posición. Probado en seco contra Sepolia: ve `btc-dip` y `btc-dip-2`, ambas `farFromRange` con el precio a 29 % del rango.
+- ~~**Umbrales v1**, fijos y documentados en el código; al cruzar uno, **una** llamada a `claude-opus-5` con `messages.parse()` contra el esquema zod de la propuesta, thinking adaptativo, `fallbacks: "default"`. Si la salida no valida, no se escribe.~~ `packages/core/src/agent.ts` (`THRESHOLDS`, `detectTriggers`, `deterministicProposal`, `simulate`, `proposalPrompt`, `shouldPropose`), 25 pruebas; `apps/agent/src/model.ts` llama a `client.beta.messages.parse` con `betaZodOutputFormat(Proposal)`, `fallbacks: "default"` y thinking adaptativo; una refusal o una salida que no valida caen a la propuesta determinista. La llamada real a Claude está por probar (falta la API key en el entorno).
+- Secretos por **Key Ring** (`wallet-cli ring`) en el VPS: llave del agente, RPC, `ANTHROPIC_API_KEY`. `systemd` para el bucle. *Escrito* (`apps/agent/deploy/moor-agent.service`, `run.sh` con `wallet-cli ring decrypt`); **pendiente** el VPS y el enrolamiento del Key Ring (arrastrado desde la fase 0).
+- ~~Live App: **panel del agente** en *Position detail* (última lectura con su antigüedad, propuesta si la hay); **Accept proposal** → sesión `dock` + `ship` + `createPosition`; **Revoke agent** → `revokeRoles`.~~ Hecho: panel (fase 3), *Accept proposal* (`acceptProposalCalls`: `dock` + `unregister`, y para widen/narrow/renew `ship` + `createPosition` del sucesor `<label>-N` con lo que quedaba) y *Revoke agent* (`revokeAgent`).
 - **Recorte interno permitido:** si aprieta, *Accept proposal* se reemplaza por *Close* + *New position* manuales, y la propuesta es texto determinista sin llamar a Claude.
 
 **Verificación:** el agente corre en el VPS sin dispositivo conectado; `moor.agent.checkedAt` avanza cada ciclo; se fuerza un umbral y aparece una propuesta válida en la Live App; `cast call hasRoles` muestra que el agente no puede nada más; *Revoke agent* lo silencia y la posición sigue operando.
