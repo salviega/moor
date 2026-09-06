@@ -23,7 +23,7 @@ pnpm agent:loop                   # the loop, as on the VPS
 
 Environment (06 §8): `SEPOLIA_RPC_URL` (must allow wide `eth_getLogs` ranges —
 PublicNode does; Alchemy's free tier does not), `AGENT_PRIVATE_KEY`, optional
-`ANTHROPIC_API_KEY`, `AGENT_INTERVAL_SECONDS`, `AGENT_PARENT_NAME`, `AGENT_MODEL`,
+`ANTHROPIC_API_KEY` (and `ANTHROPIC_WORKSPACE_ID` when the key is not workspace-scoped), `AGENT_INTERVAL_SECONDS`, `AGENT_PARENT_NAME`, `AGENT_MODEL`,
 `AGENT_LOGS_CHUNK`, `AGENT_FROM_BLOCK`, `AGENT_DRY_RUN`.
 
 On the VPS the secrets come from Ledger Key Ring, never from a file:

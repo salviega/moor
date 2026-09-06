@@ -47,7 +47,14 @@ const walletClient = createWalletClient({
 	chain: sepolia,
 	transport: http(env.SEPOLIA_RPC_URL),
 });
-const anthropic = env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }) : null;
+const anthropic = env.ANTHROPIC_API_KEY
+	? new Anthropic({
+			apiKey: env.ANTHROPIC_API_KEY,
+			...(env.ANTHROPIC_WORKSPACE_ID
+				? { defaultHeaders: { "anthropic-workspace-id": env.ANTHROPIC_WORKSPACE_ID } }
+				: {}),
+		})
+	: null;
 const parentLabel = env.AGENT_PARENT_NAME.replace(/\.eth$/, "");
 
 /** eth_getLogs in chunks: the holder's registry is young and small, the RPC's range limit is the constraint. */
@@ -94,7 +101,12 @@ async function propose(
 				"model answer refused or invalid; using the deterministic proposal",
 			);
 		} catch (err) {
-			log.warn({ err, position: view.name }, "model call failed; using the deterministic proposal");
+			// The message, not the stack: never a key, never a prompt in the logs (AGENTS.md, Security).
+			const reason = err instanceof Error ? err.message.split("\n")[0] : String(err);
+			log.warn(
+				{ reason, position: view.name },
+				"model call failed; using the deterministic proposal",
+			);
 		}
 	}
 	return {
