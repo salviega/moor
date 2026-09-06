@@ -245,6 +245,14 @@ export default function PositionDetail() {
 			) : null}
 			{!canAct ? <Notice>{t.needAccount}</Notice> : null}
 			<div className="flex flex-wrap justify-end gap-3">
+				{acceptCalls ? (
+					<div className="flex flex-col items-end gap-1">
+						<Button onClick={() => act("accept")} disabled={!canAct || session.running}>
+							{acting === "accept" && session.running ? t.confirm : t.accept}
+						</Button>
+						<span className="text-neutral-500 text-xs">{t.acceptHint(acceptCalls.length)}</span>
+					</div>
+				) : null}
 				<div className="flex flex-col items-end gap-1">
 					<Button
 						variant="ghost"
