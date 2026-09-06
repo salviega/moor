@@ -5,7 +5,8 @@
  * fees are nominal; only `to` and `data` matter to the screens.
  */
 import { type Address, type Hex, serializeTransaction } from "viem";
-import { moorSepolia, SEPOLIA_CHAIN_ID } from "./addresses";
+import { SEPOLIA_CHAIN_ID } from "./addresses";
+import { btcPair } from "./pairs";
 import { type Call, closeCalls, type Pair, planNewPosition, revokeAgentCall } from "./session";
 
 export interface FlowTransaction {
@@ -27,10 +28,8 @@ export interface FlowInput {
 	pair?: Pair;
 }
 
-export const demoPair: Pair = {
-	base: { address: moorSepolia.testWbtc, decimals: 8, symbol: "tWBTC" },
-	quote: { address: moorSepolia.testUsdc, decimals: 6, symbol: "tUSDC" },
-};
+/** The screens flow always exercises the BTC pair — one flow is enough to render every signature. */
+export const demoPair: Pair = btcPair;
 
 /** approve → ship → createPosition → dock → unregister → revokeAgent, for a 1,000 tUSDC buy between 58k and 62k. */
 export function demoFlowCalls(input: FlowInput): Call[] {

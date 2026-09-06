@@ -10,12 +10,13 @@ import type { PositionView } from "@moor/core";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Landing } from "@/components/landing";
 import { PositionPanel } from "@/components/position-panel";
 import { RangeRuler } from "@/components/range-ruler";
 import { Button, Notice, Panel, Skeleton, StateMark } from "@/components/ui";
 import { ago, fmtAmount, fmtPct, fmtPrice } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
-import { demoPair } from "@/lib/pair";
+import { resolveDemoPair } from "@/lib/pair";
 import { usePositions, usePrice, usePriceHistory } from "@/lib/queries";
 import { NameField } from "./name-field";
 
@@ -28,6 +29,10 @@ const t = {
 	empty: {
 		title: "No positions under this name yet",
 		body: "A position is a name under yours that already holds the order: it buys or sells BTC only when the price enters the range you chose, earns a fee on each trade, and your tokens never leave your wallet.",
+	},
+	notYours: {
+		title: "None of these positions belong to the connected account",
+		body: "This name has positions, but the account you chose owns none of them. Switch to the account that owns them, or change the name above.",
 	},
 	noRegistry: {
 		title: "This name is not set up for Moor yet",
@@ -53,6 +58,10 @@ const t = {
 };
 
 export default function Dashboard() {
+	const h = useHolder();
+	// No account: the landing screen carries the pitch and the one thing to do next.
+	// Reading still works without one — the browsing routes (/new, /setup) stay reachable from the nav.
+	if (!h.address) return <Landing onConnect={h.connect} connecting={h.connecting} host={h.host} />;
 	return (
 		<Suspense fallback={<Skeleton className="h-40 w-full" />}>
 			<DashboardInner />
@@ -70,11 +79,19 @@ function DashboardInner() {
 	const q = usePositions(h.name, h.parentLabel);
 	const now = Date.now() / 1000;
 	const stale = price.data ? now - price.data.updatedAt > 5400 : false;
-	const positions = q.data?.positions ?? [];
-	const current = selected ?? positions[0]?.label ?? null;
+	const allPositions = q.data?.positions ?? [];
+	// A name's positions can only ever be created by its root holder, but the account connected right
+	// now might not be that holder (wrong account chosen, or switched away) — show only what it owns.
+	const positions = h.address
+		? allPositions.filter((p) => p.holder.toLowerCase() === h.address?.toLowerCase())
+		: allPositions;
+	const current =
+		selected && positions.some((p) => p.label === selected)
+			? selected
+			: (positions[0]?.label ?? null);
 
 	const list = (
-		<div className="flex flex-col gap-4">
+		<div className="flex h-full flex-col gap-4">
 			<NameField quiet />
 			<Panel tone="raised" className="flex flex-col gap-2">
 				<div className="flex items-baseline justify-between">
@@ -100,76 +117,83 @@ function DashboardInner() {
 					/>
 				) : null}
 			</Panel>
-			<div className="flex items-center justify-between">
-				<h1 className="font-semibold text-xl tracking-tight">{t.title}</h1>
-				<Link href="/new">
-					<Button className="min-h-9 px-3 py-1 text-xs">{t.open}</Button>
-				</Link>
+			<div className="flex flex-col gap-3">
+				<div className="flex items-center justify-between">
+					<h1 className="font-semibold text-xl tracking-tight">{t.title}</h1>
+					<Link href="/new">
+						<Button className="min-h-9 px-3 py-1 text-xs">{t.open}</Button>
+					</Link>
+				</div>
+				{q.isLoading ? (
+					<ul className="flex flex-col gap-2" aria-busy="true" aria-label="Loading positions">
+						{[0, 1].map((i) => (
+							<li key={i} className="flex flex-col gap-2 rounded-md border border-line p-3">
+								<Skeleton className="h-4 w-40" />
+								<Skeleton className="h-3 w-24" />
+							</li>
+						))}
+					</ul>
+				) : null}
+				{q.isError ? (
+					<Notice
+						tone="error"
+						title={t.error.title}
+						action={
+							<Button variant="quiet" onClick={() => q.refetch()}>
+								{t.error.retry}
+							</Button>
+						}
+					>
+						{t.error.body}
+					</Notice>
+				) : null}
+				{q.data && !q.data.registry ? (
+					<Notice
+						tone="warn"
+						title={t.noRegistry.title}
+						action={
+							<Link href="/setup" className="underline">
+								{t.noRegistry.action}
+							</Link>
+						}
+					>
+						{t.noRegistry.body}
+					</Notice>
+				) : null}
+				{q.data?.registry && allPositions.length === 0 ? (
+					<section className="flex flex-col gap-3 rounded-md border border-line border-dashed p-5">
+						<h2 className="text-base">{t.empty.title}</h2>
+						<p className="text-muted text-sm">{t.empty.body}</p>
+					</section>
+				) : null}
+				{q.data?.registry && allPositions.length > 0 && positions.length === 0 ? (
+					<Notice tone="warn" title={t.notYours.title}>
+						{t.notYours.body}
+					</Notice>
+				) : null}
+				{positions.length ? (
+					<ul
+						className="flex flex-col divide-y divide-line rounded-md border border-line"
+						aria-label="Your positions"
+					>
+						{positions.map((p) => (
+							<Row
+								key={p.name}
+								p={p}
+								now={now}
+								price={price.data?.price}
+								active={p.label === current}
+								onPick={() => router.push(`/?position=${encodeURIComponent(p.label)}`)}
+							/>
+						))}
+					</ul>
+				) : null}
 			</div>
-			{q.isLoading ? (
-				<ul className="flex flex-col gap-2" aria-busy="true" aria-label="Loading positions">
-					{[0, 1].map((i) => (
-						<li key={i} className="flex flex-col gap-2 rounded-md border border-line p-3">
-							<Skeleton className="h-4 w-40" />
-							<Skeleton className="h-3 w-24" />
-						</li>
-					))}
-				</ul>
-			) : null}
-			{q.isError ? (
-				<Notice
-					tone="error"
-					title={t.error.title}
-					action={
-						<Button variant="quiet" onClick={() => q.refetch()}>
-							{t.error.retry}
-						</Button>
-					}
-				>
-					{t.error.body}
-				</Notice>
-			) : null}
-			{q.data && !q.data.registry ? (
-				<Notice
-					tone="warn"
-					title={t.noRegistry.title}
-					action={
-						<Link href="/setup" className="underline">
-							{t.noRegistry.action}
-						</Link>
-					}
-				>
-					{t.noRegistry.body}
-				</Notice>
-			) : null}
-			{q.data?.registry && positions.length === 0 ? (
-				<section className="flex flex-col gap-3 rounded-md border border-line border-dashed p-5">
-					<h2 className="text-base">{t.empty.title}</h2>
-					<p className="text-muted text-sm">{t.empty.body}</p>
-				</section>
-			) : null}
-			{positions.length ? (
-				<ul
-					className="flex flex-col divide-y divide-line rounded-md border border-line"
-					aria-label="Your positions"
-				>
-					{positions.map((p) => (
-						<Row
-							key={p.name}
-							p={p}
-							now={now}
-							price={price.data?.price}
-							active={p.label === current}
-							onPick={() => router.push(`/?position=${encodeURIComponent(p.label)}`)}
-						/>
-					))}
-				</ul>
-			) : null}
 		</div>
 	);
 
 	return (
-		<div className="grid grid-cols-1 gap-6 lg:min-h-[calc(100vh-80px)] lg:grid-cols-[minmax(340px,420px)_1fr]">
+		<div className="grid grid-cols-1 gap-6 lg:h-full lg:grid-cols-[minmax(340px,420px)_1fr]">
 			<aside className={selected ? "hidden lg:block" : ""}>{list}</aside>
 			<section className={`flex flex-col ${selected ? "" : "hidden lg:flex"}`} aria-live="polite">
 				{selected ? (
@@ -214,7 +238,8 @@ function Row({
 	onPick: () => void;
 	price: number | undefined;
 }) {
-	const tokenIn = p.side === "buy" ? demoPair.quote : demoPair.base;
+	const demo = resolveDemoPair(p.tokenIn, p.tokenOut);
+	const tokenIn = p.side === "buy" ? demo.pair.quote : demo.pair.base;
 	const pending = p.agent.proposal && p.agent.proposal.kind !== "none";
 	const agent = p.agent.checkedAt
 		? now - p.agent.checkedAt > 3600
@@ -230,7 +255,16 @@ function Row({
 				className={`flex min-h-24 w-full flex-col gap-2 p-4 text-left hover:bg-ink-1 ${active ? "border-l-2 border-l-accent bg-ink-1" : "border-l-2 border-l-transparent"}`}
 			>
 				<span className="flex items-center justify-between gap-3">
-					<span className="truncate text-base text-text">{p.name}</span>
+					<span className="flex min-w-0 items-center gap-2">
+						<img
+							src={demo.icon}
+							alt=""
+							width={20}
+							height={20}
+							className="h-5 w-5 shrink-0 rounded-full"
+						/>
+						<span className="truncate text-base text-text">{p.name}</span>
+					</span>
 					<StateMark state={p.state} />
 				</span>
 				<RangeRuler

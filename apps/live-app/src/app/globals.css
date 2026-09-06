@@ -78,9 +78,47 @@ body {
 	}
 }
 @media (prefers-reduced-motion: reduce) {
-	.skeleton {
+	.skeleton,
+	.animate-in-1,
+	.animate-in-2,
+	.animate-in-3,
+	.cta-pulse {
 		animation: none;
 	}
+}
+
+/* Landing (disconnected state): a short staggered entrance, then a slow pulse on the primary CTA. */
+@keyframes fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+.animate-in-1 {
+	animation: fade-up 0.5s ease-out both;
+}
+.animate-in-2 {
+	animation: fade-up 0.5s ease-out 0.12s both;
+}
+.animate-in-3 {
+	animation: fade-up 0.5s ease-out 0.24s both;
+}
+
+@keyframes cta-glow {
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 rgba(240, 182, 74, 0.35);
+	}
+	50% {
+		box-shadow: 0 0 0 10px rgba(240, 182, 74, 0);
+	}
+}
+.cta-pulse {
+	animation: cta-glow 2.4s ease-in-out infinite;
 }
 
 details > summary {

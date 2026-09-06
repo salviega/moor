@@ -27,7 +27,7 @@ import {
 	short,
 } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
-import { demoPair, explorer } from "@/lib/pair";
+import { btcDemo, explorer, resolveDemoPair } from "@/lib/pair";
 import {
 	usePosition,
 	usePrice,
@@ -110,8 +110,9 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 	const [acting, setActing] = useState<Act | null>(null);
 	const [dismissed, setDismissed] = useState<string | null>(null);
 	const p = q.data;
-	const tokenIn = p ? (p.side === "buy" ? demoPair.quote : demoPair.base) : demoPair.quote;
-	const tokenOut = p ? (p.side === "buy" ? demoPair.base : demoPair.quote) : demoPair.base;
+	const demo = p ? resolveDemoPair(p.tokenIn, p.tokenOut) : btcDemo;
+	const tokenIn = p ? (p.side === "buy" ? demo.pair.quote : demo.pair.base) : demo.pair.quote;
+	const tokenOut = p ? (p.side === "buy" ? demo.pair.base : demo.pair.quote) : demo.pair.base;
 	const acct = useTokenAccount(h.address, tokenIn.address);
 	const agentAddr = useQuery({
 		queryKey: ["addr", p?.agentName],
@@ -134,7 +135,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 			? acceptProposalCalls({
 					view: p,
 					proposal,
-					pair: demoPair,
+					pair: demo.pair,
 					names: { registry: p.registry, resolver: setup.data.resolver },
 					allowance: acct.data?.allowance ?? 0n,
 					now: Math.floor(now),
@@ -234,7 +235,16 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				</Link>
 			) : null}
 			<header className="flex flex-col gap-2">
-				<h1 className={`font-semibold tracking-tight ${embedded ? "text-xl" : "text-2xl"}`}>
+				<h1
+					className={`flex items-center gap-2 font-semibold tracking-tight ${embedded ? "text-xl" : "text-2xl"}`}
+				>
+					<img
+						src={demo.icon}
+						alt=""
+						width={24}
+						height={24}
+						className="h-6 w-6 shrink-0 rounded-full"
+					/>
 					{p.name}
 				</h1>
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -261,7 +271,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				/>
 			) : null}
 
-			<div className="grid grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]">
+			<div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]">
 				<Panel tone="raised" className="flex flex-col justify-center gap-3">
 					<span className="eyebrow">Price against the range · last 48 h</span>
 					<RangeRuler
@@ -272,8 +282,8 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 						side={p.side}
 					/>
 				</Panel>
-				<Panel tone="raised" className="flex flex-col gap-4">
-					<div className="grid grid-cols-2 gap-x-6 gap-y-4">
+				<Panel tone="raised" className="flex flex-col justify-center gap-4">
+					<div className="grid grid-cols-2 gap-x-6 gap-y-5">
 						<Stat
 							label={t.stats.committed}
 							value={
@@ -328,7 +338,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 			) : null}
 			{!p.amountKnown ? <p className="text-dim text-xs">{t.unknownAmount}</p> : null}
 
-			<div className="mt-auto grid grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr_2fr]">
+			<div className="grid shrink-0 grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr_2fr]">
 				<Panel className="flex flex-col gap-3">
 					<div className="flex flex-wrap items-baseline justify-between gap-2">
 						<h2 className="text-base">{t.agent.title}</h2>

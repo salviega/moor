@@ -36,4 +36,6 @@ export const moorSepolia = {
 	moorProgramFactory: ZERO_ADDRESS,
 	testWbtc: "0xfA92A297eC2cCC8Ec010ACa475F07240e2D47deC",
 	testUsdc: "0x274aaB610937e018310cCedC0b05B543b75557AB",
+	/** WETH9-style (deposit/withdraw with real Sepolia ETH, not the open-mint tUSDC/tWBTC pattern). */
+	testWeth: "0x10C5026152eB4f79119d6cFb75205aEB6E98dfA0",
 } as const satisfies Record<string, Address>;

@@ -30,6 +30,48 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **A second demo asset: ETH alongside BTC (2026-09-06).** Opening a position now
+  starts with a "Which asset" choice — BTC or ETH — before buy/sell, each with its
+  own icon; every unit label and the plain-words preview ("If ETH drops below…")
+  follow the choice. `packages/core/src/pairs.ts` adds `ethPair` next to `btcPair`
+  and `resolveDemoPair(tokenIn, tokenOut)`, which derives which pair an *existing*
+  position actually is from its own on-chain token addresses rather than assuming
+  BTC — used by the dashboard rows, the position detail panel and, in
+  `apps/agent`, the proposal and simulation calls, so an ETH position is never
+  read or written as if it were BTC. `moorSepolia.testWeth` (already deployed,
+  WETH9-style: `deposit()`/`withdraw()` against real ETH, not open-mint like the
+  other test tokens) is now in `addresses.ts`. Real sponsor and coin logos
+  (`apps/live-app/public/sponsor-1inch.png`, `sponsor-ens.png`,
+  `sponsor-ledger.png`, `token-btc.png`, `token-eth.png`, `token-usdc.png`)
+  replace the landing page's text-only sponsor wordmarks and appear next to every
+  amount in the rows, the detail panel and the form. Opening a position in ETH
+  shows the holder's real (possibly zero) tWETH balance; there is no in-app wrap
+  flow yet — funding tWETH happens outside Moor, same as any other test token,
+  until a wrap step is asked for.
+- **Landing screen when disconnected (2026-09-06).** Choosing an account was
+  the only thing the disconnected dashboard asked for, buried in an empty
+  positions list. Replaced with `src/components/landing.tsx`: the pitch, a
+  pulsing "Connect Ledger account" call to action (host-aware: "Open Moor from
+  Ledger Live" when opened outside it), three steps (sign once → the order is
+  already working → named, watched, yours to decide) and what each sponsor's
+  own tech is doing — 1inch Aqua/SwapVM hold the order and the balance, ENSv2
+  names every position with on-chain per-key permissions, Ledger's Wallet API
+  and Key Ring sign and hold the agent's one key. Fits one screen on the
+  dashboard's own flex-height chain, no page scroll on a normal desktop
+  window; a short entrance animation and the CTA's pulse respect
+  `prefers-reduced-motion`.
+- **A real height chain, no more scrollbar (2026-09-06).** The previous fit
+  guessed the nav's height in a `calc()`; on the holder's screen it was off by
+  a few pixels and the page still scrolled. Rebuilt on flexbox instead of a
+  guess: `body` is `h-dvh` and the only scroll container, `nav` does not
+  shrink, `main` is the one `flex-1` region — the dashboard grid gets its
+  height from that chain, not a magic number. Inside it, the range chart and
+  the numbers panel now grow to absorb whatever space the maker-mismatch and
+  unknown-amount notices leave when they are not shown, instead of leaving a
+  gap above an `mt-auto` bottom row; the position rows on the left do the same
+  with the sidebar's leftover height. Verified with
+  `document.documentElement.scrollHeight === clientHeight` on both a position
+  with a pending proposal and notices, and one without.
 - **Fit to the viewport (2026-09-06).** The dashboard uses the whole width:
   chart beside the numbers, the proposal band horizontal, agent / close /
   technical details in one row, list rows taller with their own range ruler;
