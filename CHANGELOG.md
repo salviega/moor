@@ -215,8 +215,10 @@ Two things this project's entries carry that a web app's would not:
   `apps/agent/src/model.ts` is the `fetch`: 60 s timeout; on a non-2xx the
   error carries the status and the API's first line, never the key or the
   prompt. `GROQ_API_KEY` replaces `ANTHROPIC_API_KEY` (`ANTHROPIC_WORKSPACE_ID`
-  goes away), `AGENT_MODEL` defaults to `openai/gpt-oss-120b`, and
-  `deploy/run.sh` reads `moor/groq-api-key` from the ring. Prompt, thresholds,
+  goes away), `AGENT_MODEL` defaults to `openai/gpt-oss-120b`,
+  `deploy/run.sh` reads `moor/groq-api-key` from the ring, and `.env.example`
+  documents the local-only path (a git-ignored `.env`; a key pasted anywhere
+  else is burned). Prompt, thresholds,
   the eight records, the one multicall and the fallback are unchanged. Still
   pending: the first real call — the key is not in the ring yet.
 
