@@ -52,9 +52,10 @@ container), Node 24 (`nvm use 24`), `gh` (downloads the prebuilt app ELF).
 | `revokeAgent` → "Revoke Moor agent" | clear-signed | `screens/revokeAgent/` |
 
 `screens/results.json` carries the verdicts; the `ledger-screens` workflow (manual,
-`workflow_dispatch` — it takes ~8 minutes) regenerates the folder and fails on any diff in
-the five descriptor-covered signatures (`approve/` is Ledger's own flow and its screens
-depend on timing, so they are kept as evidence but not diffed). The transactions come from `@moor/core`'s `demoFlow()` —
+`workflow_dispatch` — it takes ~8 minutes) regenerates the folder and runs `scripts/screens-check.mjs`: the verdict of every
+signature and every frame the holder reads before "Hold to sign" must be unchanged. The last
+two frames of a flow (the device's post-signature transition) and `approve/` (Ledger's own
+ERC-20 flow) depend on timing, so they are kept as evidence but not compared. The transactions come from `@moor/core`'s `demoFlow()` —
 the same builders the Live App signs with — via `scripts/raw-flow.ts`.
 
 **The physical device is a different story.** Ledger Live only clear-signs descriptors
