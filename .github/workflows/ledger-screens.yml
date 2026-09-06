@@ -28,7 +28,9 @@ jobs:
       - run: pnpm ledger:screens
         env:
           GH_TOKEN: ${{ github.token }}
-      - run: git diff --exit-code --stat -- packages/erc7730/screens
+      # approve/ is Ledger's own ERC-20 flow (blind on testnet tokens) and its screens depend on timing;
+      # the five descriptor-covered signatures must not change by a pixel.
+      - run: git diff --exit-code --stat -- packages/erc7730/screens ':!packages/erc7730/screens/approve'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
