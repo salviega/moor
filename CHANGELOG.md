@@ -49,9 +49,19 @@ Two things this project's entries carry that a web app's would not:
   **Accept proposal** on the detail screen (`acceptProposalCalls`: close, then
   for widen/narrow/renew ship and name the successor `<label>-N` with what was
   left). `apps/agent/deploy/`: systemd unit and a runner that reads the three
-  secrets from Ledger Key Ring. Not yet done: a real write on Sepolia (the
-  agent key has no ETH), the Claude call (no API key in the environment), the
-  VPS.
+  secrets from Ledger Key Ring.
+  **First real cycle on Sepolia** (agent key `0xf98d…4B32`, funded by the
+  holder): one multicall per position — `btc-dip.salviega.eth`
+  `0x699c334de0827e6d87e43126b431484201a86a5d3472087cf0c2478ab39fa5b0` (block
+  11648313), `btc-dip-2.salviega.eth`
+  `0xe76bfcefba87f1e2acb06507c075f11a15a21c641945602a4b7cb55a02e273d8`
+  (11648315); `UniversalResolverV2` resolves `moor.agent.checkedAt`, `price
+  79647.24`, `state waiting`, `filled 0.0%`, and a `widen` proposal to
+  74,054–78,054 with its reasoning and simulation. The Claude call returned
+  400 — the key is not scoped to a workspace and the API wants
+  `anthropic-workspace-id` — so both proposals are the deterministic ones;
+  `ANTHROPIC_WORKSPACE_ID` is now supported (env, Key Ring runner,
+  `.env.example`). Still to do: the Claude path with a workspace id, the VPS.
 
 - **Phase 3, first cut: the Live App has its five screens and signs through
   the Wallet API** (04 §5; 2026-09-05). Tested in the browser with the
