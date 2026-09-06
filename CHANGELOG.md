@@ -30,6 +30,17 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **The price chart feels watched (2026-09-06).** Considered embedding a
+  TradingView-style widget for a truly live tick; declined it — that would
+  show a real exchange's BTC/ETH price next to a position that only ever reacts
+  to Chainlink's Sepolia testnet feed, and the two numbers would disagree.
+  Instead, `usePrice` polls every 20 s instead of 60, the current-price dot
+  slides to its new spot with a CSS transition instead of jumping, and rings
+  once on each tick (`price-dot`/`price-pulse` in `globals.css`, both a no-op
+  under `prefers-reduced-motion`). The chart is also interactive now: hovering
+  or touching the line shows a crosshair and a tooltip with the exact price and
+  time at that point, flipping sides near the chart's edge so it never runs off
+  screen.
 - **A second demo asset: ETH alongside BTC (2026-09-06).** Opening a position now
   starts with a "Which asset" choice — BTC or ETH — before buy/sell, each with its
   own icon; every unit label and the plain-words preview ("If ETH drops below…")

@@ -37,7 +37,9 @@ export function usePrice() {
 	return useQuery({
 		queryKey: ["price"],
 		queryFn: () => readPrice(publicClient),
-		refetchInterval: 60_000,
+		// Chainlink's Sepolia feed itself doesn't tick every second, but polling
+		// tighter than the old 60s makes the chart's dot feel watched, not stale.
+		refetchInterval: 20_000,
 	});
 }
 

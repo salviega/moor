@@ -82,9 +82,32 @@ body {
 	.animate-in-1,
 	.animate-in-2,
 	.animate-in-3,
-	.cta-pulse {
+	.cta-pulse,
+	.price-dot,
+	.price-pulse {
 		animation: none;
+		transition: none;
 	}
+}
+
+/* Price chart: the current-price dot slides to its new spot and rings once on each tick. */
+@keyframes price-ring {
+	from {
+		r: 3;
+		opacity: 0.5;
+	}
+	to {
+		r: 9;
+		opacity: 0;
+	}
+}
+.price-dot {
+	transition:
+		cx 600ms ease,
+		cy 600ms ease;
+}
+.price-pulse {
+	animation: price-ring 900ms ease-out;
 }
 
 /* Landing (disconnected state): a short staggered entrance, then a slow pulse on the primary CTA. */
