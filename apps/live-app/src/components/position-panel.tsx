@@ -340,10 +340,12 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 								: undefined
 						}
 					/>
+				</Panel>
+				<Panel tone="raised" className="flex flex-col justify-center gap-4">
 					{draft ? (
-						<div className="flex shrink-0 flex-col gap-3 border-line border-t pt-3">
-							<div className="grid grid-cols-[auto_1fr_1fr] items-end gap-3">
-								<span className="eyebrow pb-3">{t.move.title}</span>
+						<div className="flex flex-col gap-4">
+							<span className="eyebrow">{t.move.title}</span>
+							<div className="grid grid-cols-2 gap-3">
 								<Field
 									label={t.move.low}
 									unit={t.move.unit(demo.label)}
@@ -402,55 +404,56 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 								</Button>
 							</div>
 						</div>
-					) : null}
-				</Panel>
-				<Panel tone="raised" className="flex flex-col justify-center gap-4">
-					<div className="grid grid-cols-2 gap-x-6 gap-y-5">
-						<Stat
-							label={t.stats.committed}
-							value={
-								p.amountKnown ? fmtAmount(p.amountIn ?? 0n, tokenIn.decimals, tokenIn.symbol) : "—"
-							}
-							sub={
-								p.amountKnown && cur
-									? `≈ ${fmtUsd(p.amountIn ?? 0n, tokenIn.decimals, p.side === "buy" ? 1 : cur)}`
-									: undefined
-							}
-						/>
-						<Stat
-							label={t.stats.left}
-							value={fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)}
-							sub={p.amountKnown ? `${fmtPct(p.converted)} converted` : undefined}
-						/>
-						<Stat
-							label={t.stats.received}
-							value={fmtAmount(p.balanceOut, tokenOut.decimals, tokenOut.symbol)}
-							sub={
-								cur && p.balanceOut > 0n
-									? `≈ ${fmtUsd(p.balanceOut, tokenOut.decimals, p.side === "buy" ? cur : 1)}`
-									: undefined
-							}
-						/>
-						<Stat
-							label={t.stats.expires}
-							value={p.expiry ? fmtDate(p.expiry) : "—"}
-							sub={p.expiry ? `${daysLeft(p.expiry, now)} days left` : undefined}
-						/>
-						<Stat
-							label="Range"
-							value={`${fmtPrice(lo)} – ${fmtPrice(hi)}`}
-							sub={`${p.side === "buy" ? "buys" : "sells"} BTC · USD per BTC`}
-						/>
-						<Stat
-							label="Owner"
-							value={<ExplorerLink kind="address" id={p.holder} short />}
-							sub={
-								h.address && p.holder.toLowerCase() === h.address.toLowerCase()
-									? "this account"
-									: undefined
-							}
-						/>
-					</div>
+					) : (
+						<div className="grid grid-cols-2 gap-x-6 gap-y-5">
+							<Stat
+								label={t.stats.committed}
+								value={
+									p.amountKnown
+										? fmtAmount(p.amountIn ?? 0n, tokenIn.decimals, tokenIn.symbol)
+										: "—"
+								}
+								sub={
+									p.amountKnown && cur
+										? `≈ ${fmtUsd(p.amountIn ?? 0n, tokenIn.decimals, p.side === "buy" ? 1 : cur)}`
+										: undefined
+								}
+							/>
+							<Stat
+								label={t.stats.left}
+								value={fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)}
+								sub={p.amountKnown ? `${fmtPct(p.converted)} converted` : undefined}
+							/>
+							<Stat
+								label={t.stats.received}
+								value={fmtAmount(p.balanceOut, tokenOut.decimals, tokenOut.symbol)}
+								sub={
+									cur && p.balanceOut > 0n
+										? `≈ ${fmtUsd(p.balanceOut, tokenOut.decimals, p.side === "buy" ? cur : 1)}`
+										: undefined
+								}
+							/>
+							<Stat
+								label={t.stats.expires}
+								value={p.expiry ? fmtDate(p.expiry) : "—"}
+								sub={p.expiry ? `${daysLeft(p.expiry, now)} days left` : undefined}
+							/>
+							<Stat
+								label="Range"
+								value={`${fmtPrice(lo)} – ${fmtPrice(hi)}`}
+								sub={`${p.side === "buy" ? "buys" : "sells"} BTC · USD per BTC`}
+							/>
+							<Stat
+								label="Owner"
+								value={<ExplorerLink kind="address" id={p.holder} short />}
+								sub={
+									h.address && p.holder.toLowerCase() === h.address.toLowerCase()
+										? "this account"
+										: undefined
+								}
+							/>
+						</div>
+					)}
 				</Panel>
 			</div>
 			{!p.makerMatches ? (

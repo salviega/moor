@@ -45,8 +45,9 @@ Two things this project's entries carry that a web app's would not:
   real change: the range lives inside the order, so moving it means closing
   this order and opening a successor with what is left — the same session as
   accepting the agent's "move the range" proposal. Dragging shows the on-chain
-  range as a fainter band for reference, opens *New range* with the two
-  fields, says what will happen ("Closes this order and opens btc-dip-2 with
+  range as a fainter band for reference and opens *New range* **in the side
+  panel, in place of the numbers, so the chart keeps its full height**; it has
+  the two fields, says what will happen ("Closes this order and opens btc-dip-2 with
   the 1,000 tUSDC left") and offers *Move the range · 4 signatures* or
   *Cancel*; the button explains itself when it cannot act (another wallet's
   order, nothing left to convert, no account). Touch: the first tap arms the

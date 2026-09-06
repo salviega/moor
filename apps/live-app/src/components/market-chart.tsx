@@ -203,7 +203,9 @@ export function MarketChart({
 	const arm = (zone: RangeGrab | null, dragging = false) => {
 		const el = overlay.current;
 		if (!el) return;
-		el.style.pointerEvents = zone || dragging ? "auto" : "none";
+		// Inline, outside React's `style` prop: a re-render (the axes measure on first hover) would
+		// otherwise reapply the prop and undo this between the hover and the press.
+		el.style.pointerEvents = zone || dragging ? "auto" : "";
 		el.style.cursor = dragging ? "grabbing" : zone === "body" ? "grab" : "ns-resize";
 	};
 
@@ -553,13 +555,8 @@ export function MarketChart({
 							if (!drag.current) arm(null);
 						}}
 						ref={overlay}
-						className="absolute top-0 left-0 z-10"
-						style={{
-							right: axes.right,
-							bottom: axes.bottom,
-							pointerEvents: "none",
-							touchAction: "none",
-						}}
+						className="pointer-events-none absolute top-0 left-0 z-10"
+						style={{ right: axes.right, bottom: axes.bottom, touchAction: "none" }}
 					/>
 				) : null}
 			</div>
