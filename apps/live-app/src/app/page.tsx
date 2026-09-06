@@ -240,7 +240,6 @@ function Row({
 }) {
 	const demo = resolveDemoPair(p.tokenIn, p.tokenOut);
 	const tokenIn = p.side === "buy" ? demo.pair.quote : demo.pair.base;
-	const icon = p.side === "buy" ? "/token-usdc.png" : demo.icon;
 	const pending = p.agent.proposal && p.agent.proposal.kind !== "none";
 	const agent = p.agent.checkedAt
 		? now - p.agent.checkedAt > 3600
@@ -258,7 +257,7 @@ function Row({
 				<span className="flex items-center justify-between gap-3">
 					<span className="flex min-w-0 items-center gap-2">
 						<img
-							src={icon}
+							src={demo.icon}
 							alt=""
 							width={20}
 							height={20}

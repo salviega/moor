@@ -239,7 +239,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 					className={`flex items-center gap-2 font-semibold tracking-tight ${embedded ? "text-xl" : "text-2xl"}`}
 				>
 					<img
-						src={p.side === "buy" ? "/token-usdc.png" : demo.icon}
+						src={demo.icon}
 						alt=""
 						width={24}
 						height={24}
