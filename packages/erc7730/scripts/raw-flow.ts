@@ -3,7 +3,7 @@
  * EIP-1559 raw transactions on Sepolia, built by the same code the Live App
  * uses (@moor/core). screens.mjs renders each on the emulated device.
  */
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { demoFlow } from "@moor/core";
@@ -16,5 +16,6 @@ const flow = demoFlow({
 	agent: "0xf98dad9f1aa054cDEc857F9bB98f0be9B1f74B32",
 });
 const out = resolve(dirname(fileURLToPath(import.meta.url)), "../flow/raw-flow.json");
+mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, `${JSON.stringify(flow, null, "\t")}\n`);
 console.log(`wrote ${flow.length} transactions to ${out}`);
