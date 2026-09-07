@@ -9,7 +9,11 @@ Stack en uso: `1inch/swap-vm` (`main`), `1inch/aqua` (`main`), `@1inch/aqua-sdk`
 
 ## Lo que funcionó bien
 
-_Se llena mientras se construye. Primer candidato ya visible desde la investigación: el catálogo `docs/PROGRAMS.md` de SwapVM da ejemplos de composición de instrucciones que evitan tener que leer el bytecode a mano._
+- **`CoreInvariants` es reutilizable desde fuera tal cual.** Un contrato abstracto, un método que implementar (`_executeSwap`), y el programa de Moor tuvo su suite de invariantes de SwapVM (simetría exact-in/exact-out, quote/swap, monotonía, redondeo a favor del maker) en ~80 líneas. Decidió la compuerta de la fase 1 dos días antes de lo planeado. (2026-09-05)
+- **El redespliegue reproduce el bytecode oficial byte a byte.** Aqua compilado desde el tag `v1.0.0` con su propio `foundry.toml` y desplegado en Sepolia verifica en Sourcify con `exact_match`. Sin despliegue oficial en testnet, es lo que hace defendible "official contracts". (2026-09-05)
+- **`docs/PROGRAMS.md` es la documentación real de SwapVM.** Usa los nombres del código, muestra programas completos y explica la composición; leyéndolo desde el principio se ahorra el desencuentro del README (abajo). (2026-09-05)
+- **Aqua hizo exactamente lo prometido con un taker real.** Un `ship` de 1,000 tUSDC contra el programa; un `swap` de 0.01 tWBTC dentro del rango devolvió 605.86 tUSDC con la fee retenida en la posición, `Pulled`/`Pushed` correctos, y el balance virtual del maker bajó sin que ningún token saliera de su wallet — [`0xe76cc5cf…`](https://sepolia.etherscan.io/tx/0xe76cc5cf16e51a611c96abe17bff7a79f487273c3de75ecbfb78180dac867501). La dirección contraria revierte en `quote` y en `swap`. Los mismos números que en Anvil: la matemática es determinista. (2026-09-05)
+- **`forge install` con tags, cero fricción** una vez resueltos los remappings (abajo). (2026-09-05)
 
 ---
 
@@ -83,7 +87,7 @@ _Se llena mientras se construye. Primer candidato ya visible desde la investigac
 
 ## Preguntas abiertas para los mentores
 
-- [ ] ¿Un redespliegue sin modificar de Aqua y SwapVM en Sepolia cuenta como "official contracts" para la calificación? (Pregunta de la fase 0 del [07](../definicion/07_plan-de-trabajo.md).)
+- [ ] ¿Un redespliegue sin modificar de Aqua y SwapVM en Sepolia cuenta como "official contracts" para la calificación? (Pregunta de la fase 0 del [07](../definicion/07_plan-de-trabajo.md).) *Al 7 de septiembre sigue sin respuesta; la evidencia que la acompaña es el `exact_match` de Sourcify de Aqua [`0xB874…7140`](https://sepolia.etherscan.io/address/0xB8747B3e2F90154420165FB2fc4707D638797140) y del router, y el README lo dice tal cual. Se lleva a la submission como está.*
 
 ---
 
@@ -91,8 +95,15 @@ _Se llena mientras se construye. Primer candidato ya visible desde la investigac
 
 | # | Área | Se documentaba | Se encontró | Severidad | Reportado |
 | - | ---- | --------------- | ----------- | --------- | --------- |
-| — | — | — | — | — | — |
+| 1 | Paquetes npm | Badges de `@1inch/swap-vm` y `@1inch/aqua` en los READMEs; `remappings.txt` a `node_modules/` | No están publicados; consumo externo solo vía `forge install` + OZ 5.4.0 + `solidity-utils` 6.9.x + remappings a mano | Media | no enviado — solo documentado aquí |
+| 2 | Opcode `Revert` | `PROGRAMS.md` lo lista como control de flujo; `Controls.sol` lo implementa | `AquaOpcodes` no lo despacha: un programa Aqua con `Revert` falla con `UnknownOpcode(1)` | Media | no enviado — solo documentado aquí |
+| 3 | Nombres del README | 30 instrucciones con sufijos `1D`/`2D`/`XD` | Ninguna existe con ese nombre en `src/`; `PROGRAMS.md` y `OpcodeList.sol` usan otros | Baja (costó horas de lectura, ningún bug) | no enviado — solo documentado aquí |
+| — | `CoreInvariants`, redespliegue `exact_match`, tags, fill real | — | Funcionó mejor o igual que lo documentado | Nota (positiva) | — |
 
 ## Reportes abiertos (se llena en fase 5)
 
-- [ ] —
+Cerrado el 7 de septiembre. Nada se envió aguas arriba a 1inch: los tres hallazgos son de documentación (paquetes anunciados y no publicados, un opcode listado y no despachado, un catálogo de nombres que no coincide con el código) y ninguno bloqueó nada una vez entendido; están aquí con la evidencia exacta y la sugerencia concreta, que es lo que un issue diría. Si se abren después del hackathon, van a:
+
+- [ ] `1inch/swap-vm` — README: publicar los paquetes que anuncian los badges o documentar el consumo desde Foundry externo (hallazgo 1); alinear el catálogo de instrucciones con `OpcodeList.sol` y enlazar `PROGRAMS.md` (hallazgo 3).
+- [ ] `1inch/swap-vm` — `AquaOpcodes.sol` / `PROGRAMS.md`: despachar `Revert` y `Stop` en el set de Aqua, o marcar en el catálogo qué instrucciones existen en cada set (hallazgo 2).
+- [ ] La pregunta a los mentores sobre el redespliegue queda sin respuesta escrita; el README y el video la contestan con la evidencia.

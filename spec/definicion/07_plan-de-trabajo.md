@@ -141,7 +141,7 @@ Cualquier sorpresa en este paso —de la Wallet API, de Speculos, del redesplieg
 - **README público en inglés:** qué es, arquitectura (el diagrama del [05 §2](./05_stack-y-arquitectura.md#2-arquitectura)), cómo correr cada pieza, direcciones en Sepolia, hashes de las transacciones de la demo, enlace a `spec/`.
 - **Revisión de requisitos por track**, con la lista del [03](./03_bounties.md#requisitos-que-atraviesan-los-tres) en la mano: historial de commits, ejecución onchain, sin hardcode, código abierto, video, empezado en el evento.
 - **Confirmación de 1inch** sobre el redespliegue, preguntada en la fase 0 y cerrada aquí por escrito.
-- **Cerrar `feedback/`:** cada archivo lleva su tabla resumen llena y su sección de reportes abiertos dice qué se envió aguas arriba y qué quedó solo documentado.
+- ~~**Cerrar `feedback/`:** cada archivo lleva su tabla resumen llena y su sección de reportes abiertos dice qué se envió aguas arriba y qué quedó solo documentado.~~ Hecho el 7 sep: los tres archivos con tabla resumen (3, 4 y 9 hallazgos) y *Reportes abiertos* cerrados — a Ledger fueron dos PRs al registro ERC-7730 (#2953, #2954) y un comentario; a 1inch y ENS nada durante el hackathon, todo documentado con la evidencia y el destino de cada issue si se abre después.
 - **Submission a los tres tracks el 13 por la mañana**, no por la noche.
 
 **Verificación:** una persona ajena sigue el README y reproduce `ship` + fill + `hasRoles` en Sepolia sin ayuda; el video está subido; las tres submissions muestran confirmación.

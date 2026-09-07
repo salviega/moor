@@ -103,7 +103,7 @@ Lo que más quieren ver:
 
 **Qué significa para Moor.** Moor entra por el **punto 4**, y casi con la frase textual del [02](./02_solucion.md): **el agente propone, la Ledger decide**. El agente monitorea, razona y simula; lo irreversible —cambiar la estrategia o mover el capital— exige el dispositivo. Suma el **Clear Signing** del paso 2: el usuario ve qué autoriza en vez de firmar un hash opaco, que es justo lo contrario de "saltarse la intención del usuario". La superficie es **Ledger Live**.
 
-**Decisión:** punto 4 como núcleo, más Key Ring (puntos 1 y 2) para los secretos del agente. x402 no. Ver *Decisiones* al final.
+**Decisión:** punto 4 como núcleo. x402 no. Key Ring (puntos 1 y 2) para los secretos del agente fue la decisión del 5 de septiembre; el 6 el agente pasó a Supabase porque enrolar un host sin USB no está documentado ([`feedback/03_ledger.md`](../feedback/03_ledger.md)) — Key Ring queda en el [08](./08_roadmap.md). Ver *Decisiones* al final.
 
 ---
 
