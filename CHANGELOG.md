@@ -30,6 +30,23 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **The agent's first live writes, from Supabase, unattended (2026-09-07).**
+  Deployed to the linked project (`lbjmkmjldctnqxmaqkyq`) and scheduled: `pg_cron`'s
+  first tick fired the Edge Function on its own at 03:30 UTC with no device and
+  no local process running, and `cron.job_run_details` shows it `succeeded`.
+  Two real cycles wrote `moor.agent.*` on `btc-dip`, `btc-dip-2` and
+  `one-sig-1` — all three `farFromRange` with a `widen` proposal, the one on
+  `one-sig-1` from Groq rather than the deterministic fallback —
+  [`0xc87ef116…`](https://sepolia.etherscan.io/tx/0xc87ef116de7a4192f25d4282d4ec859f37a385c98a5c528b52e022d9f15fc48)
+  and
+  [`0x62d47922…`](https://sepolia.etherscan.io/tx/0x62d4792283e2fff1eb8e7a3d50058240bb97999bfe9bce458c6fd518ed4fc51),
+  `moor.agent.checkedAt` moving from `16:22:20` to `03:35:16` on all three.
+  Phase 4 closes here, seven days ahead of the plan. One thing found and fixed
+  on the way: the migration's `vault.create_secret('anon_key', …)` was seeded
+  with a personal access token instead of the project's anon key, so the
+  first manual call answered `401 Invalid JWT` — `vault.update_secret` with
+  the real anon JWT fixed it; the cron's own first tick already used the
+  corrected value.
 - **The agent moves to Supabase (2026-09-06).** The VPS with Ledger Key Ring
   was the plan for the agent's host, and enrolling a host without USB is still
   undocumented (`spec/feedback/03_ledger.md`); rather than wait, the agent is

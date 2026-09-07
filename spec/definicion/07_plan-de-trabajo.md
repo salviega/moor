@@ -33,7 +33,7 @@ Lo que sorprende de la documentación de un sponsor frente a lo que hace su cód
 | ~~1~~ | ~~El programa y la regla que no puede fallar~~ cerrada el 5 sep | 2    | 6–8 sep      |
 | ~~2~~ | ~~El nombre y los permisos~~ cerrada el 5 sep | 1.5  | 8–9 sep      |
 | ~~3~~ | ~~La Live App~~ cerrada el 6 sep (clear signing en la Flex real queda en negativo, aceptado) | 2    | 9–11 sep     |
-| 4    | El agente                                    | 1    | 11–12 sep    |
+| ~~4~~ | ~~El agente~~ cerrada el 7 sep (7 días antes del calendario) | 1    | 11–12 sep    |
 | 5    | Demo y submission                            | 1    | 12–13 sep    |
 | —    | Stretch: opcode propio                       | —    | solo si sobra |
 
@@ -128,7 +128,7 @@ Cualquier sorpresa en este paso —de la Wallet API, de Speculos, del redesplieg
 - ~~Live App: **panel del agente** en *Position detail* (última lectura con su antigüedad, propuesta si la hay); **Accept proposal** → sesión `dock` + `ship` + `createPosition`; **Revoke agent** → `revokeRoles`.~~ Hecho: panel (fase 3), *Accept proposal* (`acceptProposalCalls`: `dock` + `unregister`, y para widen/narrow/renew `ship` + `createPosition` del sucesor `<label>-N` con lo que quedaba) y *Revoke agent* (`revokeAgent`).
 - **Recorte interno permitido:** si aprieta, *Accept proposal* se reemplaza por *Close* + *New position* manuales, y la propuesta es texto determinista sin llamar al modelo.
 
-**Verificación:** el agente corre en Supabase (`pg_cron` cada 5 min) sin dispositivo conectado; `moor.agent.checkedAt` avanza cada ciclo; se fuerza un umbral y aparece una propuesta válida en la Live App; `cast call hasRoles` muestra que el agente no puede nada más; *Revoke agent* lo silencia y la posición sigue operando.
+~~**Verificación:** el agente corre en Supabase (`pg_cron` cada 5 min) sin dispositivo conectado; `moor.agent.checkedAt` avanza cada ciclo; se fuerza un umbral y aparece una propuesta válida en la Live App; `cast call hasRoles` muestra que el agente no puede nada más; *Revoke agent* lo silencia y la posición sigue operando.~~ **Hecho el 7 de septiembre:** desplegado en el proyecto Supabase `lbjmkmjldctnqxmaqkyq`, `pg_cron` disparó el primer tick solo a las 03:30 UTC (`cron.job_run_details.status = succeeded`), sin dispositivo ni proceso local. Dos escrituras reales confirmadas en Sepolia — `btc-dip`, `btc-dip-2` y `one-sig-1`, las tres `farFromRange` con propuesta `widen` (la de `one-sig-1` generada por Groq, no por el fallback): [`0xc87ef116…`](https://sepolia.etherscan.io/tx/0xc87ef116de7a4192f25d4282d4ec859f37a385c98a5c528b52e022d9f15fc48) y [`0x62d47922…`](https://sepolia.etherscan.io/tx/0x62d4792283e2fff1eb8e7a3d50058240bb97999bfe9bce458c6fd518ed4fc51) — `moor.agent.checkedAt` avanzó de `16:22:20` a `03:35:16` en las tres. `hasRoles` y *Revoke agent* siguen probados por las pruebas negativas de `packages/contracts` y el flujo de fase 3, no repetidos hoy.
 
 ---
 
