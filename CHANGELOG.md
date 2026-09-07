@@ -28,6 +28,20 @@ Two things this project's entries carry that a web app's would not:
 
 ## [Unreleased]
 
+### Added
+
+- **The blind flow, captured (2026-09-07).** What a physical Flex shows today
+  for the one-signature batch was a recollection; now it is ten frames.
+  `pnpm ledger:screens -- --probe` gained `batch7702BlindSigning`: the same
+  batch to the holder's own address, rendered with the device's blind-signing
+  setting on (the tester's `--blind-signing-enabled`, the setting every holder
+  has on to sign `ship` from Ledger Live) — "Blind signing ahead" → "Review
+  transaction · Blind signing required" → From / To / Max fees → Network ·
+  Transaction hash → "Accept risk and sign transaction?". No "1 of 2", no word
+  of Moor. The tester labels the flow *partially clear-signed* (network and
+  fees render); recorded as seen. `screens/batch7702BlindSigning/`,
+  `results-probe.json`, the erc7730 README table and `03_ledger.md`.
+
 ### Fixed
 
 - **A duplicate descriptor left by the merge (2026-09-07).** `descriptors/probe/calldata-Simple7702Account.json` came back when the branch was reconciled with the squash of #22; the descriptor lives in the main set as `descriptors/calldata-Simple7702Account.json` and nothing read the copy. Removed.

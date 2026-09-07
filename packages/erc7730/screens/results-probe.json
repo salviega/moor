@@ -11,6 +11,13 @@
 			"screens": 3
 		},
 		{
+			"kind": "batch7702BlindSigning",
+			"ledgerShows": "Batch to self, blind signing on",
+			"status": "partially_clear_signed",
+			"expected": "blind_signed",
+			"screens": 10
+		},
+		{
 			"kind": "batch7702Nested",
 			"ledgerShows": "Batch via delegate, nested",
 			"status": "partially_clear_signed",

@@ -38,7 +38,7 @@ const args = Object.fromEntries(
 );
 /** The EIP-7702 probes: not the flow, so they never touch the flow's captures or results.json. */
 const probe = Boolean(args.probe);
-const PROBE_KINDS = ["batch7702Blind", "batch7702Nested"];
+const PROBE_KINDS = ["batch7702Blind", "batch7702BlindSigning", "batch7702Nested"];
 const only = args.only ? String(args.only).split(",") : probe ? PROBE_KINDS : null;
 const device = String(args.device ?? "flex");
 const APP_VERSION = "1.22.3";
@@ -141,6 +141,9 @@ for (const tx of flow) {
 			tmp,
 			"--log-level",
 			"warn",
+			// A transaction flagged blindSigning renders as on a device whose holder turned blind signing
+			// on — the warning flow, not the refusal — which is what a real Flex shows for an undescribed tx.
+			...(tx.blindSigning ? ["--blind-signing-enabled"] : []),
 			"raw-file",
 			resolve(tmp, "tx.json"),
 		],
