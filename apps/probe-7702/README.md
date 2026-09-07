@@ -79,6 +79,7 @@ production device clear-signs; only `DynamicNetwork` means it blind-signs.
 - `cal`: no calldata descriptor for Aqua, MoorRegistrar, the delegated EOA or
   `Simple7702Account` on Sepolia, mainnet or Base; the USDC control returns one, signed.
   With blind signing enabled in the app, the Flex signed the batch blind — the same as
-  `ship` alone from Ledger Live today. The one-signature path is gated on the ERC-7730
+  `ship` alone from Ledger Live today. That flow is captured frame by frame in
+  `packages/erc7730/screens/batch7702BlindSigning/` (`ledger:screens -- --probe`). The one-signature path is gated on the ERC-7730
   registry (Moor's descriptors plus one for `Simple7702Account.executeBatch`), not on the
   device. Details in `spec/feedback/03_ledger.md`.

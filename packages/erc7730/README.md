@@ -76,7 +76,8 @@ two extra transactions that never touch the flow's captures or `results.json` (v
 
 | Probe | `to` | Result | Screens |
 | --- | --- | --- | --- |
-| `batch7702Blind` | the holder's own address (the real 7702 shape) | blind-signed — no descriptor can be bound to an EOA | `screens/batch7702Blind/` |
+| `batch7702Blind` | the holder's own address (the real 7702 shape) | blind-signed — no descriptor can be bound to an EOA; the device refuses until blind signing is on | `screens/batch7702Blind/` |
+| `batch7702BlindSigning` | same, with the device's blind-signing setting on (`--blind-signing-enabled`) — what a physical Flex shows today | "Blind signing ahead" → "Review transaction · Blind signing required" → From / To / Max fees → Network · Transaction hash → "Accept risk and sign transaction?"; the tester calls it *partially clear-signed* (network and fees render), a person reads it as blind end to end | `screens/batch7702BlindSigning/` |
 | `batch7702Nested` | `Simple7702Account` itself | the app enumerates **"Review transaction 1 of 2 / 2 of 2"** and renders each inner call with *our* `ship` and `createPosition` descriptors — every frame in the product's words; the tester's verdict is *partially clear-signed* (the `???` token amount, as in `ship` alone) | `screens/batch7702Nested/` |
 
 What Speculos proves: app 1.22.3 + these descriptors render nested calls. What the physical

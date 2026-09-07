@@ -75,9 +75,11 @@ function probe(
 	expectedStatus: FlowTransaction["expectedStatus"],
 	title: string,
 	nonce: number,
-): FlowTransaction {
+	blindSigning = false,
+): FlowTransaction & { blindSigning: boolean } {
 	return {
 		kind,
+		blindSigning,
 		expectedTexts: [title],
 		expectedStatus,
 		description: `${kind}: ${title}`,
@@ -93,13 +95,25 @@ function probe(
 			value: 0n,
 			data: batchData,
 		}),
-	} as unknown as FlowTransaction;
+	} as unknown as FlowTransaction & { blindSigning: boolean };
 }
 
 // Only with `pnpm ledger:screens -- --probe`: the flow's six captures and results.json never change.
 if (process.env.PROBE_7702) {
 	flow.push(
 		probe("batch7702Blind", input.holder, "blind_signed", "Batch to self, no descriptor", 90),
+		// What a physical Flex shows today (2026-09-06: Ledger's servers hold no descriptor for the
+		// delegate, and holders have blind signing on to sign ship alone): the same tx, blind signing enabled.
+		// Observed 2026-09-07: "Blind signing ahead" → "Blind signing required" → From/To/fees → "Accept risk
+		// and sign". The tester calls that flow "partially clear signed"; recorded as seen.
+		probe(
+			"batch7702BlindSigning",
+			input.holder,
+			"partially_clear_signed" as FlowTransaction["expectedStatus"],
+			"Batch to self, blind signing on",
+			90,
+			true,
+		),
 		// Observed twice on 2026-09-06: every frame readable, inner calls rendered by our descriptors, and the
 		// tester still says "partially" (the ??? testnet token amount, as with ship alone). Recorded as seen.
 		probe(
