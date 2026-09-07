@@ -105,6 +105,7 @@ Cosas que en v1 no existen porque un solo holder dentro de Ledger Live no las ne
 | Necesidad | Por qué aparece | Qué es |
 | --- | --- | --- |
 | **Indexador de posiciones** | Enumerar subnombres de un registry por eventos no escala a miles de holders ni sirve para "todas las posiciones de Moor" | Un servicio que sigue eventos de los registries y de Aqua y expone una API de lectura. Primer **backend** real de Moor |
+| **Secretos del agente en Ledger Key Ring** | En v1 la llave caliente la custodia Supabase. El track de Ledger destaca *Key Ring en hosts sin USB*, pero el enrolamiento de un segundo host no está documentado ([feedback](../feedback/03_ledger.md)) | Un host propio enrolado en el trustchain de la Ledger del holder, arrancando el ciclo con `wallet-cli ring decrypt`. v1 lo tuvo escrito (`run.sh` + systemd, retirados el 6 sep — están en el historial) |
 | **Agente multi-tenant** | Un proceso por holder con Key Ring de *su* Ledger no escala; Key Ring es por seed | O el holder corre su propio agente (Moor lo empaqueta), o Moor opera uno hospedado con otro modelo de secretos (KMS, enrolamiento por holder). Decisión de producto, no solo técnica |
 | **Notificaciones** | 1c y toda la expansión | Canal push/correo/Telegram; el agente lo dispara |
 | **`MoorRegistrar` para dueños no-EOA** | Safe y smart accounts como dueños de nombre y posición | Ya es agnóstico a la dirección; hay que probarlo con cuentas contrato y ajustar el flujo de primera vez |

@@ -7,7 +7,8 @@
 	"scripts": {
 		"typecheck": "tsc --noEmit",
 		"once": "tsx src/main.ts --once",
-		"loop": "tsx src/main.ts"
+		"loop": "tsx src/main.ts",
+		"bundle": "node scripts/bundle-edge.mjs"
 	},
 	"dependencies": {
 		"@moor/core": "workspace:*",
@@ -17,6 +18,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "22.19.14",
+		"esbuild": "0.28.2",
 		"tsx": "4.23.13"
 	}
 }

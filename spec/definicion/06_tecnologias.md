@@ -77,12 +77,14 @@ Formularios con estado de React y `useActionState`; sin librería de formularios
 
 | Tecnología               | Versión | Para qué                                                                                                        |
 | ------------------------ | ------- | --------------------------------------------------------------------------------------------------------------- |
-| **Node.js + tsx**        | 22 / 4.x | Correr el agente en TypeScript sin paso de build. Un proceso, un bucle                                          |
+| **Node.js + tsx**        | 22 / 4.x | Correr el agente en local sin paso de build (`pnpm agent`, `agent:loop`); en producción el runtime es Deno, en Supabase |
+| **Supabase Edge Functions + pg_cron** | CLI 2.116 | Hospedar el agente: `agent-cycle` corre un ciclo por petición (Deno); `pg_cron` + `pg_net` la llaman cada 5 minutos desde la base. Secretos en el proyecto (`pnpm agent:secrets`) |
+| **esbuild**              | 0.28    | `pnpm agent:bundle`: empaqueta `edge.ts` con `@moor/core`, viem y zod en un solo archivo para Deno; `ws` (Node) queda fuera con un stub |
 | **Groq API**             | `fetch`, sin SDK | Llamar al modelo cuando hay algo que proponer: el endpoint compatible con OpenAI, `response_format: json_schema` estricto. Tier gratuito, sin tarjeta |
 | **gpt-oss-120b** (en Groq) | `openai/gpt-oss-120b` | El modelo. Razonamiento propio; salida estructurada estricta contra el esquema zod de la propuesta, derivado a JSON Schema en `packages/core/src/model.ts` |
-| **viem**                 | 2.56    | Leer Aqua/SwapVM y escribir `setText` en el subnombre del agente. La llave caliente se carga desde Key Ring     |
+| **viem**                 | 2.56    | Leer Aqua/SwapVM y escribir `setText` en el subnombre del agente. La llave caliente llega por el entorno del host |
 | **pino**                 | 10.x    | Logs estructurados. Cada ciclo deja una línea: qué leyó, qué derivó, si propuso                                 |
-| **Ledger Key Ring CLI**  | `wallet-cli` 2.1.0 | `wallet-cli ring encrypt/decrypt --key <nombre>`: custodia de la llave del agente, la RPC y la API key de Groq, cifradas con la seed de la Ledger y descifradas sin USB en el VPS (solo red) |
+| ~~**Ledger Key Ring CLI**~~ | `wallet-cli` 2.1.0 | Fue el plan para custodiar los secretos del agente. `ring init` funcionó en el portátil; enrolar un host sin USB no está documentado, así que el 6 de septiembre la custodia pasó a Supabase y Key Ring va al [08](./08_roadmap.md) |
 
 **Dónde entra el modelo y dónde no.** Leer precio, leer balances, derivar estado y detectar umbrales es **código determinista** en `packages/core` — no se le pregunta a un modelo cuánto vale `1 − balIn/monto0`. El modelo entra **solo cuando se cruza un umbral**: recibe la posición, la lectura y las alternativas ya simuladas por código, y devuelve una propuesta estructurada (`none | widen | narrow | close | renew`, parámetros, razonamiento en dos frases). Una llamada por propuesta, no por ciclo. La salida se valida con zod antes de escribirse en ENS; si no valida, no se escribe.
 
@@ -124,7 +126,7 @@ El modelo fue primero Claude Opus 5 vía `@anthropic-ai/sdk`; el 6 de septiembre
 | **Ledger Live Desktop**           | —        | Modo desarrollador para cargar el `manifest.json` local y probar con el dispositivo real       |
 | **Vercel**                        | Hobby    | Hospedar la Live App: proyecto `moor`, Root Directory `apps/live-app`, Node 22, repo conectado. Producción: [getmoor.vercel.app](https://getmoor.vercel.app) — `moor.vercel.app` estaba tomado. *Gotcha:* el `prepare` de la raíz debe tolerar la ausencia de `.git` o tumba el `pnpm install` del build |
 | **Groq API**                      | Gratis   | `gpt-oss-120b` para las propuestas. Tier gratuito: 30 req/min, 1 000 req/día, 200K tokens/día — sobra para una llamada por propuesta |
-| **VPS** (cualquiera)              | ~5 USD/mes | El agente headless, con Key Ring enrolado                                                   |
+| **Supabase**                      | Gratis   | El agente: Edge Function `agent-cycle` + `pg_cron`; secretos del proyecto. Capa gratuita                |
 
 ---
 
@@ -139,9 +141,9 @@ Validadas con zod al arrancar cada app; si falta una, no arranca. Ninguna vive e
 | `NEXT_PUBLIC_AQUA`, `NEXT_PUBLIC_SWAPVM_ROUTER` | Live App | Direcciones del redespliegue en Sepolia. Las de producción de 1inch **no** aplican. *Hoy no hacen falta:* la Live App las lee de `packages/core/src/addresses.ts`, que `contracts:deploy` reescribe |
 | `DEPLOYER_ADDRESS`                | Foundry      | Dueño del `AquaSwapVMRouter` (`Rescuable`). Solo fondos de prueba                |
 | `WETH_ADDRESS`                    | Foundry      | Opcional. Si falta, `Deploy.s.sol` despliega un `TestWETH`                      |
-| `SEPOLIA_RPC_URL`                 | Agente       | Distinta llave que la de la Live App. Sale de Key Ring                         |
-| `AGENT_PRIVATE_KEY`               | Agente       | La llave caliente. **Sale de Key Ring, nunca de un `.env`**                     |
-| `GROQ_API_KEY`                    | Agente       | Sale de Key Ring. Opcional: sin ella el agente corre con la propuesta determinista |
+| `SEPOLIA_RPC_URL`                 | Agente       | Distinta llave que la de la Live App. Secreto de Supabase (`pnpm agent:secrets`); en local, `.env`. Debe permitir rangos amplios de `eth_getLogs` — PublicNode sí, Alchemy gratis no |
+| `AGENT_PRIVATE_KEY`               | Agente       | La llave caliente. **Secreto de Supabase, nunca un archivo del repo**; en local, el `.env` ignorado por git |
+| `GROQ_API_KEY`                    | Agente       | Secreto de Supabase. Opcional: sin ella el agente corre con la propuesta determinista |
 | `AGENT_INTERVAL_SECONDS`          | Agente       | Cadencia del ciclo. Por defecto 300                                            |
 | `AGENT_PARENT_NAME`, `AGENT_MODEL` | Agente      | Nombre del holder (`salviega.eth`) y modelo (`openai/gpt-oss-120b`)                  |
 | `AGENT_LOGS_CHUNK`, `AGENT_FROM_BLOCK` | Agente  | Tramo de `eth_getLogs` (10 000; Alchemy gratis solo permite 10) y bloque inicial (11 600 000). El RPC del agente debe permitir rangos amplios: PublicNode sirve |
@@ -164,7 +166,11 @@ Desde la raíz, con `pnpm`:
 | `dev`               | Live App con el simulador de Wallet API; no requiere Ledger Live                   |
 | `dev:ledger`        | Live App en `localhost` para cargarla en Ledger Live con el manifest local          |
 | `agent`             | Un ciclo del agente y sale. Para probar (`AGENT_DRY_RUN=1` para no enviar)          |
-| `agent:loop`        | El agente en bucle, como corre en el VPS (`apps/agent/deploy/moor-agent.service` + `run.sh`, que lee los secretos del Key Ring) |
+| `agent:loop`        | El agente en bucle bajo Node, para una máquina propia; en producción corre en Supabase           |
+| `agent:bundle`      | Empaqueta la Edge Function (`supabase/functions/agent-cycle/index.js`, ignorado por git)         |
+| `agent:serve`       | La corre en local bajo Deno con el `.env` (puerto 8000); `curl 'localhost:8000/?dry=1'` es un ciclo sin enviar |
+| `agent:secrets`     | Sube al proyecto enlazado solo las variables del agente que hay en `.env`                        |
+| `agent:deploy`      | Empaqueta y despliega; el cron va aparte con `npx supabase db push` (migración `agent_cron`)     |
 | `check`             | Biome sobre todo el monorepo                                                        |
 | `test`              | Vitest en `packages/core`, con `--coverage` — falla si el cubrimiento baja de 90%    |
 | `contracts:test`    | `forge test` en `packages/contracts`                                                |
@@ -193,7 +199,7 @@ Desde la raíz, con `pnpm`:
 | **Vercel AI SDK / AI Gateway / SDK del proveedor** | `fetch` + zod | Un modelo, un proveedor, una llamada por propuesta: una petición HTTP y un esquema. Ni la abstracción ni el SDK pagan su costo aquí — pasar de Anthropic a Groq fue reescribir un archivo de treinta líneas |
 | **Turborepo**           | pnpm workspaces        | Cinco paquetes. Entra si el CI tarda                                                                       |
 | **Base de datos / ORM** | Nada                   | No hay estado propio ([05 §4](./05_stack-y-arquitectura.md#4-dónde-vive-el-estado))                        |
-| **Ledger como firmante del agente** | Llave caliente + Key Ring | El agente firma `setText` cada pocos minutos sin humano; una Ledger ahí sería teatro. Lo que sí custodia la Ledger es la llave |
+| **Ledger como firmante del agente** | Llave caliente + secretos de Supabase | El agente firma `setText` cada pocos minutos sin humano; una Ledger ahí sería teatro. La Ledger firma lo del holder; la llave del agente la custodia el host (Key Ring: [08](./08_roadmap.md)) |
 
 ---
 
@@ -202,5 +208,5 @@ Desde la raíz, con `pnpm`:
 - ~~**Fuente de precio.**~~ Chainlink BTC/USD en Sepolia, fijado en `packages/core` (`chainlinkSepolia.btcUsd`, `readPrice()`), fase 3.
 - **Verificación de contratos.** El verificador Sourcify de `forge 1.3` no entiende la respuesta de la API actual (`error decoding response body`); la API v2 de Sourcify sí funciona con el standard-json de `forge verify-contract --show-standard-json-input`. Empaquetarlo como script `contracts:verify`. Etherscan requiere `ETHERSCAN_API_KEY`.
 - ~~**Descriptores locales en el dispositivo.**~~ ~~**Speculos + Clear Signing.**~~ Cerrados en la fase 3: el *clear-signing tester* de `device-sdk-ts` inyecta los descriptores sin firmar a la app de Ethereum en Speculos mediante su *CAL interceptor* (sirve descriptores y certificados a la Device Management Kit); `ledger:screens` lo usa y cinco de las seis firmas salen clear-signed ([`feedback/03_ledger.md`](../feedback/03_ledger.md)). Lo que sigue abierto es el **dispositivo físico**: Ledger Live solo muestra clear signing con descriptores del registro de Ledger, así que la demo en la Flex firma a ciegas hasta que haya PR al registro (fase 5, si aplica a Sepolia).
-- **Enrolar el Key Ring en un host sin USB.** La instalación ya está clara (`npm i -g @ledgerhq/wallet-cli`; `ring init` con dispositivo; luego solo red). Lo que sigue sin documentar es cómo un segundo host (el VPS) pasa a ser miembro del mismo trustchain. Se resuelve con el dispositivo — ver [`feedback/03_ledger.md`](../feedback/03_ledger.md).
+- ~~**Enrolar el Key Ring en un host sin USB.**~~ Cerrado por otro camino el 6 de septiembre: el agente corre en Supabase y sus secretos son del proyecto; Key Ring en un host propio queda en el [08](./08_roadmap.md). Lo que sigue sin documentar (cómo un segundo host se une al trustchain) sigue anotado en [`feedback/03_ledger.md`](../feedback/03_ledger.md).
 - ~~**Cómo enumerar subnombres** de un `UserRegistry` desde viem.~~ Cerrado en la fase 2: `listPositions()` sobre el evento `LabelRegistered` del registry del holder ([05 §11](./05_stack-y-arquitectura.md#11-pendientes)).
