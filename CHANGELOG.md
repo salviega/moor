@@ -28,6 +28,8 @@ Two things this project's entries carry that a web app's would not:
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-07
+
 ### Added
 
 - **A whole session in one signature — the EIP-7702 probe (2026-09-06).** Today a
@@ -60,6 +62,44 @@ Two things this project's entries carry that a web app's would not:
   backend or the physical device can answer. Findings and the docs gap in
   `spec/feedback/03_ledger.md`; the path and its two conditions in
   `spec/definicion/08_roadmap.md` §2.3.
+  **Then the physical device, the same evening.** The Flex (Ledger Live account
+  0, `0xAA1a…62E1`) signed the delegation — clear, "Delegate to
+  Simple7702Account · Sepolia" — and the self-sponsored type-4 transaction
+  ([`0xedec5af4…`](https://sepolia.etherscan.io/tx/0xedec5af4b36d7f073f63c0cafb1386d9553a00fb8ec9e5bb369977615a4f938f),
+  36,837 gas), and then **a whole position in one signature**:
+  `executeBatch([ship, createPosition])` to its own address
+  ([`0xe4a7fdea…`](https://sepolia.etherscan.io/tx/0xe4a7fdea0a2d7565efafffb5db24de991adb5cf035190105ede47c52c0f46c2c),
+  957,608 gas) — `one-sig-1.salviega.eth`: `Shipped` on Aqua, the name
+  registered, eight records written, `PositionCreated`, all or nothing. The
+  account stays delegated (`0xef0100‖0x4Cd2…66c9`); undoing it is one more
+  type-4 transaction from the same page. What the screen showed is the other
+  half, and `pnpm --filter @moor/probe-7702 cal` answers it without a device:
+  it builds Ledger's own ContextModule and asks its servers exactly what the
+  signer streams to the app before signing — **no calldata descriptor** for
+  Aqua, MoorRegistrar, the delegated EOA, or `Simple7702Account` itself, on
+  Sepolia, mainnet or Base (a `USDC.approve` control on mainnet returns one,
+  PKI-signed). So a production Flex blind-signs the batch today, exactly as it
+  blind-signs `ship` alone, and the delegate-resolution question is moot until
+  a descriptor for the delegate exists anywhere. The 7702 path is gated on the
+  registry, not on the device: `Simple7702Account.executeBatch` with nested
+  `calldata` (the probe's descriptor) plus Moor's own, published, would make
+  the one-signature session clear-signed for anyone.
+  **So both were submitted, and the Live App learnt the path (2026-09-07).**
+  Registry pull requests, one entity each as the registry requires, in its v2
+  schema with a `testsv2/` fixture per descriptor built from the same
+  transactions the Live App signs: [ethereum/clear-signing-erc7730-registry#2953](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2953)
+  (`MoorRegistrar` and the Sepolia Aqua) and [#2954](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954)
+  (`Simple7702Account`: `execute` and `executeBatch` with nested `calldata` —
+  the descriptor Ledger's own whitelisted delegate never had). In the Live
+  App, `sessionCalls` (`packages/core/src/batch.ts`, four tests written
+  first) decides per session: a holder whose account code is
+  `0xef0100‖Simple7702Account` signs a multi-call session as **one**
+  `executeBatch` to their own address, through the Wallet API as always; a
+  plain EOA, a foreign delegate or a single-call session sign exactly as
+  before. The app reads the account's code and never delegates anything —
+  the opt-in is the holder's, on chain, from `apps/probe-7702`. The batch's
+  descriptor moved from `descriptors/probe/` into the main set
+  (`calldata-Simple7702Account.json`); its captures stay under `--probe`.
 - **Opening a position looks like having one (2026-09-06).** The New form
   now sits in the same frame as an open position's page: the live chart with
   its history on the left (3/5), the numbers in the side panel on the right

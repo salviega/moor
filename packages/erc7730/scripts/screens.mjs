@@ -6,8 +6,8 @@
 //
 //   pnpm ledger:screens                # all six; needs Docker and Node >= 24
 //   pnpm ledger:screens -- --only=ship
-//   pnpm ledger:screens -- --probe     # the EIP-7702 batch probes (08 roadmap): extra
-//                                      # transactions, descriptors/probe/*, results-probe.json
+//   pnpm ledger:screens -- --probe     # the EIP-7702 batch (08 §2.3): two extra transactions,
+//                                      # captures under screens/batch7702*, results-probe.json
 //
 // Uses Ledger's own clear-signing tester (apps/clear-signing-tester in
 // LedgerHQ/device-sdk-ts): it starts Speculos in Docker with the prebuilt
@@ -103,15 +103,11 @@ run("npx", ["tsx", resolve(here, "raw-flow.ts")], {
 	env: { ...process.env, ...(probe ? { PROBE_7702: "1" } : {}) },
 });
 const flow = JSON.parse(readFileSync(resolve(pkg, "flow/raw-flow.json"), "utf8"));
-const descriptorDirs = [
-	resolve(pkg, "descriptors"),
-	...(probe ? [resolve(pkg, "descriptors/probe")] : []),
-];
-const descriptors = descriptorDirs.flatMap((dir) =>
-	readdirSync(dir)
-		.filter((f) => f.endsWith(".json"))
-		.map((f) => resolve(dir, f)),
-);
+// Every descriptor the holder can be asked to sign against, the batch's included: it is bound to
+// Simple7702Account, so it never matches the six flow transactions and only renders under --probe.
+const descriptors = readdirSync(resolve(pkg, "descriptors"))
+	.filter((f) => f.endsWith(".json"))
+	.map((f) => resolve(pkg, "descriptors", f));
 
 // 4. One run per transaction, screens copied under screens/<kind>/.
 const results = [];

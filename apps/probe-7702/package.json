@@ -7,9 +7,11 @@
 	"scripts": {
 		"dev": "vite --port 5177 --strictPort",
 		"build": "vite build",
+		"cal": "tsx scripts/cal-check.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@ledgerhq/context-module": "2.5.0",
 		"@ledgerhq/device-management-kit": "1.9.0",
 		"@ledgerhq/device-signer-kit-ethereum": "1.18.0",
 		"@ledgerhq/device-transport-kit-web-hid": "1.2.4",
@@ -18,6 +20,7 @@
 		"viem": "2.56.3"
 	},
 	"devDependencies": {
+		"tsx": "4.23.13",
 		"vite": "8.2.2"
 	}
 }

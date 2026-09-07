@@ -201,6 +201,9 @@ importers:
 
   apps/probe-7702:
     dependencies:
+      '@ledgerhq/context-module':
+        specifier: 2.5.0
+        version: 2.5.0(@ledgerhq/device-management-kit@1.9.0(rxjs@7.8.2))
       '@ledgerhq/device-management-kit':
         specifier: 1.9.0
         version: 1.9.0(rxjs@7.8.2)
@@ -220,6 +223,9 @@ importers:
         specifier: 2.56.3
         version: 2.56.3(typescript@5.9.3)(zod@4.5.4)
     devDependencies:
+      tsx:
+        specifier: 4.23.13
+        version: 4.23.13
       vite:
         specifier: 8.2.2
         version: 8.2.2(@types/node@22.19.14)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)

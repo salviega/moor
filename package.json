@@ -1,6 +1,6 @@
 {
 	"name": "moor",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"private": true,
 	"description": "Turns the waiting time of holding into productive capital. Ledger signs once; 1inch Aqua earns; ENS names it; the agent proposes and the Ledger decides.",
 	"license": "MIT",
