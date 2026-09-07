@@ -28,6 +28,10 @@ Two things this project's entries carry that a web app's would not:
 
 ## [Unreleased]
 
+### Fixed
+
+- **A duplicate descriptor left by the merge (2026-09-07).** `descriptors/probe/calldata-Simple7702Account.json` came back when the branch was reconciled with the squash of #22; the descriptor lives in the main set as `descriptors/calldata-Simple7702Account.json` and nothing read the copy. Removed.
+
 ## [0.4.1] - 2026-09-07
 
 ### Added
