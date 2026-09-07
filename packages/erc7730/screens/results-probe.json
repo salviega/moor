@@ -1,0 +1,21 @@
+{
+	"device": "flex",
+	"appEthereum": "1.22.3",
+	"tester": "bb0cc89381ca7a4e297ed6bb801aa3e5ba9cf21f",
+	"results": [
+		{
+			"kind": "batch7702Blind",
+			"ledgerShows": "Batch to self, no descriptor",
+			"status": "blind_signed",
+			"expected": "blind_signed",
+			"screens": 3
+		},
+		{
+			"kind": "batch7702Nested",
+			"ledgerShows": "Batch via delegate, nested",
+			"status": "partially_clear_signed",
+			"expected": "partially_clear_signed",
+			"screens": 22
+		}
+	]
+}

@@ -63,6 +63,25 @@ published in Ledger's registry; a local descriptor cannot be loaded, so the Flex
 blind-signs the demo until the registry PR lands. The Live App says on every step what a
 Ledger with the published descriptor would show ("Ledger shows: …").
 
+## Probe: a whole session in one signature (EIP-7702)
+
+`pnpm ledger:screens -- --probe` renders two extra transactions that are **not** part of the
+flow and never touch its captures or `results.json` (08 roadmap §2.3; verdicts in
+`screens/results-probe.json`). Both carry `ship` + `createPosition` inside one
+`Simple7702Account.executeBatch` — the shape a holder's EOA would sign after delegating to
+the one 7702 account contract the Ledger Ethereum app whitelists:
+
+| Probe | `to` | Descriptors | Result | Screens |
+| --- | --- | --- | --- | --- |
+| `batch7702Blind` | the holder's own address (the real 7702 shape) | the flow's four | blind-signed — no descriptor can be bound to an EOA | `screens/batch7702Blind/` |
+| `batch7702Nested` | `Simple7702Account` itself | the four + `descriptors/probe/calldata-Simple7702Account.json`, whose `calls.[].data` uses ERC-7730's nested `calldata` format (`calleePath: calls.[].target`) | the app enumerates **"Review transaction 1 of 2 / 2 of 2"** and renders each inner call with *our* `ship` and `createPosition` descriptors — every frame in the product's words; the tester's verdict is *partially clear-signed* (the `???` token amount, as in `ship` alone) | `screens/batch7702Nested/` |
+
+What the probe proves: app 1.22.3 + these descriptors render nested calls. What it cannot
+prove: whether a production device resolves the delegate's descriptor when `to` is a
+delegated EOA — that lookup is Ledger's, server-side and PKI-signed
+(`ProxyContextFieldLoader` in `device-sdk-ts`), so it is a question for Ledger or for the
+physical Flex (`apps/probe-7702`), not for Speculos.
+
 `screens/phase0-ethereum-app-1.22.3-home-flex.png` is the phase-0 evidence that
 Speculos runs the prebuilt app: Flex, Ethereum 1.22.3, seed address
 `0xDad77910DbDFdE764fC21FCD4E74D71bBACA6D8D`.

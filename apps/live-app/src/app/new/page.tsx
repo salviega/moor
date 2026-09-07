@@ -559,6 +559,7 @@ const verbs: Record<Step["call"]["kind"], string> = {
 	unregister: "Remove the name",
 	revokeAgent: "Revoke the agent",
 	setupAgent: "Register the agent",
+	batch: "Run every step at once, from your own account",
 };
 
 export function StepRow({ i, step }: { i: number; step: Step }) {

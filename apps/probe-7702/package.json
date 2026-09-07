@@ -1,0 +1,23 @@
+{
+	"name": "@moor/probe-7702",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Dev-only probe, not the Live App: the EIP-7702 one-signature path signed on a physical Ledger over WebHID — delegate once, then a whole Moor session as one call to self.",
+	"scripts": {
+		"dev": "vite --port 5177 --strictPort",
+		"build": "vite build",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@ledgerhq/device-management-kit": "1.9.0",
+		"@ledgerhq/device-signer-kit-ethereum": "1.18.0",
+		"@ledgerhq/device-transport-kit-web-hid": "1.2.4",
+		"@moor/core": "workspace:*",
+		"rxjs": "7.8.2",
+		"viem": "2.56.3"
+	},
+	"devDependencies": {
+		"vite": "8.2.2"
+	}
+}

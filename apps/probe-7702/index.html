@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Moor · 7702 probe</title>
+		<style>
+			:root {
+				color-scheme: light dark;
+				font: 14px/1.45 system-ui, sans-serif;
+			}
+			body {
+				max-width: 880px;
+				margin: 2rem auto;
+				padding: 0 1rem;
+			}
+			h1 {
+				font-size: 1.25rem;
+				margin: 0 0 0.25rem;
+			}
+			.muted {
+				opacity: 0.7;
+			}
+			section {
+				border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+				border-radius: 8px;
+				padding: 0.9rem 1rem;
+				margin: 1rem 0;
+			}
+			section h2 {
+				font-size: 0.95rem;
+				margin: 0 0 0.6rem;
+			}
+			.row {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem 0.75rem;
+				align-items: center;
+				margin: 0.4rem 0;
+			}
+			label {
+				display: inline-flex;
+				gap: 0.4rem;
+				align-items: center;
+			}
+			input {
+				font: inherit;
+				padding: 0.3rem 0.45rem;
+				border-radius: 6px;
+				border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+				background: transparent;
+				color: inherit;
+			}
+			input.addr {
+				width: 27rem;
+				font-family: ui-monospace, monospace;
+			}
+			button {
+				font: inherit;
+				padding: 0.4rem 0.8rem;
+				border-radius: 6px;
+				border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+				background: transparent;
+				color: inherit;
+				cursor: pointer;
+			}
+			button:disabled {
+				opacity: 0.45;
+				cursor: not-allowed;
+			}
+			button.primary {
+				border-color: currentColor;
+				font-weight: 600;
+			}
+			button.danger {
+				border-color: #c0392b;
+				color: #c0392b;
+			}
+			code,
+			pre {
+				font-family: ui-monospace, monospace;
+				font-size: 0.85em;
+			}
+			pre#log {
+				white-space: pre-wrap;
+				word-break: break-all;
+				min-height: 8rem;
+				max-height: 24rem;
+				overflow: auto;
+				margin: 0;
+			}
+			#status dt {
+				opacity: 0.7;
+				font-size: 0.85em;
+			}
+			#status dd {
+				margin: 0 0 0.5rem;
+				font-family: ui-monospace, monospace;
+			}
+			.warn {
+				color: #b9770e;
+			}
+			.ok {
+				color: #1e8449;
+			}
+			.bad {
+				color: #c0392b;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Moor · EIP-7702 probe</h1>
+		<p class="muted">
+			Dev-only. Physical Ledger over WebHID, Sepolia. Close Ledger Live first (it owns the
+			device), open the Ethereum app on the Flex with <b>Smart account upgrade</b> enabled in
+			its settings, use Chrome. Nothing here runs without a tap on the device.
+		</p>
+
+		<section>
+			<h2>1 · Connect</h2>
+			<div class="row">
+				<button id="connect" class="primary">Connect Ledger (WebHID)</button>
+				<label>Expected holder <input id="expected" class="addr" value="0xAA1aEf44DDE610F433f271C6A8749139DD5162E1" /></label>
+			</div>
+			<dl id="status">
+				<dt>Device address</dt>
+				<dd id="address">—</dd>
+				<dt>Account code</dt>
+				<dd id="code">—</dd>
+				<dt>tUSDC balance · allowance to Aqua</dt>
+				<dd id="balances">—</dd>
+			</dl>
+		</section>
+
+		<section>
+			<h2>2 · Delegation (once per account)</h2>
+			<div class="row">
+				<button id="dryrun" disabled>Dry run: sign the authorization only, verify it recovers</button>
+			</div>
+			<div class="row">
+				<button id="delegate" disabled class="primary">Delegate to Simple7702Account (type-4 tx to self)</button>
+				<button id="undelegate" disabled class="danger">Undo: delegate to 0x0</button>
+			</div>
+			<p class="muted">
+				Watch the Flex: the delegation screen is clear-signed by the app itself ("Delegate to
+				Simple7702Account · Sepolia"). The type-4 transaction that carries it is the second tap.
+			</p>
+		</section>
+
+		<section>
+			<h2>3 · One signature: open + name a position</h2>
+			<div class="row">
+				<label>Parent name <input id="parent" value="salviega.eth" /></label>
+				<label>Label <input id="label" value="one-sig-1" /></label>
+				<label>tUSDC <input id="amount" value="100" size="6" /></label>
+			</div>
+			<div class="row">
+				<button id="batch" disabled class="primary">Sign one executeBatch to self (approve? · ship · createPosition)</button>
+			</div>
+			<p class="muted">
+				The question this answers: does the Flex show <code>executeBatch</code> in words (Ledger
+				resolving the delegate's descriptor behind your own address) or as raw calldata? The
+				inner Moor calls are blind on a production device either way until our descriptors are
+				in Ledger's registry — same as today.
+			</p>
+		</section>
+
+		<section>
+			<h2>Log</h2>
+			<pre id="log"></pre>
+		</section>
+
+		<script type="module" src="/src/main.ts"></script>
+	</body>
+</html>

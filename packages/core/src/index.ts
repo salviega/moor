@@ -1,6 +1,7 @@
 export * from "./abi";
 export * from "./addresses";
 export * from "./agent";
+export * from "./batch";
 export * from "./fees";
 export * from "./flow";
 export * from "./history";

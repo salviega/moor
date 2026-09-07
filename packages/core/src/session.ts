@@ -29,7 +29,9 @@ export type CallKind =
 	| "dock"
 	| "unregister"
 	| "revokeAgent"
-	| "setupAgent";
+	| "setupAgent"
+	/** Several of the above as one `executeBatch` on the holder's own delegated address (batch.ts). */
+	| "batch";
 
 export interface Call {
 	kind: CallKind;
