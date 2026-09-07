@@ -50,3 +50,6 @@ packages/erc7730/.speculos/
 # Ledger clear-signing tester checkout and run folders (ledger:screens)
 packages/erc7730/.cs-tester/
 packages/erc7730/flow/
+
+# Claude Code agent worktrees: nested checkouts, never part of this tree
+.claude/worktrees/

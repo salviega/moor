@@ -3,6 +3,8 @@
 import type { PositionState } from "@moor/core";
 import { ChevronRight, Loader2 } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { short } from "@/lib/format";
+import { explorer } from "@/lib/pair";
 
 /**
  * Six components, one accent. Primary is amber and means "this signs on your
@@ -172,6 +174,31 @@ export function Details({
 
 export function Skeleton({ className = "" }: { className?: string }) {
 	return <span className={`skeleton block ${className}`} aria-hidden />;
+}
+
+/** An address or a transaction hash, always a link to the block explorer — a judge can follow every one. */
+export function ExplorerLink({
+	kind,
+	id,
+	short: shorten = false,
+	className = "",
+}: {
+	kind: "address" | "tx";
+	id: string;
+	short?: boolean;
+	className?: string;
+}) {
+	return (
+		<a
+			className={`num underline decoration-dotted underline-offset-2 hover:text-text ${className}`}
+			href={explorer(kind, id)}
+			target="_blank"
+			rel="noreferrer"
+			title={shorten ? id : undefined}
+		>
+			{shorten ? short(id) : id}
+		</a>
+	);
 }
 
 export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {

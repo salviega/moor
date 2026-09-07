@@ -19,7 +19,8 @@
 			"!packages/erc7730/screens",
 			"!pnpm-lock.yaml",
 			"!packages/contracts/deployments",
-			"!packages/erc7730/.speculos"
+			"!packages/erc7730/.speculos",
+			"!.claude/worktrees"
 		]
 	},
 	"formatter": {

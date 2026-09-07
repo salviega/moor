@@ -30,6 +30,88 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Opening a position looks like having one (2026-09-06).** The New form
+  now sits in the same frame as an open position's page: the live chart with
+  its history on the left (3/5), the numbers in the side panel on the right
+  (2/5) — asset, buy or sell, amount, range, fee, days, name, and the review
+  button at the panel's foot — and under them the plain-words preview and
+  the list of what the position never does. Full width on the dashboard's
+  own height chain (`xl:min-h-full`: it fills the viewport when it can and
+  grows when the panel needs more, instead of clipping); one column on a
+  phone with the chart kept tall enough to drag. Dragging the band, typing
+  the numbers, and moving an open position's range are now one gesture
+  learnt once. The name field goes quiet in the header — the missing-account
+  case is already the reason on the sign button.
+
+- **Drag the range on the chart (2026-09-06).** The amber band is now a
+  control: grab its body to move it, an edge to widen or narrow it; the
+  numbers snap to a sensible step (`priceStep`: 100 for BTC, 10 for ETH) and
+  land in *Range low* / *Range high* for fine-tuning, both ways. An overlay
+  takes the pointer only while it is over the band — everywhere else the chart
+  keeps its own scroll and zoom. **The scale follows the drag**: autoscale
+  stays on, so as the band nears the market price the chart zooms in for
+  precision and as it moves away the scale opens up; the point that was
+  grabbed is re-anchored under the cursor against the live scale on every
+  move, which is what keeps the band from running away while the scale
+  changes under it (`dragRange` in `packages/core/src/market.ts`, 5 tests). On the form that
+  is all it is: nothing is signed until *Review*. On an open position it is a
+  real change: the range lives inside the order, so moving it means closing
+  this order and opening a successor with what is left — the same session as
+  accepting the agent's "move the range" proposal. Dragging shows the on-chain
+  range as a fainter band for reference and opens *New range* **in the side
+  panel, in place of the numbers, so the chart keeps its full height**; it has
+  the two fields, says what will happen ("Closes this order and opens btc-dip-2 with
+  the 1,000 tUSDC left") and offers *Move the range · 4 signatures* or
+  *Cancel*; the button explains itself when it cannot act (another wallet's
+  order, nothing left to convert, no account). Touch: the first tap arms the
+  band, then drag — the fields are the precise route on a phone.
+- **Every address is a link to the block explorer (2026-09-06).** One shared
+  `ExplorerLink` in `components/ui.tsx` (dotted underline, opens Sepolia
+  Etherscan in a new tab, full address on hover when shortened) replaces every
+  plain-text address: the owner and the agent's key on the position panel, the
+  owner, registry and both tokens under *Technical details* (the separate
+  "owner on etherscan" line is gone — the address itself is the link), each
+  call's contract on *Review and sign* and in the signing steps, and the
+  registry, resolver and registrar on *Setup*. A judge can follow every one
+  without copying anything. `strategyHash` stays text: Etherscan has no page
+  for it.
+- **A live market chart, with the oracle drawn on it (2026-09-06).** The
+  first attempt animated the Chainlink line — a feed that ticks every 20 to 60
+  minutes on Sepolia cannot look alive, and the holder said so. Now the
+  position panel and the form preview carry a real trading chart:
+  `lightweight-charts` (TradingView's open-source library, the one new
+  dependency) draws candles from a real venue, trade by trade over a
+  WebSocket — Binance first, Coinbase Exchange when Binance is unreachable (it
+  geo-blocks whole countries) and the other again if a socket keeps dropping —
+  at 1m / 15m / 1h / 1d, with crosshair, zoom and pan, the time axis in the
+  holder's local time. The position's range is a band behind the candles (a
+  series primitive, `RangeBand`) with its working edge labelled ("buys
+  58.0k–62.0k"), and **the scale keeps the band in view by default** — the
+  holder asked for exactly that; *Follow price* zooms into the candles and,
+  from there, the header says how far the range is ("buys 58.0k–62.0k · 27%
+  below") with *Show range* to come back. The form's default range follows the
+  asset (58k–62k for BTC, 2.2k–2.4k for ETH) until the holder types their own.
+  **Two prices on purpose, each
+  labelled**: the venue's live price in the header, and the Chainlink price as
+  a dashed *oracle* line with its age — "the price your position reacts to" —
+  so "the market crossed but nothing traded" has an answer instead of a
+  mystery. Everything the venues send crosses Zod in
+  `packages/core/src/market.ts` (`parseBinanceKlines`, `parseCoinbaseCandles`,
+  the two tick parsers, `applyTick` folding trades into the current candle
+  without rewriting history — 12 tests); `apps/live-app/src/lib/market.ts`
+  only moves bytes and reconnects. `chainlinkSepolia.ethUsd`
+  (`0x694A…5306`, verified on chain: "ETH / USD", 8 decimals) joins `btcUsd`,
+  and `usePrice(asset)` / `usePriceHistory(asset)` read the feed of the
+  position's own asset, so an ETH position marks its own oracle. If no venue
+  answers, the panel falls back to the Chainlink 48-hour ruler and says so.
+  Known gap, deliberately left for its own commit: `deriveState` for an ETH
+  position is still fed the BTC oracle by `usePositions`, `usePosition` and
+  the agent — no ETH position exists on chain yet.
+- **The oracle ruler got a crosshair (2026-09-06).** Kept for the review
+  screen and as the no-network fallback: `usePrice` polls every 20 s instead
+  of 60, the dot slides to its new spot and rings once on a tick (a no-op
+  under `prefers-reduced-motion`), and hovering shows the exact price and time
+  at that point.
 - **Brand and SEO (2026-09-06).** Moor has a mark: a bollard with a line — the
   arc is the mooring, the stroke the rope that holds; something that stays
   where it is, read also as an M. The kit is in `brand/` (logo and symbol,
