@@ -28,6 +28,8 @@ Two things this project's entries carry that a web app's would not:
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-07
+
 ### Added
 
 - **A whole session in one signature — the EIP-7702 probe (2026-09-06).** Today a
