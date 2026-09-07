@@ -154,10 +154,10 @@ Tres cosas que costaron: (1) el paquete npm `@ledgerhq/ethereum-clear-signing-te
 
 Huecos ya detectados en la documentación leída antes de escribir código, listados como riesgos en el [05 §10](../definicion/05_stack-y-arquitectura.md#10-riesgos-técnicos) y con fecha de verificación en el [07](../definicion/07_plan-de-trabajo.md):
 
-- [ ] **6 sep** — ¿la Wallet API firma y transmite `data` arbitrario contra un contrato en Sepolia (`transaction.signAndBroadcast`), o solo transferencias simples? Ninguna página consultada lo dice con un ejemplo de llamada a contrato.
-- [ ] **6 sep** — ¿cómo recibe la app de Ethereum en **Speculos** un descriptor ERC-7730 local, si el dispositivo real solo acepta descriptores firmados por el registro de Ledger? Es el mismo hueco que otro equipo documentó como "`withContextModule` parece self-serve pero no lo es en producción" — confirmar si aplica igual en Speculos.
-- [ ] **Instalación del Key Ring CLI en Linux** y su flujo de enrolamiento en un host sin USB: la página del track lo describe en prosa; la documentación de `ai-tools` de Ledger, al momento de escribir esto, no menciona `wallet-cli ring` ni sus comandos.
-- [ ] Tooling de **ERC-7730**: confirmar los límites de caracteres por campo (`intent`, `label`) antes del primer `lint`, para no descubrirlos a mitad de la fase 0.
+- [x] ~~**6 sep** — ¿la Wallet API firma y transmite `data` arbitrario contra un contrato en Sepolia (`transaction.signAndBroadcast`), o solo transferencias simples?~~ **Sí**, confirmado el 5 de septiembre desde Ledger Live con la Flex: `mint` de tUSDC ([`0x3160e91f…`](https://sepolia.etherscan.io/tx/0x3160e91f23a196f60c8dc8092c5e062ef9d97a399cd88d9a5c918c974321f392)) y después `approve` · `ship` · `createPosition` en una sesión (`btc-dip-2`). Sigue sin haber un ejemplo de llamada a contrato en la guía; anotado en *Lo que funcionó bien*.
+- [x] ~~**6 sep** — ¿cómo recibe la app de Ethereum en **Speculos** un descriptor ERC-7730 local?~~ Resuelto el 5 de septiembre: el `clear-signing-tester` de `device-sdk-ts` los inyecta sin firmar (entrada del 2026-09-05, *El clear-signing tester…*). En el dispositivo físico no hay vía: solo descriptores del registro (entradas del 2026-09-06 y 07).
+- [x] ~~**Instalación del Key Ring CLI en Linux** y su flujo de enrolamiento en un host sin USB.~~ La instalación es un `npm i -g` y `ring init` funcionó en el portátil; el enrolamiento de un segundo host **sigue sin documentar** (entrada del 2026-09-05, *El Key Ring en un host sin USB*), y el agente se fue a Supabase el 6 de septiembre para no esperar.
+- [x] ~~Tooling de **ERC-7730**: confirmar los límites de caracteres por campo antes del primer `lint`.~~ `erc7730 lint` los dice con el mensaje exacto (owner ≤ 22, URL ≤ 26) y degrada a aviso cuando el contrato no está en Sourcify; ningún límite nos sorprendió a mitad de fase (entrada en *Lo que funcionó bien*).
 
 ---
 
@@ -165,8 +165,20 @@ Huecos ya detectados en la documentación leída antes de escribir código, list
 
 | # | Área | Se documentaba | Se encontró | Severidad | Reportado |
 | - | ---- | --------------- | ----------- | --------- | --------- |
-| — | — | — | — | — | — |
+| 1 | Speculos | `pip install speculos` como vía recomendada | No arranca ninguna app sin `qemu-user-static`, y el error llega tarde y sin nombrar el paquete | Baja | no enviado — solo documentado aquí |
+| 2 | ERC-7730 Tester | "Inyecta tu descriptor y muestra los campos" | No dice cómo pasa la PKI ni si es automatizable; resuelto encontrando el CLI `clear-signing-tester` en `device-sdk-ts` | Media | no enviado — solo documentado aquí |
+| 3 | Ledger Live, *Add account* | Cuenta de Ethereum Sepolia para usar una Live App en testnet | Buscar "Sepolia" ofrece solo un token y lleva al flujo de Arbitrum; la red no aparece | Media (una cuenta inútil, media hora) | no enviado — solo documentado aquí |
+| 4 | Key Ring en host sin USB | "Enroll a VPS, a CI runner, or a hosted agent" | Ningún documento dice cómo un segundo host se une al trustchain; el agente se fue a Supabase | **Alta** (cambió la arquitectura del agente) | no enviado — solo documentado aquí |
+| 5 | Wallet API simulator | Perfil de cuentas para desarrollo | Sin cuenta de Sepolia; una añadida a mano falla en `lastSyncDate.toISOString`; `useRequestAccount` calla el error | Media | no enviado — solo documentado aquí |
+| 6 | `wallet-api-client-react` | Hooks que envuelven al cliente | Sus funciones devuelven `void`, no el resultado del cliente | Baja | no enviado — solo documentado aquí |
+| 7 | `clear-signing-tester` (CLI) | Solo el Tester web está enlazado desde *Validate & Submit* | El CLI existe, inyecta descriptores sin firmar en Speculos y guarda capturas: es `ledger:screens` | Nota (positiva) + sugerencias | no enviado — solo documentado aquí |
+| 8 | `calldata` anidado (ERC-7730) | El esquema lo define; ninguna guía lo menciona ni dice qué app lo soporta | Funciona en la app 1.22.3 ("Review transaction 1 of 2"); en un dispositivo real es ciego porque el registro no tiene descriptor para el delegado 7702 | Media (documentación) | **enviado**: PRs al registro [#2953](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2953), [#2954](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954) |
+| 9 | Registro ERC-7730, CI | El CI de un PR prueba los descriptores del PR | Un `calldata` anidado solo resuelve contra lo ya fusionado en `master`; dos PRs que se citan fallan hasta que entra el primero | Baja (orden de fusión) | **enviado**: [comentario en #2954](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954#issuecomment-5569415321) |
+| — | Wallet API con `data` arbitrario; app precompilada; `erc7730 lint`; `wallet-cli` | — | Funcionó igual o mejor que lo documentado | Nota (positiva) | — |
 
 ## Reportes abiertos (se llena en fase 5)
 
-- [ ] —
+Cerrado el 7 de septiembre. Este archivo **es** el entregable de feedback que el track pide; lo que además salió del repo:
+
+- [x] **Registro ERC-7730** — [ethereum/clear-signing-erc7730-registry#2953](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2953) (`MoorRegistrar` + la Aqua de Sepolia; CI 5/5 en verde) y [#2954](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954) (`Simple7702Account`, `execute`/`executeBatch` con `calldata` anidado — el descriptor que el delegado 7702 que Ledger acepta no tenía; CI en rojo hasta que #2953 se fusione, explicado en un [comentario](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954#issuecomment-5569415321)). Ambos abiertos, mergeables, sin revisión humana al 7 de septiembre.
+- [ ] **Lo que queda solo documentado aquí**, con la sugerencia concreta en cada entrada, y adónde iría si se abre después del hackathon: Speculos README (`qemu-user-static` junto al `pip install`, hallazgo 1); `developers.ledger.com` *Validate & Submit* (enlazar el CLI del tester y decir cómo pasa la PKI, hallazgos 2 y 7; documentar el formato `calldata` anidado con la versión mínima de la app, hallazgo 8; documentar que `signTransaction` acepta tipo 4); Ledger Live (*Select asset* con redes de prueba en modo desarrollador, hallazgo 3); `ledger-live` `wallet-api-simulator` y `wallet-api-client-react` (perfil con Sepolia, hooks que devuelvan el resultado, hallazgos 5 y 6); y la guía del track — **"Key Ring on a headless host"**, el enrolamiento de un segundo host, que es el único hallazgo que cambió una decisión de arquitectura (hallazgo 4).

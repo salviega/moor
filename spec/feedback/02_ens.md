@@ -12,6 +12,8 @@ Stack en uso: `ensdomains/contracts-v2` (`main`), ENSv2 beta en Sepolia — dire
 - **`authorizeTextRoles(name, key, account, grant)` es exactamente la primitiva que un agente necesita.** Permiso de escritura sobre *una* clave de text record, en un nombre o en todos (`name = 0x00`), revocable con el mismo método. Convirtió el diseño "un subnombre por posición para el agente" en "una identidad por holder y ocho claves", con menos nombres y la misma garantía. (2026-09-05, fase 2)
 - **Las implementaciones de Sepolia están verificadas en Sourcify con `exact_match`** (`UserRegistryImpl` `0x624a…2050`, `PermissionedResolverImpl` `0x9EAe…365e`), así que el ABI contra el que compilamos es el que corre. Y `VerifiableFactory.deployProxy` funcionó a la primera desde un script Foundry externo.
 - **`LabelRegistered` lleva el label en claro.** Enumerar los subnombres de un `UserRegistry` es un solo `eth_getLogs`; no hizo falta indexador ni recorrer `UniversalResolverV2`. Cerró un pendiente que arrastrábamos desde el 05.
+- **Los roles por clave aguantan un agente real, sin humano, cada cinco minutos.** Desde el 7 de septiembre el agente escribe las ocho claves `moor.agent.*` de cada posición en **un** `multicall` de `setText` sobre el `PermissionedResolver` del holder — [`0xc87ef116…`](https://sepolia.etherscan.io/tx/0xc87ef116de7a4192f25d4282d4ec859f37a385c98a5c528b52e022d9f15fc48), [`0x62d47922…`](https://sepolia.etherscan.io/tx/0x62d4792283e2fff1eb8e7a3d50058240bb97999bfe9bce458c6fd518ed4fc51) — y `hasRoles` sigue siendo `false` para todo lo demás; el holder lo apaga con una firma (`revokeAgent`). Es el caso de uso "un servicio escribe solo esta clave" funcionando en producción, no en una prueba. (2026-09-07, fase 4)
+- **`UniversalResolverV2` resuelve un nombre con records propios sin configuración.** `moor.strategy`, `moor.pair`, los ocho `moor.agent.*` y `addr` de `btc-dip.salviega.eth` se leen con una llamada desde viem; la Live App y el agente no necesitaron nada más. (2026-09-05, fase 2)
 
 ---
 
@@ -94,11 +96,17 @@ Estas no son hallazgos todavía — son huecos que ya se detectaron en la docume
 
 | # | Área | Se documentaba | Se encontró | Severidad | Reportado |
 | - | ---- | --------------- | ----------- | --------- | --------- |
-| 1 | Consumo desde Foundry | `forge install` + imports del tutorial | Sin tags; proyecto en subdirectorio; remappings a mano; OZ 5.3 vs 5.4 | Media | pendiente |
-| 2 | Permissioned Resolver | Roles por tipo de record | Roles **por clave** (`authorizeTextRoles`) — mejor que lo documentado | Nota (positiva) | pendiente |
-| 3 | Direcciones de la beta | Carpetas `deployments/` del repo | No coinciden con app.ens.dev; proxies sin verificar en Sourcify | Baja | pendiente |
-| 4 | Transferencia de nombre | El nombre se transfiere como ERC-1155 | El resolver queda con root en la wallet anterior; la app no lo avisa | Media | pendiente |
+| 1 | Consumo desde Foundry | `forge install` + imports del tutorial | Sin tags; proyecto en subdirectorio; remappings a mano; OZ 5.3 vs 5.4 | Media | no enviado — solo documentado aquí |
+| 2 | Permissioned Resolver | Roles por tipo de record | Roles **por clave** (`authorizeTextRoles`) — mejor que lo documentado | Nota (positiva) | no enviado — solo documentado aquí |
+| 3 | Direcciones de la beta | Carpetas `deployments/` del repo | No coinciden con app.ens.dev; proxies sin verificar en Sourcify | Baja | no enviado — solo documentado aquí |
+| 4 | Transferencia de nombre | El nombre se transfiere como ERC-1155 | El resolver queda con root en la wallet anterior; la app no lo avisa | Media | no enviado — solo documentado aquí |
+| — | Roles por clave con un agente real; `UniversalResolverV2`; `LabelRegistered`; Sourcify `exact_match` de las implementaciones | — | Funcionó igual o mejor que lo documentado | Nota (positiva) | — |
 
 ## Reportes abiertos (se llena en fase 5)
 
-- [ ] —
+Cerrado el 7 de septiembre. Nada se envió aguas arriba a ENS durante el hackathon: los cuatro hallazgos son de documentación y de la app de la beta, ninguno es un bug de contrato, y el 2 es una buena noticia que la guía no cuenta. Todos están aquí con `cast`/`forge` reproducibles y la sugerencia escrita. Si se abren después, van a:
+
+- [ ] `ensdomains/contracts-v2` — tags/releases y una sección "consumir desde un proyecto Foundry externo" con los remappings (hallazgo 1).
+- [ ] `ensdomains/docs` — guía del Permissioned Resolver: un ejemplo de `authorizeTextRoles` como "un servicio puede escribir solo esta clave", con `name = 0x00` para todos los nombres (hallazgo 2, el más útil para el bonus de agentes).
+- [ ] `ensdomains/docs` — una tabla fechada con las direcciones de la beta de Sepolia, y verificar los proxies (`ETHRegistry`, resolvers) en Sourcify (hallazgo 3).
+- [ ] app.ens.dev — aviso al transferir un nombre de que su resolver conserva el root en la wallet anterior, con la opción de transferir roles o crear uno nuevo; y la guía de EAC diciendo que registry y resolver son dominios de permisos independientes (hallazgo 4).
