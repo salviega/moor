@@ -52,4 +52,33 @@ pnpm --filter @moor/probe-7702 dev     # http://localhost:5177
   Ledger's registry — same as `ship` and `createPosition` today. The Speculos side of
   this question is answered in `packages/erc7730/screens/batch7702*`.
 
-Write down what you saw in `spec/feedback/03_ledger.md`, with the tx hashes.
+**Photograph the screens.** A recollection of what the device showed is not evidence —
+on 2026-09-06 one contradicted the servers. The device shows every screen before "Hold to
+sign", and **Reject** costs nothing: to see what a batch looks like without broadcasting,
+run step 4 and reject on the device.
+
+## Reading Ledger's servers without a device
+
+```sh
+pnpm --filter @moor/probe-7702 cal
+```
+
+`scripts/cal-check.ts` builds the same ContextModule the signer uses (production CAL,
+metadata service, no origin token) and asks it what it would stream to the app for
+`ship` → Aqua, `createPosition` → MoorRegistrar, `executeBatch` → the delegated EOA and
+→ `Simple7702Account` (Sepolia, mainnet, Base), with `USDC.approve` on mainnet as a
+positive control. A `TRANSACTION_INFO` context means Ledger has a signed descriptor and a
+production device clear-signs; only `DynamicNetwork` means it blind-signs.
+
+## What happened on 2026-09-06
+
+- Delegation signed on the Flex (clear: "Delegate to Simple7702Account · Sepolia") and the
+  type-4 tx broadcast: [`0xedec5af4…`](https://sepolia.etherscan.io/tx/0xedec5af4b36d7f073f63c0cafb1386d9553a00fb8ec9e5bb369977615a4f938f), 36,837 gas. The account is delegated since.
+- One signature, whole session: `executeBatch([ship, createPosition])` to self,
+  [`0xe4a7fdea…`](https://sepolia.etherscan.io/tx/0xe4a7fdea0a2d7565efafffb5db24de991adb5cf035190105ede47c52c0f46c2c), 957,608 gas — `one-sig-1.salviega.eth`, all or nothing.
+- `cal`: no calldata descriptor for Aqua, MoorRegistrar, the delegated EOA or
+  `Simple7702Account` on Sepolia, mainnet or Base; the USDC control returns one, signed.
+  With blind signing enabled in the app, the Flex signed the batch blind — the same as
+  `ship` alone from Ledger Live today. The one-signature path is gated on the ERC-7730
+  registry (Moor's descriptors plus one for `Simple7702Account.executeBatch`), not on the
+  device. Details in `spec/feedback/03_ledger.md`.
