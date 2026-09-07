@@ -2,9 +2,12 @@
 
 /**
  * Open a position → Review and sign (04 §4.1). One decision: what to buy or
- * sell, with how much, between which prices, until when. The range is drawn
- * while the holder types; the review says in plain words what will happen,
- * what will not, and what each of the signatures on the Ledger does.
+ * sell, with how much, between which prices, until when. The frame is the
+ * one an open position has — the live chart where the chart is, the numbers
+ * in the side panel where the numbers are — so opening and moving a position
+ * are one gesture learnt once. The range is drawn while the holder types or
+ * drags; the review says in plain words what will happen, what will not, and
+ * what each of the signatures on the Ledger does.
  */
 import { type NewPositionPlan, planNewPosition } from "@moor/core";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,12 +22,13 @@ import { Button, Details, ExplorerLink, Field, inputClass, Notice, Panel } from 
 import { fmtAmount, fmtDate, fmtPrice, fmtUsd } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
 import { btcDemo, demoPairs, explorer, resolveDemoPair } from "@/lib/pair";
-import { usePrice, useSetupStatus, useTokenAccount } from "@/lib/queries";
+import { usePrice, usePriceHistory, useSetupStatus, useTokenAccount } from "@/lib/queries";
 import { type Step, useSignSession } from "@/lib/session";
 import { NameField } from "../name-field";
 
 const t = {
 	title: "Open a position",
+	editor: "Set it up",
 	review: "Review and sign",
 	asset: "Which asset",
 	side: "What do you want to do",
@@ -129,6 +133,7 @@ export default function NewPosition() {
 	const [assetId, setAssetId] = useState<"btc" | "eth">("btc");
 	const demo = demoPairs.find((d) => d.id === assetId) ?? btcDemo;
 	const price = usePrice(assetId);
+	const history = usePriceHistory(assetId);
 	const [side, setSide] = useState<"buy" | "sell">("buy");
 	const tokenIn = side === "buy" ? demo.pair.quote : demo.pair.base;
 	const acct = useTokenAccount(h.address, tokenIn.address);
@@ -199,10 +204,28 @@ export default function NewPosition() {
 
 	if (plan) return <Review plan={plan} price={p} onBack={() => setPlan(null)} />;
 
+	const chart = (
+		<MarketChart
+			asset={assetId}
+			priceMin={validRange ? lo : 0}
+			priceMax={validRange ? hi : 1}
+			side={side}
+			oracle={price.data}
+			history={history.data ?? []}
+			onRangeChange={(min, max) =>
+				setForm((f) => ({ ...f, priceMin: String(min), priceMax: String(max) }))
+			}
+		/>
+	);
+	const choice = (on: boolean) =>
+		`min-h-11 flex-1 items-center justify-center gap-2 rounded-md border px-3 text-sm ${on ? "border-accent text-text" : "border-line-strong text-muted hover:text-text"}`;
+
 	return (
-		<div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-			<h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
-			<NameField />
+		<div className="flex flex-col gap-3 xl:min-h-full">
+			<header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+				<h1 className="font-semibold text-xl tracking-tight">{t.title}</h1>
+				<NameField quiet />
+			</header>
 			{setup.data && (!setup.data.registry || !setup.data.resolver) ? (
 				<Notice
 					tone="warn"
@@ -216,9 +239,18 @@ export default function NewPosition() {
 					{t.needSetup.body}
 				</Notice>
 			) : null}
-			<form onSubmit={review} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-				<Panel className="flex flex-col gap-5">
-					<fieldset className="flex flex-col gap-2">
+
+			{/* Same frame as an open position: the chart where the chart is, the numbers where the numbers are. */}
+			<form
+				onSubmit={review}
+				className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]"
+			>
+				<Panel tone="raised" className="flex min-h-[380px] flex-col gap-3 xl:min-h-0">
+					{chart}
+				</Panel>
+				<Panel tone="raised" className="flex flex-col gap-3">
+					<span className="eyebrow">{t.editor}</span>
+					<fieldset className="flex flex-col gap-1.5">
 						<legend className="text-muted text-sm">{t.asset}</legend>
 						<div className="flex gap-2" role="radiogroup" aria-label={t.asset}>
 							{demoPairs.map((d) => (
@@ -228,7 +260,7 @@ export default function NewPosition() {
 									role="radio"
 									aria-checked={assetId === d.id}
 									onClick={() => chooseAsset(d.id)}
-									className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border px-3 text-sm ${assetId === d.id ? "border-accent text-text" : "border-line-strong text-muted hover:text-text"}`}
+									className={`flex ${choice(assetId === d.id)}`}
 								>
 									<img
 										src={d.icon}
@@ -242,7 +274,7 @@ export default function NewPosition() {
 							))}
 						</div>
 					</fieldset>
-					<fieldset className="flex flex-col gap-2">
+					<fieldset className="flex flex-col gap-1.5">
 						<legend className="text-muted text-sm">{t.side}</legend>
 						<div className="flex gap-2" role="radiogroup" aria-label={t.side}>
 							{(["buy", "sell"] as const).map((s) => (
@@ -252,7 +284,7 @@ export default function NewPosition() {
 									role="radio"
 									aria-checked={side === s}
 									onClick={() => setSide(s)}
-									className={`min-h-11 flex-1 rounded-md border px-3 text-sm ${side === s ? "border-accent text-text" : "border-line-strong text-muted hover:text-text"}`}
+									className={choice(side === s)}
 								>
 									{s === "buy" ? t.buy(demo.label) : t.sell(demo.label)}
 								</button>
@@ -331,7 +363,7 @@ export default function NewPosition() {
 						/>
 					</Field>
 					{error ? <Notice tone="error">{error}</Notice> : null}
-					<div className="flex justify-end">
+					<div className="mt-auto flex justify-end pt-1">
 						<Button
 							type="submit"
 							disabled={!validRange || !validLabel || !validAmount}
@@ -347,19 +379,11 @@ export default function NewPosition() {
 						</Button>
 					</div>
 				</Panel>
-				<Panel tone="raised" className="flex flex-col gap-4 self-start">
+			</form>
+
+			<div className="grid shrink-0 grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]">
+				<Panel className="flex flex-col gap-2">
 					<span className="eyebrow">{t.preview.eyebrow}</span>
-					<MarketChart
-						asset={assetId}
-						priceMin={validRange ? lo : 0}
-						priceMax={validRange ? hi : 1}
-						side={side}
-						oracle={price.data}
-						height={260}
-						onRangeChange={(min, max) =>
-							setForm((f) => ({ ...f, priceMin: String(min), priceMax: String(max) }))
-						}
-					/>
 					<p className="text-text">
 						{validRange
 							? side === "buy"
@@ -369,7 +393,20 @@ export default function NewPosition() {
 					</p>
 					{where ? <p className="text-muted text-sm">{where}</p> : null}
 				</Panel>
-			</form>
+				<Panel className="flex flex-col gap-2">
+					<span className="eyebrow">{t.head.never}</span>
+					<ul className="flex flex-col gap-1 text-muted text-sm">
+						{t.never.map((n) => (
+							<li key={n} className="flex gap-2">
+								<span aria-hidden className="text-dim">
+									·
+								</span>
+								{n}
+							</li>
+						))}
+					</ul>
+				</Panel>
+			</div>
 		</div>
 	);
 }

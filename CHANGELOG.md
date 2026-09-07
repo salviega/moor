@@ -30,6 +30,19 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **Opening a position looks like having one (2026-09-06).** The New form
+  now sits in the same frame as an open position's page: the live chart with
+  its history on the left (3/5), the numbers in the side panel on the right
+  (2/5) — asset, buy or sell, amount, range, fee, days, name, and the review
+  button at the panel's foot — and under them the plain-words preview and
+  the list of what the position never does. Full width on the dashboard's
+  own height chain (`xl:min-h-full`: it fills the viewport when it can and
+  grows when the panel needs more, instead of clipping); one column on a
+  phone with the chart kept tall enough to drag. Dragging the band, typing
+  the numbers, and moving an open position's range are now one gesture
+  learnt once. The name field goes quiet in the header — the missing-account
+  case is already the reason on the sign button.
+
 - **Drag the range on the chart (2026-09-06).** The amber band is now a
   control: grab its body to move it, an edge to widen or narrow it; the
   numbers snap to a sensible step (`priceStep`: 100 for BTC, 10 for ETH) and
