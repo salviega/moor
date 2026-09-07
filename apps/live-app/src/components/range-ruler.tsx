@@ -8,7 +8,7 @@
 import type { PricePoint } from "@moor/core";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { fmtShort } from "@/lib/format";
+import { ago, fmtShort } from "@/lib/format";
 
 export function RangeRuler({
 	priceMin,
@@ -133,6 +133,8 @@ function PriceChart({
 	const padR = 56;
 	const padT = 10;
 	const padB = 18;
+	const svgRef = useRef<SVGSVGElement>(null);
+	const [hover, setHover] = useState<number | null>(null);
 	const pts = history.length > 1 ? history : price ? [{ price, updatedAt: Date.now() / 1000 }] : [];
 	const values = [priceMin, priceMax, ...pts.map((p) => p.price), ...(price ? [price] : [])];
 	const lo = Math.min(...values);
@@ -149,15 +151,45 @@ function PriceChart({
 	const inRange = price !== undefined && price >= priceMin && price <= priceMax;
 	const hours = pts.length > 1 ? Math.round((t1 - t0) / 3600) : 0;
 	const label = `${side === "buy" ? "Buys" : "Sells"} between ${fmtShort(priceMin)} and ${fmtShort(priceMax)}; price ${price ? fmtShort(price) : "unknown"}${inRange ? ", inside the range" : ""}; last ${hours} hours shown`;
+
+	const onHover = (e: React.PointerEvent<SVGSVGElement>) => {
+		if (pts.length === 0) return;
+		const rect = svgRef.current?.getBoundingClientRect();
+		if (!rect || rect.width === 0) return;
+		const mouseX = ((e.clientX - rect.left) / rect.width) * W;
+		let best = 0;
+		let bestDist = Number.POSITIVE_INFINITY;
+		for (let i = 0; i < pts.length; i++) {
+			const pt = pts[i];
+			if (!pt) continue;
+			const d = Math.abs(x(pt.updatedAt) - mouseX);
+			if (d < bestDist) {
+				bestDist = d;
+				best = i;
+			}
+		}
+		setHover(best);
+	};
+	const hovered = hover !== null ? pts[hover] : undefined;
+	const boxW = 78;
+	const boxH = 34;
+	const hx = hovered ? x(hovered.updatedAt) : 0;
+	const hy = hovered ? y(hovered.price) : 0;
+	const boxX = hovered ? (hx + 10 + boxW > W - 4 ? hx - 10 - boxW : hx + 10) : 0;
+	const boxY = hovered ? Math.min(Math.max(hy - boxH / 2, padT), H - padB - boxH) : 0;
+
 	return (
 		<div ref={wrap} className="w-full">
 			<svg
+				ref={svgRef}
 				viewBox={`0 0 ${W} ${H}`}
 				width="100%"
 				height={H}
 				role="img"
 				aria-label={label}
 				className="block max-w-full"
+				onPointerMove={onHover}
+				onPointerLeave={() => setHover(null)}
 			>
 				<title>{label}</title>
 				<rect
@@ -208,7 +240,16 @@ function PriceChart({
 				) : null}
 				{price !== undefined ? (
 					<>
-						<circle cx={x(t1)} cy={y(price)} r="3" fill="var(--color-text)" />
+						<circle
+							key={price}
+							className="price-pulse"
+							cx={x(t1)}
+							cy={y(price)}
+							fill="none"
+							stroke="var(--color-text)"
+							strokeWidth="1"
+						/>
+						<circle className="price-dot" cx={x(t1)} cy={y(price)} r="3" fill="var(--color-text)" />
 						<text
 							x={x(t1) + 8}
 							y={y(price) + 4}
@@ -228,6 +269,35 @@ function PriceChart({
 				<text x={W - padR} y={H - 4} textAnchor="end" fontSize="10" fill="var(--color-dim)">
 					now
 				</text>
+				{hovered ? (
+					<g pointerEvents="none">
+						<line
+							x1={hx}
+							x2={hx}
+							y1={padT}
+							y2={H - padB}
+							stroke="var(--color-line-strong)"
+							strokeWidth="1"
+							strokeDasharray="2 3"
+						/>
+						<circle cx={hx} cy={hy} r="3.5" fill="var(--color-accent)" />
+						<rect
+							x={boxX}
+							y={boxY}
+							width={boxW}
+							height={boxH}
+							rx="4"
+							fill="var(--color-ink-2)"
+							stroke="var(--color-line)"
+						/>
+						<text x={boxX + 8} y={boxY + 14} fontSize="11" className="num" fill="var(--color-text)">
+							{fmtShort(hovered.price)}
+						</text>
+						<text x={boxX + 8} y={boxY + 27} fontSize="10" fill="var(--color-dim)">
+							{ago(hovered.updatedAt)}
+						</text>
+					</g>
+				) : null}
 			</svg>
 		</div>
 	);

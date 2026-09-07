@@ -1,21 +1,23 @@
 @import "tailwindcss";
 
 /*
- * Moor — logbook (direction A). One accent (amber) reserved for "needs your
- * signature"; green and red only mean what they mean; hierarchy by size and
- * space; numbers in a monospace face. Dark first: the app lives inside Ledger Live.
+ * Moor — logbook (direction A). The brand's four colours (brand/README.md):
+ * ink for the ground, paper for text, brass as the one accent — reserved for
+ * "needs your signature" — and slate for what is secondary. Green and red only
+ * mean what they mean; hierarchy by size and space; numbers in a monospace
+ * face. Dark first: the app lives inside Ledger Live.
  */
 @theme {
-	--color-ink-0: #0c0e12;
+	--color-ink-0: #0a0e14;
 	--color-ink-1: #121620;
 	--color-ink-2: #171c27;
 	--color-line: #232a37;
 	--color-line-strong: #34405a;
-	--color-text: #e7eaf0;
+	--color-text: #f4f1ea;
 	--color-muted: #9aa3b4;
-	--color-dim: #6a7387;
-	--color-accent: #f0b64a;
-	--color-accent-ink: #0c0e12;
+	--color-dim: #6b7785;
+	--color-accent: #d99a2b;
+	--color-accent-ink: #0a0e14;
 	--color-good: #59c98f;
 	--color-bad: #ef6b73;
 	--font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -82,9 +84,32 @@ body {
 	.animate-in-1,
 	.animate-in-2,
 	.animate-in-3,
-	.cta-pulse {
+	.cta-pulse,
+	.price-dot,
+	.price-pulse {
 		animation: none;
+		transition: none;
 	}
+}
+
+/* Price chart: the current-price dot slides to its new spot and rings once on each tick. */
+@keyframes price-ring {
+	from {
+		r: 3;
+		opacity: 0.5;
+	}
+	to {
+		r: 9;
+		opacity: 0;
+	}
+}
+.price-dot {
+	transition:
+		cx 600ms ease,
+		cy 600ms ease;
+}
+.price-pulse {
+	animation: price-ring 900ms ease-out;
 }
 
 /* Landing (disconnected state): a short staggered entrance, then a slow pulse on the primary CTA. */

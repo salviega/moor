@@ -5,15 +5,26 @@
  * leave it working. The proposal is pending and looks pending; what already
  * happened looks settled. Closing is its own row, away from the primary.
  */
-import { acceptProposalCalls, closeCalls, readAddr, revokeAgentCall } from "@moor/core";
+import { acceptProposalCalls, closeCalls, nextLabel, readAddr, revokeAgentCall } from "@moor/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { StepRow } from "@/app/new/page";
+import { MarketChart } from "@/components/market-chart";
 import { PendingBand } from "@/components/pending-band";
-import { RangeRuler } from "@/components/range-ruler";
 import { useToast } from "@/components/toast";
-import { Button, Details, Notice, Panel, Skeleton, Stat, StateMark } from "@/components/ui";
+import {
+	Button,
+	Details,
+	ExplorerLink,
+	Field,
+	inputClass,
+	Notice,
+	Panel,
+	Skeleton,
+	Stat,
+	StateMark,
+} from "@/components/ui";
 import { publicClient } from "@/lib/chain";
 import {
 	ago,
@@ -24,10 +35,9 @@ import {
 	fmtPrice,
 	fmtShort,
 	fmtUsd,
-	short,
 } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
-import { btcDemo, explorer, resolveDemoPair } from "@/lib/pair";
+import { btcDemo, resolveDemoPair } from "@/lib/pair";
 import {
 	usePosition,
 	usePrice,
@@ -83,6 +93,26 @@ const t = {
 		body: "Two signatures: stop the order on Aqua, then remove the name. Your tokens were never anywhere else. This cannot be undone; you can open a new position later.",
 		action: "Stop and close the position",
 	},
+	move: {
+		title: "New range",
+		low: "Low",
+		high: "High",
+		unit: (asset: string) => `USD per ${asset}`,
+		now: "Now, on chain",
+		next: "New",
+		moves: "Moves",
+		successor: "Opens as",
+		sameTerms: "same side and deadline",
+		removed: "this name is removed",
+		width: (pct: string) => `${pct} wide`,
+		body: "Two signatures close this order, two open the successor. Nothing else moves.",
+		action: (n: number) => `Move the range · ${n} signatures`,
+		cancel: "Cancel",
+		invalid: "The low end must be below the high end.",
+		notMaker: "Shipped by another wallet: there is nothing here to move.",
+		nothingLeft: "Nothing left to convert; close the position instead.",
+		reasoning: "Moved by the holder from the chart.",
+	},
 	needAccount: "Choose the account that owns this name to act.",
 	browser: "Open Moor from Ledger Live to sign.",
 	done: {
@@ -92,25 +122,32 @@ const t = {
 			next ? `Done. The successor is ${next}.` : "Done. Position closed.",
 	},
 	failed: "The session stopped. Nothing after the failed step was sent.",
-	session: { accept: "Signing the proposal", close: "Closing", revoke: "Revoking the agent" },
+	session: {
+		accept: "Signing the proposal",
+		close: "Closing",
+		revoke: "Revoking the agent",
+		move: "Moving the range",
+	},
 	confirm: "Confirm on your Ledger…",
 };
 
-type Act = "close" | "revoke" | "accept";
+type Act = "close" | "revoke" | "accept" | "move";
 
 export function PositionPanel({ label, embedded = false }: { label: string; embedded?: boolean }) {
 	const h = useHolder();
 	const q = usePosition(h.name, label);
-	const price = usePrice();
-	const history = usePriceHistory();
 	const setup = useSetupStatus(h.parentLabel);
 	const session = useSignSession();
 	const toast = useToast();
 	const qc = useQueryClient();
 	const [acting, setActing] = useState<Act | null>(null);
 	const [dismissed, setDismissed] = useState<string | null>(null);
+	// A range being drawn on the chart, as the holder's own numbers; null when nothing is being moved.
+	const [draft, setDraft] = useState<{ min: string; max: string } | null>(null);
 	const p = q.data;
 	const demo = p ? resolveDemoPair(p.tokenIn, p.tokenOut) : btcDemo;
+	const price = usePrice(demo.id);
+	const history = usePriceHistory(demo.id);
 	const tokenIn = p ? (p.side === "buy" ? demo.pair.quote : demo.pair.base) : demo.pair.quote;
 	const tokenOut = p ? (p.side === "buy" ? demo.pair.base : demo.pair.quote) : demo.pair.base;
 	const acct = useTokenAccount(h.address, tokenIn.address);
@@ -141,6 +178,25 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 					now: Math.floor(now),
 				})
 			: null;
+	const draftMin = draft ? Number(draft.min) : Number.NaN;
+	const draftMax = draft ? Number(draft.max) : Number.NaN;
+	const draftValid = draftMin > 0 && draftMax > draftMin;
+	const moveCalls =
+		p && draft && draftValid && setup.data?.resolver
+			? acceptProposalCalls({
+					view: p,
+					proposal: {
+						kind: "widen",
+						priceMin: String(draftMin),
+						priceMax: String(draftMax),
+						reasoning: t.move.reasoning,
+					},
+					pair: demo.pair,
+					names: { registry: p.registry, resolver: setup.data.resolver },
+					allowance: acct.data?.allowance ?? 0n,
+					now: Math.floor(now),
+				})
+			: null;
 	const reason =
 		h.host === "browser"
 			? t.browser
@@ -155,24 +211,27 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 		const calls =
 			kind === "accept"
 				? (acceptCalls ?? [])
-				: kind === "close"
-					? closeCalls({
-							strategyHash: p.strategyHash,
-							tokens: [p.tokenIn, p.tokenOut],
-							registry: p.registry,
-							label: p.label,
-						})
-					: [
-							revokeAgentCall({
-								resolver: setup.data?.resolver ?? p.registry,
-								agent: agentAddr.data ?? p.holder,
-							}),
-						];
+				: kind === "move"
+					? (moveCalls ?? [])
+					: kind === "close"
+						? closeCalls({
+								strategyHash: p.strategyHash,
+								tokens: [p.tokenIn, p.tokenOut],
+								registry: p.registry,
+								label: p.label,
+							})
+						: [
+								revokeAgentCall({
+									resolver: setup.data?.resolver ?? p.registry,
+									agent: agentAddr.data ?? p.holder,
+								}),
+							];
 		const ok = await session.run(h.accountId, calls);
 		const successor =
-			kind === "accept" && calls.some((c) => c.kind === "createPosition")
-				? nextName(p.label)
+			(kind === "accept" || kind === "move") && calls.some((c) => c.kind === "createPosition")
+				? nextLabel(p.label)
 				: null;
+		if (ok && kind === "move") setDraft(null);
 		if (ok)
 			toast(
 				"ok",
@@ -272,63 +331,150 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 			) : null}
 
 			<div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[3fr_2fr]">
-				<Panel tone="raised" className="flex flex-col justify-center gap-3">
-					<span className="eyebrow">Price against the range · last 48 h</span>
-					<RangeRuler
-						priceMin={lo}
-						priceMax={hi}
-						price={cur}
-						history={history.data ?? []}
+				<Panel tone="raised" className="flex min-h-0 flex-col gap-3">
+					<MarketChart
+						asset={demo.id}
+						priceMin={draft && draftValid ? draftMin : lo}
+						priceMax={draft && draftValid ? draftMax : hi}
 						side={p.side}
+						oracle={price.data}
+						history={history.data ?? []}
+						reference={draft ? { min: lo, max: hi } : undefined}
+						onRangeChange={
+							p.state !== "closed"
+								? (min, max) => setDraft({ min: String(min), max: String(max) })
+								: undefined
+						}
 					/>
 				</Panel>
 				<Panel tone="raised" className="flex flex-col justify-center gap-4">
-					<div className="grid grid-cols-2 gap-x-6 gap-y-5">
-						<Stat
-							label={t.stats.committed}
-							value={
-								p.amountKnown ? fmtAmount(p.amountIn ?? 0n, tokenIn.decimals, tokenIn.symbol) : "—"
-							}
-							sub={
-								p.amountKnown && cur
-									? `≈ ${fmtUsd(p.amountIn ?? 0n, tokenIn.decimals, p.side === "buy" ? 1 : cur)}`
-									: undefined
-							}
-						/>
-						<Stat
-							label={t.stats.left}
-							value={fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)}
-							sub={p.amountKnown ? `${fmtPct(p.converted)} converted` : undefined}
-						/>
-						<Stat
-							label={t.stats.received}
-							value={fmtAmount(p.balanceOut, tokenOut.decimals, tokenOut.symbol)}
-							sub={
-								cur && p.balanceOut > 0n
-									? `≈ ${fmtUsd(p.balanceOut, tokenOut.decimals, p.side === "buy" ? cur : 1)}`
-									: undefined
-							}
-						/>
-						<Stat
-							label={t.stats.expires}
-							value={p.expiry ? fmtDate(p.expiry) : "—"}
-							sub={p.expiry ? `${daysLeft(p.expiry, now)} days left` : undefined}
-						/>
-						<Stat
-							label="Range"
-							value={`${fmtPrice(lo)} – ${fmtPrice(hi)}`}
-							sub={`${p.side === "buy" ? "buys" : "sells"} BTC · USD per BTC`}
-						/>
-						<Stat
-							label="Owner"
-							value={short(p.holder)}
-							sub={
-								h.address && p.holder.toLowerCase() === h.address.toLowerCase()
-									? "this account"
-									: undefined
-							}
-						/>
-					</div>
+					{draft ? (
+						<div className="flex flex-1 flex-col gap-5">
+							<span className="eyebrow">{t.move.title}</span>
+							<div className="grid grid-cols-2 gap-3">
+								<Field
+									label={t.move.low}
+									unit={t.move.unit(demo.label)}
+									error={!draftValid ? t.move.invalid : undefined}
+								>
+									<input
+										className={inputClass}
+										inputMode="decimal"
+										value={draft.min}
+										onChange={(e) => setDraft({ ...draft, min: e.target.value })}
+									/>
+								</Field>
+								<Field label={t.move.high} unit={t.move.unit(demo.label)}>
+									<input
+										className={inputClass}
+										inputMode="decimal"
+										value={draft.max}
+										onChange={(e) => setDraft({ ...draft, max: e.target.value })}
+									/>
+								</Field>
+							</div>
+							<dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+								<Stat
+									label={t.move.now}
+									value={`${fmtPrice(lo)} – ${fmtPrice(hi)}`}
+									sub={t.move.width(fmtPct((hi - lo) / lo))}
+								/>
+								<Stat
+									label={t.move.next}
+									value={draftValid ? `${fmtPrice(draftMin)} – ${fmtPrice(draftMax)}` : "—"}
+									sub={
+										draftValid ? t.move.width(fmtPct((draftMax - draftMin) / draftMin)) : undefined
+									}
+								/>
+								<Stat
+									label={t.move.moves}
+									value={fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)}
+									sub={t.move.sameTerms}
+								/>
+								<Stat label={t.move.successor} value={nextLabel(p.label)} sub={t.move.removed} />
+							</dl>
+							<p className="text-muted text-sm">{t.move.body}</p>
+							<div className="mt-auto flex flex-wrap items-center gap-3">
+								<Button
+									onClick={() => act("move")}
+									disabled={
+										!canAct ||
+										!moveCalls ||
+										!p.makerMatches ||
+										p.balanceIn === 0n ||
+										session.running
+									}
+									reason={
+										reason ??
+										(!p.makerMatches
+											? t.move.notMaker
+											: p.balanceIn === 0n
+												? t.move.nothingLeft
+												: !draftValid
+													? t.move.invalid
+													: undefined)
+									}
+									busy={acting === "move" && session.running}
+								>
+									{acting === "move" && session.running
+										? t.confirm
+										: t.move.action(moveCalls?.length ?? 4)}
+								</Button>
+								<Button variant="quiet" onClick={() => setDraft(null)} disabled={session.running}>
+									{t.move.cancel}
+								</Button>
+							</div>
+						</div>
+					) : (
+						<div className="grid grid-cols-2 gap-x-6 gap-y-5">
+							<Stat
+								label={t.stats.committed}
+								value={
+									p.amountKnown
+										? fmtAmount(p.amountIn ?? 0n, tokenIn.decimals, tokenIn.symbol)
+										: "—"
+								}
+								sub={
+									p.amountKnown && cur
+										? `≈ ${fmtUsd(p.amountIn ?? 0n, tokenIn.decimals, p.side === "buy" ? 1 : cur)}`
+										: undefined
+								}
+							/>
+							<Stat
+								label={t.stats.left}
+								value={fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)}
+								sub={p.amountKnown ? `${fmtPct(p.converted)} converted` : undefined}
+							/>
+							<Stat
+								label={t.stats.received}
+								value={fmtAmount(p.balanceOut, tokenOut.decimals, tokenOut.symbol)}
+								sub={
+									cur && p.balanceOut > 0n
+										? `≈ ${fmtUsd(p.balanceOut, tokenOut.decimals, p.side === "buy" ? cur : 1)}`
+										: undefined
+								}
+							/>
+							<Stat
+								label={t.stats.expires}
+								value={p.expiry ? fmtDate(p.expiry) : "—"}
+								sub={p.expiry ? `${daysLeft(p.expiry, now)} days left` : undefined}
+							/>
+							<Stat
+								label="Range"
+								value={`${fmtPrice(lo)} – ${fmtPrice(hi)}`}
+								sub={`${p.side === "buy" ? "buys" : "sells"} BTC · USD per BTC`}
+							/>
+							<Stat
+								label="Owner"
+								value={<ExplorerLink kind="address" id={p.holder} short />}
+								sub={
+									h.address && p.holder.toLowerCase() === h.address.toLowerCase()
+										? "this account"
+										: undefined
+								}
+							/>
+						</div>
+					)}
 				</Panel>
 			</div>
 			{!p.makerMatches ? (
@@ -344,7 +490,12 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 						<h2 className="text-base">{t.agent.title}</h2>
 						<span className="num text-dim text-xs">
 							{p.agentName}
-							{agentAddr.data ? ` → ${short(agentAddr.data)}` : ""}
+							{agentAddr.data ? (
+								<>
+									{" → "}
+									<ExplorerLink kind="address" id={agentAddr.data} short />
+								</>
+							) : null}
 						</span>
 					</div>
 					<p className="text-dim text-xs">{t.agent.canOnly}</p>
@@ -426,25 +577,20 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				<Details>
 					<span>name {p.name}</span>
 					<span>strategyHash {p.strategyHash}</span>
-					<span>owner {p.holder}</span>
-					<span>registry {p.registry}</span>
-					<span>tokenIn {p.tokenIn}</span>
-					<span>tokenOut {p.tokenOut}</span>
-					<a
-						className="underline"
-						href={explorer("address", p.holder)}
-						target="_blank"
-						rel="noreferrer"
-					>
-						owner on etherscan
-					</a>
+					<span>
+						owner <ExplorerLink kind="address" id={p.holder} />
+					</span>
+					<span>
+						registry <ExplorerLink kind="address" id={p.registry} />
+					</span>
+					<span>
+						tokenIn <ExplorerLink kind="address" id={p.tokenIn} />
+					</span>
+					<span>
+						tokenOut <ExplorerLink kind="address" id={p.tokenOut} />
+					</span>
 				</Details>
 			</div>
 		</div>
 	);
-}
-
-function nextName(label: string): string {
-	const m = label.match(/^(.*)-(\d+)$/);
-	return m ? `${m[1]}-${Number(m[2]) + 1}` : `${label}-2`;
 }

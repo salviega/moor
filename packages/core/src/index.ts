@@ -5,6 +5,8 @@ export * from "./batch";
 export * from "./fees";
 export * from "./flow";
 export * from "./history";
+export * from "./market";
+export * from "./model";
 export * from "./names";
 export * from "./pairs";
 export * from "./position";
