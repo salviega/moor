@@ -48,7 +48,7 @@ Por qué pnpm workspaces y no Turborepo: con tres paquetes y dos apps, los scrip
 | **`@ledgerhq/wallet-api-client-react`** | 1.4     | Hooks sobre el cliente: `useAccounts`, `useSignTransaction`. Menos plomería en los componentes             |
 | **`@ledgerhq/wallet-api-simulator`**    | 2.3     | Simula Ledger Live en el navegador para desarrollar **sin abrir Ledger Live ni conectar el dispositivo**. Solo desarrollo |
 | **Tailwind CSS**                        | 4.x     | Estilos. Configuración por CSS                                                                            |
-| **lucide-react**                        | 1.41    | Iconos. Los componentes (botón con motivo de deshabilitado, panel, campo con unidad, aviso con acción, marca de estado, detalles técnicos, skeleton, gráfico de rango, banda de propuesta, toast) son funciones propias en `src/components/`; no hizo falta shadcn/ui. Tokens en `globals.css` (`@theme`): un acento ámbar para "requiere tu firma", monoespaciada para cifras |
+| **lucide-react**                        | 1.41    | Iconos. Los componentes (botón con motivo de deshabilitado, panel, campo con unidad, aviso con acción, marca de estado, detalles técnicos, skeleton, gráfico de rango, banda de propuesta, toast) son funciones propias en `src/components/`; no hizo falta shadcn/ui. Tokens en `globals.css` (`@theme`) con la paleta de la marca (`brand/README.md`): tinta de fondo, papel para texto, latón como único acento para "requiere tu firma", pizarra para lo secundario; monoespaciada para cifras |
 | **TanStack Query**                      | 5.x     | Polling de balances, estado y records del agente. Caché y reintentos sin escribirlos                     |
 
 **No hay conexión de wallet.** Ni wagmi, ni RainbowKit, ni WalletConnect: dentro de Ledger Live, la cuenta la da la Wallet API y la firma la hace Ledger Live. viem solo lee.
@@ -78,15 +78,15 @@ Formularios con estado de React y `useActionState`; sin librería de formularios
 | Tecnología               | Versión | Para qué                                                                                                        |
 | ------------------------ | ------- | --------------------------------------------------------------------------------------------------------------- |
 | **Node.js + tsx**        | 22 / 4.x | Correr el agente en TypeScript sin paso de build. Un proceso, un bucle                                          |
-| **`@anthropic-ai/sdk`**  | 0.124   | Llamar a Claude cuando hay algo que proponer                                                                   |
-| **Claude Opus 5**        | `claude-opus-5` | El modelo. Thinking adaptativo (viene por defecto). Salida estructurada con `messages.parse()` contra el esquema zod de la propuesta |
+| **Groq API**             | `fetch`, sin SDK | Llamar al modelo cuando hay algo que proponer: el endpoint compatible con OpenAI, `response_format: json_schema` estricto. Tier gratuito, sin tarjeta |
+| **gpt-oss-120b** (en Groq) | `openai/gpt-oss-120b` | El modelo. Razonamiento propio; salida estructurada estricta contra el esquema zod de la propuesta, derivado a JSON Schema en `packages/core/src/model.ts` |
 | **viem**                 | 2.56    | Leer Aqua/SwapVM y escribir `setText` en el subnombre del agente. La llave caliente se carga desde Key Ring     |
 | **pino**                 | 10.x    | Logs estructurados. Cada ciclo deja una línea: qué leyó, qué derivó, si propuso                                 |
-| **Ledger Key Ring CLI**  | `wallet-cli` 2.1.0 | `wallet-cli ring encrypt/decrypt --key <nombre>`: custodia de la llave del agente, la RPC y la API key de Anthropic, cifradas con la seed de la Ledger y descifradas sin USB en el VPS (solo red) |
+| **Ledger Key Ring CLI**  | `wallet-cli` 2.1.0 | `wallet-cli ring encrypt/decrypt --key <nombre>`: custodia de la llave del agente, la RPC y la API key de Groq, cifradas con la seed de la Ledger y descifradas sin USB en el VPS (solo red) |
 
-**Dónde entra el modelo y dónde no.** Leer precio, leer balances, derivar estado y detectar umbrales es **código determinista** en `packages/core` — no se le pregunta a un modelo cuánto vale `1 − balIn/monto0`. Claude entra **solo cuando se cruza un umbral**: recibe la posición, la lectura y las alternativas ya simuladas por código, y devuelve una propuesta estructurada (`none | widen | narrow | close | renew`, parámetros, razonamiento en dos frases). Una llamada por propuesta, no por ciclo. La salida se valida con zod antes de escribirse en ENS; si no valida, no se escribe.
+**Dónde entra el modelo y dónde no.** Leer precio, leer balances, derivar estado y detectar umbrales es **código determinista** en `packages/core` — no se le pregunta a un modelo cuánto vale `1 − balIn/monto0`. El modelo entra **solo cuando se cruza un umbral**: recibe la posición, la lectura y las alternativas ya simuladas por código, y devuelve una propuesta estructurada (`none | widen | narrow | close | renew`, parámetros, razonamiento en dos frases). Una llamada por propuesta, no por ciclo. La salida se valida con zod antes de escribirse en ENS; si no valida, no se escribe.
 
-Se activan los **fallbacks del lado del servidor** del SDK (`fallbacks: "default"`), para que un rechazo del clasificador de seguridad no deje un ciclo sin propuesta.
+El modelo fue primero Claude Opus 5 vía `@anthropic-ai/sdk`; el 6 de septiembre pasó a Groq para que el agente corra sin gasto durante el hackathon. Lo que no cambió: el prompt, el esquema, y que una respuesta que no valida cae a la propuesta determinista — el modelo es una dependencia de un ciclo, nunca del producto.
 
 ---
 
@@ -123,7 +123,7 @@ Se activan los **fallbacks del lado del servidor** del SDK (`fallbacks: "default
 | **ENS App (Sepolia, ENSv2)**      | Gratis   | Registrar `salviega.eth` de prueba en ENSv2                                                   |
 | **Ledger Live Desktop**           | —        | Modo desarrollador para cargar el `manifest.json` local y probar con el dispositivo real       |
 | **Vercel**                        | Hobby    | Hospedar la Live App: proyecto `moor`, Root Directory `apps/live-app`, Node 22, repo conectado. Producción: [getmoor.vercel.app](https://getmoor.vercel.app) — `moor.vercel.app` estaba tomado. *Gotcha:* el `prepare` de la raíz debe tolerar la ausencia de `.git` o tumba el `pnpm install` del build |
-| **Anthropic API**                 | Pago por uso | Claude Opus 5 para las propuestas. Pocas llamadas: solo al cruzar umbrales                |
+| **Groq API**                      | Gratis   | `gpt-oss-120b` para las propuestas. Tier gratuito: 30 req/min, 1 000 req/día, 200K tokens/día — sobra para una llamada por propuesta |
 | **VPS** (cualquiera)              | ~5 USD/mes | El agente headless, con Key Ring enrolado                                                   |
 
 ---
@@ -141,9 +141,9 @@ Validadas con zod al arrancar cada app; si falta una, no arranca. Ninguna vive e
 | `WETH_ADDRESS`                    | Foundry      | Opcional. Si falta, `Deploy.s.sol` despliega un `TestWETH`                      |
 | `SEPOLIA_RPC_URL`                 | Agente       | Distinta llave que la de la Live App. Sale de Key Ring                         |
 | `AGENT_PRIVATE_KEY`               | Agente       | La llave caliente. **Sale de Key Ring, nunca de un `.env`**                     |
-| `ANTHROPIC_API_KEY`               | Agente       | Sale de Key Ring. Opcional: sin ella el agente corre con la propuesta determinista |
+| `GROQ_API_KEY`                    | Agente       | Sale de Key Ring. Opcional: sin ella el agente corre con la propuesta determinista |
 | `AGENT_INTERVAL_SECONDS`          | Agente       | Cadencia del ciclo. Por defecto 300                                            |
-| `AGENT_PARENT_NAME`, `AGENT_MODEL` | Agente      | Nombre del holder (`salviega.eth`) y modelo (`claude-opus-5`)                  |
+| `AGENT_PARENT_NAME`, `AGENT_MODEL` | Agente      | Nombre del holder (`salviega.eth`) y modelo (`openai/gpt-oss-120b`)                  |
 | `AGENT_LOGS_CHUNK`, `AGENT_FROM_BLOCK` | Agente  | Tramo de `eth_getLogs` (10 000; Alchemy gratis solo permite 10) y bloque inicial (11 600 000). El RPC del agente debe permitir rangos amplios: PublicNode sirve |
 | `AGENT_DRY_RUN`                   | Agente       | `1`: lee, deriva y registra, pero no envía nada                                |
 | `DEPLOYER_PRIVATE_KEY`            | Foundry      | Solo para scripts de despliegue; local, nunca en CI                            |
@@ -190,7 +190,7 @@ Desde la raíz, con `pnpm`:
 | **wagmi / RainbowKit**  | Wallet API             | Dentro de Ledger Live no hay que conectar wallet: la cuenta y la firma vienen del host                     |
 | **ethers**              | viem                   | Tipos más estrictos, menor tamaño, y es lo que usa el ecosistema de Aqua SDK                               |
 | **Python para el agente** | TypeScript           | Habría duplicado `packages/core` en otro lenguaje. Una sola implementación de "qué es una posición"        |
-| **Vercel AI SDK / AI Gateway** | `@anthropic-ai/sdk` | Un modelo, un proveedor, una llamada por propuesta. La capa de abstracción no paga su costo aquí        |
+| **Vercel AI SDK / AI Gateway / SDK del proveedor** | `fetch` + zod | Un modelo, un proveedor, una llamada por propuesta: una petición HTTP y un esquema. Ni la abstracción ni el SDK pagan su costo aquí — pasar de Anthropic a Groq fue reescribir un archivo de treinta líneas |
 | **Turborepo**           | pnpm workspaces        | Cinco paquetes. Entra si el CI tarda                                                                       |
 | **Base de datos / ORM** | Nada                   | No hay estado propio ([05 §4](./05_stack-y-arquitectura.md#4-dónde-vive-el-estado))                        |
 | **Ledger como firmante del agente** | Llave caliente + Key Ring | El agente firma `setText` cada pocos minutos sin humano; una Ledger ahí sería teatro. Lo que sí custodia la Ledger es la llave |

@@ -8,6 +8,7 @@
  * flex-height chain (body → main → this).
  */
 import { Anchor, ArrowRight, Eye, ShieldCheck } from "lucide-react";
+import { Mark } from "./logo";
 import { Button } from "./ui";
 
 const t = {
@@ -75,6 +76,7 @@ export function Landing({
 	return (
 		<div className="grid h-full grid-rows-[1fr_auto_auto] items-center gap-4 py-2 sm:gap-8 sm:py-4">
 			<div className="animate-in-1 flex flex-col items-center gap-3 text-center sm:gap-5">
+				<Mark className="h-12 w-12 text-text sm:h-16 sm:w-16" title="" />
 				<span className="eyebrow">{t.eyebrow}</span>
 				<h1 className="font-semibold text-4xl text-text tracking-tight sm:text-6xl">{t.title}</h1>
 				<p className="max-w-md text-base text-muted sm:max-w-lg sm:text-lg">{t.pitch}</p>

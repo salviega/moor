@@ -8,11 +8,10 @@ import { z } from "zod";
 const Env = z.object({
 	SEPOLIA_RPC_URL: z.url(),
 	AGENT_PRIVATE_KEY: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
-	/** Without it the agent still runs: proposals are the deterministic ones (07, the cut allows). */
-	ANTHROPIC_API_KEY: z.string().min(1).optional(),
-	/** Required when the key is not scoped to a workspace (the API then wants the anthropic-workspace-id header). */
-	ANTHROPIC_WORKSPACE_ID: z.string().min(1).optional(),
-	AGENT_MODEL: z.string().default("claude-opus-5"),
+	/** Without it the agent still runs: proposals are the deterministic ones (07, the cut allows). Groq's free tier covers one call per proposal. */
+	GROQ_API_KEY: z.string().min(1).optional(),
+	/** A Groq model with strict structured outputs (06 §5). */
+	AGENT_MODEL: z.string().default("openai/gpt-oss-120b"),
 	AGENT_INTERVAL_SECONDS: z.coerce.number().int().positive().default(300),
 	/** The holder's name; positions are its subnames. */
 	AGENT_PARENT_NAME: z

@@ -3,7 +3,7 @@
 	"name": "Moor",
 	"url": "https://getmoor.vercel.app",
 	"homepageUrl": "https://github.com/salviega/moor",
-	"icon": "https://getmoor.vercel.app/favicon.ico",
+	"icon": "https://getmoor.vercel.app/icon-512.png",
 	"platforms": ["desktop"],
 	"apiVersion": "^2.0.0",
 	"manifestVersion": "2",
