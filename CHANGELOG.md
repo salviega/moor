@@ -30,6 +30,36 @@ Two things this project's entries carry that a web app's would not:
 
 ### Added
 
+- **A whole session in one signature — the EIP-7702 probe (2026-09-06).** Today a
+  new position is two or three signatures (approve · ship · createPosition),
+  closing is two, accepting a proposal is four. A helper contract cannot batch
+  them — it would become Aqua's maker (AGENTS.md, Security) — but an EOA
+  delegated with EIP-7702 to the one account contract the Ledger Ethereum app
+  whitelists (eth-infinitism's `Simple7702Account`, `0x4Cd2…66c9`, same bytecode
+  on Sepolia and Base) can run them all as one `executeBatch` on itself, with
+  `msg.sender == holder` inside every call. This entry is the evidence, not the
+  feature. `packages/core/src/batch.ts`: `delegateOf(code)` reads the
+  `0xef0100‖delegate` indicator, `batchCall(holder, calls)` wraps a session into
+  that one call (kind `batch`, "Moor: all steps in one"); six tests written first.
+  `pnpm ledger:screens -- --probe` renders two extra transactions on the emulated
+  Flex without touching the flow's captures: the batch sent to the holder's own
+  address is blind (no descriptor can be bound to an EOA); the same batch with
+  `descriptors/probe/calldata-Simple7702Account.json` — whose `calls.[].data`
+  uses ERC-7730's nested `calldata` format — makes app 1.22.3 show **"Review
+  transaction 1 of 2 / 2 of 2"** and render each inner call with our existing
+  `ship` and `createPosition` descriptors, every frame in the product's words
+  (the tester says *partially clear-signed*; the only visible partial is the
+  `???` testnet token amount `ship` alone already had). `apps/probe-7702` is a
+  dev-only page — not the Live App, nothing imports it — that runs the same path
+  on a physical Flex over WebHID with Ledger's DMK, the way Streams verified on
+  this device: dry-run the delegation, delegate with a self-sponsored type-4 tx,
+  send one `executeBatch` to self built by `planNewPosition`, undo. What it is
+  for: the one open question, whether a production device resolves the
+  delegate's descriptor behind a delegated EOA — Ledger's `ProxyContextFieldLoader`
+  does exactly that for proxies, server-side and PKI-signed, so only Ledger's
+  backend or the physical device can answer. Findings and the docs gap in
+  `spec/feedback/03_ledger.md`; the path and its two conditions in
+  `spec/definicion/08_roadmap.md` §2.3.
 - **A second demo asset: ETH alongside BTC (2026-09-06).** Opening a position now
   starts with a "Which asset" choice — BTC or ETH — before buy/sell, each with its
   own icon; every unit label and the plain-words preview ("If ETH drops below…")

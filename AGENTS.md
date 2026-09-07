@@ -193,7 +193,7 @@ the need is how a small project stops being small:
 | Need                                   | Choice                                                                      |
 | -------------------------------------- | --------------------------------------------------------------------------- |
 | Reading the chain                      | viem, through `packages/core` — never a raw ABI call in a component          |
-| Signing                                | The Wallet API (`@ledgerhq/wallet-api-client-react`) and nothing else. No private key exists in the Live App |
+| Signing                                | The Wallet API (`@ledgerhq/wallet-api-client-react`) and nothing else. No private key exists in the Live App. (`apps/probe-7702` talks to a device over WebHID with Ledger's DMK — it is a dev instrument for the 08 §2.3 question, not the Live App, and nothing in `apps/live-app` imports it) |
 | Server state, polling, refetching      | TanStack Query                                                              |
 | Forms                                  | React state + `useActionState`, validated with the shared Zod schema. Two forms; no form library |
 | Schemas and types                      | Zod in `packages/core`; types are inferred from schemas, never written twice |
@@ -233,6 +233,10 @@ capture**, in the same commit — `packages/erc7730/` for the descriptor,
 regenerates the captures (Docker, Node 24, ~8 minutes) and the manual
 `ledger-screens` workflow diffs them: a descriptor change that alters a screen
 fails that run, not the demo. It is not part of the per-PR CI on purpose.
+`pnpm ledger:screens -- --probe` renders the EIP-7702 batch probes on top
+(`descriptors/probe/`, `screens/results-probe.json`) without touching the flow's
+captures; a descriptor under `descriptors/probe/` is evidence for a roadmap
+question, not something the Live App signs.
 
 **Local first, then Sepolia.** Anvil forks Sepolia for the fast loop; the phase
 does not close until the same thing happened on Sepolia itself with a hash to

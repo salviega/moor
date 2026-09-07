@@ -88,6 +88,14 @@ Es el cimiento de 1b y además resuelve una deuda de v1: **las dos o tres firmas
 - **Qué exige:** `MoorAccountPolicy` como módulo (ver 1b); soporte de 7702 en la Ledger y en la Wallet API (confirmar); descriptores ERC-7730 para la delegación, que es lo más delicado que un usuario firma.
 - **Tamaño:** grande, compartido con 1b. **Se construye una vez.**
 
+**Lo que se sabe desde el 6 de septiembre** (sonda en Speculos + revisión de [Streams](https://github.com/JulioMCruz/Streams), que firmó 7702 en esta misma Flex):
+
+- *La Ledger sí:* la app de Ethereum firma la delegación (clear, hardcodeada: "Delegate to Simple7702Account") y transacciones tipo 4, con "smart account upgrade" activado en sus ajustes. **Solo acepta un delegado**, `Simple7702Account` de eth-infinitism (`0x4Cd241E8d1510e30b2076397afc7508Ae59C66c9`, mismo bytecode en Sepolia y Base). Su batch es `executeBatch((address,uint256,bytes)[])`.
+- *La Wallet API no:* la 2.0.0 no expone ni la autorización ni tipo 4, y dentro de Ledger Live no hay WebHID. La delegación tiene que firmarse **una vez, fuera de Ledger Live**, con el DMK (`apps/probe-7702`). Después, cada flujo es una transacción **normal** a la propia dirección del holder — `to: holder, data: executeBatch([...])` — que la Wallet API sí firma. `packages/core/src/batch.ts` (`delegateOf`, `batchCall`) ya la construye.
+- *La pantalla, en Speculos, sí:* con un descriptor para `executeBatch` que usa el formato `calldata` anidado de ERC-7730, la app 1.22.3 muestra "Review transaction 1 of 2 / 2 of 2" y renderiza cada llamada con los descriptores de `ship` y `createPosition` existentes. Capturas en `packages/erc7730/screens/batch7702Nested/`; el detalle en [`feedback/03_ledger.md`](../feedback/03_ledger.md).
+- *La incógnita, y es de Ledger:* en la forma real `to` es la EOA del holder, y un descriptor se ata a una dirección de contrato. El SDK resuelve descriptores detrás de un proxy preguntando al metadata service de Ledger (firmado con su PKI); si ese servicio trata el indicador `0xef0100‖delegado` como un proxy, el camino clear-signa en dispositivos reales sin más; si no, el batch sale a ciegas hasta que Ledger lo soporte. Se responde con la Flex física (`apps/probe-7702`) o preguntándoles.
+- *Lo que cambia si entra:* la cuenta del holder pasa a ser una smart account 4337 permanente (ERC-1271, ejecución por EntryPoint — ambas exigen igual su firma; el kill switch es des-delegar a `0x0`); `AGENTS.md` gana una excepción explícita a "Wallet API y nada más" para el paso único; y la atomicidad se vuelve gratis: un `createPosition` que falla ya no deja una posición abierta sin nombre.
+
 ### 2.4 Lo que la expansión obliga a construir
 
 Cosas que en v1 no existen porque un solo holder dentro de Ledger Live no las necesita:

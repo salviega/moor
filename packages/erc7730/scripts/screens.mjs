@@ -5,7 +5,9 @@
 // the build, not the demo.
 //
 //   pnpm ledger:screens                # all six; needs Docker and Node >= 24
-//   pnpm ledger:screens -- --only ship
+//   pnpm ledger:screens -- --only=ship
+//   pnpm ledger:screens -- --probe     # the EIP-7702 batch probes (08 roadmap): extra
+//                                      # transactions, descriptors/probe/*, results-probe.json
 //
 // Uses Ledger's own clear-signing tester (apps/clear-signing-tester in
 // LedgerHQ/device-sdk-ts): it starts Speculos in Docker with the prebuilt
@@ -34,7 +36,10 @@ const args = Object.fromEntries(
 		.map((a) => a.replace(/^--/, "").split("="))
 		.map(([k, v]) => [k, v ?? true]),
 );
-const only = args.only ? String(args.only).split(",") : null;
+/** The EIP-7702 probes: not the flow, so they never touch the flow's captures or results.json. */
+const probe = Boolean(args.probe);
+const PROBE_KINDS = ["batch7702Blind", "batch7702Nested"];
+const only = args.only ? String(args.only).split(",") : probe ? PROBE_KINDS : null;
 const device = String(args.device ?? "flex");
 const APP_VERSION = "1.22.3";
 /** LedgerHQ/device-sdk-ts, develop — pinned to the commit this was built against. */
@@ -93,11 +98,20 @@ if (!existsSync(resolve(root, "node_modules"))) {
 }
 
 // 3. The transactions, from the same code the Live App signs with.
-run("npx", ["tsx", resolve(here, "raw-flow.ts")], { cwd: pkg });
+run("npx", ["tsx", resolve(here, "raw-flow.ts")], {
+	cwd: pkg,
+	env: { ...process.env, ...(probe ? { PROBE_7702: "1" } : {}) },
+});
 const flow = JSON.parse(readFileSync(resolve(pkg, "flow/raw-flow.json"), "utf8"));
-const descriptors = readdirSync(resolve(pkg, "descriptors"))
-	.filter((f) => f.endsWith(".json"))
-	.map((f) => resolve(pkg, "descriptors", f));
+const descriptorDirs = [
+	resolve(pkg, "descriptors"),
+	...(probe ? [resolve(pkg, "descriptors/probe")] : []),
+];
+const descriptors = descriptorDirs.flatMap((dir) =>
+	readdirSync(dir)
+		.filter((f) => f.endsWith(".json"))
+		.map((f) => resolve(dir, f)),
+);
 
 // 4. One run per transaction, screens copied under screens/<kind>/.
 const results = [];
@@ -177,7 +191,7 @@ spawnSync("sh", [
 	"docker rm -f $(docker ps -aq --filter name=cs-tester) >/dev/null 2>&1 || true",
 ]);
 writeFileSync(
-	resolve(pkg, "screens/results.json"),
+	resolve(pkg, probe ? "screens/results-probe.json" : "screens/results.json"),
 	`${JSON.stringify({ device, appEthereum: APP_VERSION, tester: TESTER_COMMIT, results }, null, "\t")}\n`,
 );
 if (failed) fail(`${failed} transaction(s) did not render as expected`);
