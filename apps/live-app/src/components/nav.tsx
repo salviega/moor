@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { short } from "@/lib/format";
 import { useHolder } from "@/lib/holder";
+import { Logo } from "./logo";
 import { Button } from "./ui";
 
 const t = {
@@ -55,11 +56,8 @@ export function Nav() {
 		<header className="shrink-0 border-line border-b">
 			<div className="flex w-full flex-wrap items-center justify-between gap-2 px-5 py-1.5 lg:px-8">
 				<nav className="flex items-center gap-1" aria-label="Main">
-					<Link
-						href="/"
-						className="mr-3 min-h-11 font-semibold text-base leading-11 tracking-tight"
-					>
-						{t.brand}
+					<Link href="/" className="mr-3 flex min-h-11 items-center text-text" aria-label={t.brand}>
+						<Logo className="h-6 w-auto" title={t.brand} />
 					</Link>
 					{item("/", t.positions)}
 					{item("/new", t.newPosition)}

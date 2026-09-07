@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/logo-dark.svg">
+    <img src="brand/logo.svg" alt="Moor" width="268">
+  </picture>
+</p>
+
 # Moor
 
 Turns the waiting time of holding into productive capital: a position signed
