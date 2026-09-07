@@ -1,7 +1,8 @@
 /**
- * Every variable the agent needs, validated at start. Secrets come from Key
- * Ring on the host (AGENTS.md, Security); this only reads the environment the
- * ring populated. If anything is missing, the process does not start.
+ * Every variable the agent needs, validated at start. Secrets come from the
+ * host's secret store — Supabase's for the deployed function, a git-ignored
+ * .env on a developer's machine (AGENTS.md, Security); this only reads the
+ * environment. If anything is missing, the process does not start.
  */
 import { z } from "zod";
 
@@ -35,6 +36,6 @@ const Env = z.object({
 
 export type Env = z.infer<typeof Env>;
 
-export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
+export function loadEnv(source: Record<string, string | undefined>): Env {
 	return Env.parse(source);
 }

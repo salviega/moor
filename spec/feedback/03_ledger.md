@@ -68,6 +68,8 @@ Stack en uso: `@ledgerhq/wallet-api-client`, `@ledgerhq/wallet-api-client-react`
 
 **Reportado:** pendiente. Sugerencia: una guía "Key Ring on a headless host" con el flujo exacto de enrolamiento, ya que es uno de los dos ítems que el track destaca.
 
+**Desenlace (6 sep):** Moor no esperó. El agente pasó a una Edge Function en Supabase con los secretos del proyecto; Key Ring en un host propio queda en el roadmap hasta que el enrolamiento esté documentado. Es exactamente el caso de uso que la página del track describe, y el que la documentación no permite completar hoy.
+
 ### 2026-09-05 — El simulador de la Wallet API no trae cuenta de Sepolia, y una cuenta añadida a mano falla en `lastSyncDate.toISOString`
 
 **Documentado / prometido:** `@ledgerhq/wallet-api-simulator` 2.3 sirve para desarrollar una Live App sin Ledger Live; el perfil `STANDARD` trae cuentas de Bitcoin y Ethereum.

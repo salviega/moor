@@ -1,0 +1,10 @@
+# Supabase project config for the agent (05 §8). Only what the CLI needs to serve
+# and deploy the one Edge Function; the database is used for pg_cron alone.
+project_id = "moor"
+
+[functions.agent-cycle]
+enabled = true
+# The gateway checks the JWT: pg_cron calls with the project's anon key (see the migration).
+verify_jwt = true
+# Built by `pnpm agent:bundle` from apps/agent/src/edge.ts; git-ignored.
+entrypoint = "./functions/agent-cycle/index.js"
