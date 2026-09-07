@@ -98,8 +98,14 @@ const t = {
 		low: "Low",
 		high: "High",
 		unit: (asset: string) => `USD per ${asset}`,
-		body: (next: string, left: string) =>
-			`Closes this order and opens ${next} with the ${left} left, same side and deadline.`,
+		now: "Now, on chain",
+		next: "New",
+		moves: "Moves",
+		successor: "Opens as",
+		sameTerms: "same side and deadline",
+		removed: "this name is removed",
+		width: (pct: string) => `${pct} wide`,
+		body: "Two signatures close this order, two open the successor. Nothing else moves.",
 		action: (n: number) => `Move the range · ${n} signatures`,
 		cancel: "Cancel",
 		invalid: "The low end must be below the high end.",
@@ -343,7 +349,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 				</Panel>
 				<Panel tone="raised" className="flex flex-col justify-center gap-4">
 					{draft ? (
-						<div className="flex flex-col gap-4">
+						<div className="flex flex-1 flex-col gap-5">
 							<span className="eyebrow">{t.move.title}</span>
 							<div className="grid grid-cols-2 gap-3">
 								<Field
@@ -367,13 +373,28 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 									/>
 								</Field>
 							</div>
-							<p className="text-muted text-sm">
-								{t.move.body(
-									nextLabel(p.label),
-									fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol),
-								)}
-							</p>
-							<div className="flex flex-wrap items-center gap-3">
+							<dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+								<Stat
+									label={t.move.now}
+									value={`${fmtPrice(lo)} – ${fmtPrice(hi)}`}
+									sub={t.move.width(fmtPct((hi - lo) / lo))}
+								/>
+								<Stat
+									label={t.move.next}
+									value={draftValid ? `${fmtPrice(draftMin)} – ${fmtPrice(draftMax)}` : "—"}
+									sub={
+										draftValid ? t.move.width(fmtPct((draftMax - draftMin) / draftMin)) : undefined
+									}
+								/>
+								<Stat
+									label={t.move.moves}
+									value={fmtAmount(p.balanceIn, tokenIn.decimals, tokenIn.symbol)}
+									sub={t.move.sameTerms}
+								/>
+								<Stat label={t.move.successor} value={nextLabel(p.label)} sub={t.move.removed} />
+							</dl>
+							<p className="text-muted text-sm">{t.move.body}</p>
+							<div className="mt-auto flex flex-wrap items-center gap-3">
 								<Button
 									onClick={() => act("move")}
 									disabled={
