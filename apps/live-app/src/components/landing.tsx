@@ -57,8 +57,8 @@ const t = {
 		{
 			name: "Ledger",
 			logo: "/sponsor-ledger.png",
-			role: "Wallet API & Key Ring",
-			body: "sign on the device; the agent's one narrow key never touches a disk.",
+			role: "Wallet API & Clear Signing",
+			body: "every signature happens on the device, clear-signed with Moor's ERC-7730 descriptors.",
 		},
 	],
 };

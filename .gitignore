@@ -51,5 +51,9 @@ packages/erc7730/.speculos/
 packages/erc7730/.cs-tester/
 packages/erc7730/flow/
 
+# Supabase: the agent's Edge Function is built by `pnpm agent:bundle`; CLI scratch
+supabase/functions/agent-cycle/index.js
+supabase/.temp/
+
 # Claude Code agent worktrees: nested checkouts, never part of this tree
 .claude/worktrees/

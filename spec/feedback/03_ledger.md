@@ -68,6 +68,8 @@ Stack en uso: `@ledgerhq/wallet-api-client`, `@ledgerhq/wallet-api-client-react`
 
 **Reportado:** pendiente. Sugerencia: una guía "Key Ring on a headless host" con el flujo exacto de enrolamiento, ya que es uno de los dos ítems que el track destaca.
 
+**Desenlace (6 sep):** Moor no esperó. El agente pasó a una Edge Function en Supabase con los secretos del proyecto; Key Ring en un host propio queda en el roadmap hasta que el enrolamiento esté documentado. Es exactamente el caso de uso que la página del track describe, y el que la documentación no permite completar hoy.
+
 ### 2026-09-05 — El simulador de la Wallet API no trae cuenta de Sepolia, y una cuenta añadida a mano falla en `lastSyncDate.toISOString`
 
 **Documentado / prometido:** `@ledgerhq/wallet-api-simulator` 2.3 sirve para desarrollar una Live App sin Ledger Live; el perfil `STANDARD` trae cuentas de Bitcoin y Ethereum.
@@ -121,6 +123,18 @@ Tres cosas que costaron: (1) el paquete npm `@ledgerhq/ethereum-clear-signing-te
 **Reportado:** el punto 3 lo hicimos nosotros el 7 de septiembre — dos PRs al registro (una entidad por PR, esquema v2, fixtures `testsv2/` construidos con los mismos builders de la Live App): [ethereum/clear-signing-erc7730-registry#2953](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2953) (`MoorRegistrar` + Aqua en Sepolia) y [#2954](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954) (`Simple7702Account`: `execute` y `executeBatch` con `calldata` anidado). Al convertir a v2: `required`/`excluded` ya no existen — cada parámetro lleva `visible: "always" | "never"` — y el linter 1.0.10 pide un campo también para la ruta contenedora de un array (`#.records.[]`, `#.calls.[]`) aunque sus hijos estén cubiertos; el propio descriptor de Morpho lo dispara. Pendiente de enviar a Ledger como sugerencias: (1) documentar el formato `calldata` anidado en la guía de Clear Signing, con la versión mínima de la app y un ejemplo con `executeBatch`; (2) que el tester diga *qué* campo hace "parcial" un veredicto; (4) documentar si el metadata service resuelve descriptores para EOAs delegadas por 7702 (`ProxyContextFieldLoader`), que es lo que haría útil el #2954 en la forma real (`to` = la EOA); (5) documentar que `signTransaction` acepta tipo 4.
 
 <!--
+### 2026-09-07 — Un `format: "calldata"` anidado solo resuelve contra lo que ya está fusionado en el registro
+
+**Documentado / prometido:** nada dice explícitamente que la resolución de un campo `calldata` anidado dependa del estado de `master`, pero `index.calldata.json` en la raíz del registro mapea cada `eip155:$chainId:$address` a su descriptor (README, sección *Index files*) — es razonable asumir que ese índice es lo que un `calleePath` consulta para encontrar el descriptor del contrato llamado.
+
+**Encontrado:** el CI del registro corrió las pruebas de `#2954` (`Simple7702Account`, `calldata` anidado sobre `ship`/`createPosition`) contra su propia rama, `eth-infinitism-simple7702account`, que sale de `master` **antes** de que `#2953` (los descriptores de Aqua y MoorRegistrar, la entidad `moor`) se fusionara — confirmado pidiendo `registry/moor/` en esa rama vía la API (404) y buscando la dirección de Aqua/MoorRegistrar en su `index.calldata.json` (ninguna entrada). Las cuatro pruebas de `#2954` (execute/executeBatch × dos motores) fallan igual: el campo anidado llega como calldata crudo en hex en vez de interpretarse — `"field kind at [1] 'Action': expected nested, got scalar"`. No es un descriptor mal escrito: es que el entorno de pruebas de un PR no ve los descriptores de otro PR todavía sin fusionar, aunque ambos estén abiertos a la vez y se necesiten mutuamente.
+
+**Evidencia:** [ethereum/clear-signing-erc7730-registry#2954](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954), comentario del bot de CI del 2026-09-07 03:27 UTC (`actions/runs/34079633063`); `#2953` en la misma fecha, mismo bot, 5/5 pruebas en verde (`actions/runs/34079629207`) — la entidad que no depende de nada pasa; la que depende de otro PR abierto, no.
+
+**Impacto en Moor:** ninguno sobre el producto — el batch 7702 en Sepolia ya está probado y funciona (entrada del 6 de septiembre arriba). Es una nota sobre cómo enviar PRs a un registro con dependencias cruzadas entre entidades: si dos entradas se citan una a la otra por dirección, hay que fusionar (o al menos rebasear) la que no depende de nada primero, o abrir ambas desde la misma rama, para que el CI de la segunda vea a la primera.
+
+**Reportado:** comentario dejado en `#2954` explicando la causa y pidiendo que se fusione `#2953` primero (o se re-corra el CI de `#2954` tras rebasear sobre `master` una vez `#2953` esté dentro).
+
 ### AAAA-MM-DD — Título corto del hallazgo
 
 **Documentado / prometido:** qué dice la guía de la Wallet API, del DMK, de ERC-7730 o de Speculos.

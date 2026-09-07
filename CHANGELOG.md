@@ -41,6 +41,49 @@ Two things this project's entries carry that a web app's would not:
   of Moor. The tester labels the flow *partially clear-signed* (network and
   fees render); recorded as seen. `screens/batch7702BlindSigning/`,
   `results-probe.json`, the erc7730 README table and `03_ledger.md`.
+- **The agent's first live writes, from Supabase, unattended (2026-09-07).**
+  Deployed to the linked project (`lbjmkmjldctnqxmaqkyq`) and scheduled: `pg_cron`'s
+  first tick fired the Edge Function on its own at 03:30 UTC with no device and
+  no local process running, and `cron.job_run_details` shows it `succeeded`.
+  Two real cycles wrote `moor.agent.*` on `btc-dip`, `btc-dip-2` and
+  `one-sig-1` — all three `farFromRange` with a `widen` proposal, the one on
+  `one-sig-1` from Groq rather than the deterministic fallback —
+  [`0xc87ef116…`](https://sepolia.etherscan.io/tx/0xc87ef116de7a4192f25d4282d4ec859f37a385c98a5c528b52e022d9f15fc48)
+  and
+  [`0x62d47922…`](https://sepolia.etherscan.io/tx/0x62d4792283e2fff1eb8e7a3d50058240bb97999bfe9bce458c6fd518ed4fc51),
+  `moor.agent.checkedAt` moving from `16:22:20` to `03:35:16` on all three.
+  Phase 4 closes here, seven days ahead of the plan. One thing found and fixed
+  on the way: the migration's `vault.create_secret('anon_key', …)` was seeded
+  with a personal access token instead of the project's anon key, so the
+  first manual call answered `401 Invalid JWT` — `vault.update_secret` with
+  the real anon JWT fixed it; the cron's own first tick already used the
+  corrected value.
+- **The agent moves to Supabase (2026-09-06).** The VPS with Ledger Key Ring
+  was the plan for the agent's host, and enrolling a host without USB is still
+  undocumented (`spec/feedback/03_ledger.md`); rather than wait, the agent is
+  now a **Supabase Edge Function**. The cycle is extracted to
+  `apps/agent/src/cycle.ts` (host-agnostic: a `Log` interface, clients built
+  from the validated env) and has two entries: `main.ts` under Node for a
+  developer's machine (`pnpm agent`, `agent:loop`) and `edge.ts` under Deno —
+  one cycle per request, `?dry=1` to read without sending, a JSON answer with
+  what it read and wrote. `pnpm agent:bundle` (esbuild, `platform: neutral`,
+  `ws` stubbed since only HTTP transports are used) packs `edge.ts` with
+  `@moor/core`, viem and zod into `supabase/functions/agent-cycle/index.js`
+  (git-ignored, 1.4 MB); `supabase/migrations/20260907000000_agent_cron.sql`
+  schedules it every five minutes through `pg_cron` + `pg_net`, reading the
+  project URL and anon key from Vault so nothing project-specific is committed.
+  `pnpm agent:secrets` pushes only the agent's lines of the git-ignored `.env`
+  to the linked project; `pnpm agent:deploy` bundles and deploys. Verified:
+  the bundle runs a full dry cycle under Deno 2.3 in 5.1 s — two positions
+  read, states derived, standing proposals kept — against PublicNode. Found on
+  the way: the local `.env` pointed at Alchemy's free tier, whose 10-block
+  `eth_getLogs` cap surfaces through viem as "JSON is not a valid request
+  object"; the agent README now says so. What changed in the story, said
+  everywhere it was told (05 §7–9, 06, 07 phase 0 and 4, 08, AGENTS.md, the
+  landing's Ledger card): the agent's key is custodied by Supabase, not by
+  Ledger Key Ring; Key Ring on a host of our own is roadmap. `deploy/run.sh`
+  and the systemd unit are retired. Nothing about the key's *powers* changed —
+  `ROLE_SET_TEXT` on eight keys, and the negative-role tests.
 
 ### Fixed
 

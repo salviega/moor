@@ -31,7 +31,11 @@
 		"contracts:deploy:anvil": "pnpm --filter @moor/contracts deploy:anvil",
 		"demo:ship": "pnpm --filter @moor/contracts demo:ship",
 		"contracts:deploy:registrar": "pnpm --filter @moor/contracts deploy:registrar",
-		"contracts:deploy:resolver": "pnpm --filter @moor/contracts deploy:resolver"
+		"contracts:deploy:resolver": "pnpm --filter @moor/contracts deploy:resolver",
+		"agent:bundle": "pnpm --filter @moor/agent bundle",
+		"agent:serve": "pnpm agent:bundle && deno run --allow-net --allow-env --env-file=.env supabase/functions/agent-cycle/index.js",
+		"agent:secrets": "node apps/agent/scripts/secrets.mjs",
+		"agent:deploy": "pnpm agent:bundle && npx --yes supabase@2.116.0 functions deploy agent-cycle"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.12",

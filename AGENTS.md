@@ -107,8 +107,10 @@ What a merge to `main` sets off, and what it does not:
 run by hand, against Sepolia only, and writes the new addresses into
 `packages/core/src/addresses.ts` — that file changing is what a contract
 deployment looks like in a diff, and it ships with the tx hashes in the
-CHANGELOG. The agent is restarted on its host by hand after a pull. Neither has
-a mainnet target and neither should acquire one during the hackathon.
+CHANGELOG. The agent is a Supabase Edge Function deployed by hand with
+`pnpm agent:deploy` after the change merges (`pnpm agent:bundle` builds it;
+`pg_cron` calls it every five minutes). Neither has a mainnet target and
+neither should acquire one during the hackathon.
 
 **The Live App deploy is not gated by CI.** Vercel reacts to the push, not to
 the workflow, so a red merge still reaches the manifest's URL. What stands in
@@ -164,9 +166,13 @@ kind of record, and the secrets an unattended process needs:
   registry role, no admin role, no approval, not the maker. A change that gives
   it anything else is a change to the product, goes through the spec first, and
   is what `08_roadmap.md` §1b exists to do properly.
-- **Secrets come from Key Ring, never from a file.** `AGENT_PRIVATE_KEY`,
-  the RPC key and `GROQ_API_KEY` are read from `wallet-cli ring` on the
-  host. A `.env` holding the agent's key is a leak waiting for a `git add`.
+- **Secrets live in the host's secret store, never in a file of this repo.**
+  `AGENT_PRIVATE_KEY`, the RPC URL and `GROQ_API_KEY` are Supabase project
+  secrets (`pnpm agent:secrets` pushes exactly those from the git-ignored
+  `.env`, nothing else); the function reads its environment and nothing on
+  disk. A `.env` holding the agent's key is a leak waiting for a `git add`.
+  Ledger Key Ring was the plan for a host of our own and stays in
+  `08_roadmap.md` until enrolling a host without USB is documented.
   `DEPLOYER_PRIVATE_KEY` is local, for `contracts:deploy` only, never in CI.
 - **Every input crosses a Zod schema at the trust boundary**: position
   parameters from the form, records read back from ENS, and **the model's
@@ -248,8 +254,11 @@ real takers on Sepolia — and is labelled as such everywhere it appears.
 
 ## The agent
 
-It runs headless, every 300 seconds, and each cycle starts from reading the
-chain — it has no memory it cannot lose. It reads price and balances, derives
+It runs as a Supabase Edge Function (`apps/agent/src/edge.ts` → `cycle.ts`,
+bundled into `supabase/functions/agent-cycle`) that `pg_cron` calls every
+300 seconds; each request is one cycle, and each cycle starts from reading the
+chain — it has no memory it cannot lose. `pnpm agent` runs the same cycle
+under Node on a developer's machine. It reads price and balances, derives
 state with `packages/core`, and writes `moor.agent.*` on the position name. That
 is the whole of what it can do, and the negative-role tests are what say so.
 

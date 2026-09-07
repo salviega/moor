@@ -54,8 +54,8 @@ Una cadena, tres protocolos, dos procesos nuestros. Y una regla que atraviesa el
            │ lee: precio, balances, quotes            │ escribe: solo moor.agent.* (ROLE_SET_TEXT)
            │                                          │
    ┌───────┴──────────────────────────────────────────┴───────┐
-   │  Agente  (proceso headless en un VPS)                     │
-   │  secretos en Ledger Key Ring (wallet-cli ring)            │
+   │  Agente  (Edge Function en Supabase; pg_cron cada 5 min)  │
+   │  secretos en el proyecto de Supabase (supabase secrets)   │
    │  cada N minutos: lee → deriva estado → simula → propone   │
    │  nunca firma nada que no sea un setText en su subnombre   │
    └──────────────────────────────────────────────────────────┘
@@ -197,7 +197,7 @@ Los recursos de EAC del `PermissionedResolver` son `keccak(namehash, keccak(clav
 | --- | --- | --- |
 | root del resolver | `ROLE_SET_TEXT`, `ROLE_SET_ADDR`, `ROLE_SET_TEXT_ADMIN` (`MoorRoles.REGISTRAR_ON_RESOLVER`) | `MoorRegistrar`: escribe `addr` y `moor.*` en `createPosition`, otorga y revoca las claves del agente |
 | root del resolver · todos los roles de records y sus admin (`MoorRoles.HOLDER_RESOLVER_ROOT`) | — | Holder, desde `initialize` |
-| `(cualquier nombre, moor.agent.checkedAt)` … `(cualquier nombre, moor.agent.simulation)` — ocho recursos | `ROLE_SET_TEXT` | Agente (llave caliente, custodiada en Key Ring) |
+| `(cualquier nombre, moor.agent.checkedAt)` … `(cualquier nombre, moor.agent.simulation)` — ocho recursos | `ROLE_SET_TEXT` | Agente (llave caliente, custodiada por Supabase) |
 | `(btc-dip.salviega.eth, moor.strategy)` y cualquier otra clave, `addr`, `contenthash`, alias, clear | — | **Agente: ninguno** |
 
 **Verificable:** `resolver.hasRoles(resource, ROLE_SET_TEXT, agente)` es `true` exactamente para los ocho recursos que devuelve `agentResources()` de `packages/core` y `false` para cualquier otro; `hasRootRoles` es `false` para el agente en registry y resolver. Un juez lo comprueba con `cast call` sin creernos.
@@ -208,7 +208,7 @@ Los recursos de EAC del `PermissionedResolver` son `keccak(namehash, keccak(clav
 
 - Todo lo anterior lo firma el holder en el dispositivo, vía Wallet API (`transaction.signAndBroadcast`) desde la Live App.
 - **Clear Signing** requiere un descriptor **ERC-7730** por contrato y función que el holder firme: `approve` (estándar), `Aqua.ship`/`dock`, `MoorRegistrar.createPosition`/`setupAgent`/`revokeAgent`, `PermissionedRegistry.setSubregistry`/`grantRootRoles`/`revokeRootRoles`/`unregister`, `PermissionedResolver.grantRootRoles`/`revokeRootRoles`/`authorizeTextRoles` — los tres archivos de `packages/erc7730/descriptors/`. Sin descriptor, la Ledger muestra blind signing.
-- La llave del agente **no es una Ledger** y no debe serlo: firma `setText` cada pocos minutos sin humano. Lo que sí es Ledger es la custodia de esa llave y de los demás secretos del agente, en Key Ring.
+- La llave del agente **no es una Ledger** y no debe serlo: firma `setText` cada pocos minutos sin humano. Su custodia, y la de los demás secretos del agente, es del proyecto de Supabase donde corre (`supabase secrets set`, nunca un archivo del repo). Llevarla a Ledger Key Ring en un host sin USB era el plan de v1 y queda en el [08](./08_roadmap.md): el enrolamiento de un segundo host no está documentado ([feedback](../feedback/03_ledger.md)) y el 6 de septiembre se decidió no esperar.
 
 ---
 
@@ -216,7 +216,7 @@ Los recursos de EAC del `PermissionedResolver` son `keccak(namehash, keccak(clav
 
 | Proceso | Cada cuánto | Qué hace | Si falla |
 | --- | --- | --- | --- |
-| **Agente** | Cada 5 minutos (`AGENT_INTERVAL_SECONDS`, 300) | Lee precio (Chainlink) y balances de cada posición del holder, deriva estado, escribe las ocho `moor.agent.*` en **un** `multicall` de `setText` por posición; si un umbral se cruza, simula las alternativas en código y pide al modelo (Groq, `gpt-oss-120b`) que elija — una llamada por propuesta; sin `GROQ_API_KEY`, la propuesta determinista | **Nada se rompe.** La posición sigue operando. La Live App ve `checkedAt` viejo y lo dice como aviso |
+| **Agente** | Cada 5 minutos: `pg_cron` llama a la Edge Function `agent-cycle` en Supabase (un ciclo por petición); `AGENT_INTERVAL_SECONDS` solo gobierna el bucle local | Lee precio (Chainlink) y balances de cada posición del holder, deriva estado, escribe las ocho `moor.agent.*` en **un** `multicall` de `setText` por posición; si un umbral se cruza, simula las alternativas en código y pide al modelo (Groq, `gpt-oss-120b`) que elija — una llamada por propuesta; sin `GROQ_API_KEY`, la propuesta determinista | **Nada se rompe.** La posición sigue operando. La Live App ve `checkedAt` viejo y lo dice como aviso |
 | **Taker de demo** | Solo durante la demo | Ejecuta `swap` contra la posición dentro del rango para mostrar fills y fees onchain | Sin él no hay fills en Sepolia (no hay takers reales). Es infraestructura de demo, no de producto |
 | **Vencimiento** | Onchain, sin proceso | `_deadline` deja de aceptar swaps; `expiry` deja el nombre disponible | No puede fallar: lo hace el protocolo |
 
@@ -232,7 +232,7 @@ Para el hackathon y para la demo; no hay modelo de negocio en esta versión.
 | --- | --- | --- |
 | Gas en Sepolia | 0 | Faucets. Redesplegar Aqua + SwapVM + tokens de prueba + contratos propios es la partida grande de ETH de prueba: pedirlo con anticipación |
 | RPC Sepolia | 0 | Plan gratuito de cualquier proveedor alcanza para un agente cada 5 min y una Live App |
-| VPS del agente | ~5 USD/mes | O un host gratuito; lo que importa es que sea headless y que Key Ring esté enrolado ahí |
+| Agente en Supabase | 0 | Edge Function + `pg_cron` en la capa gratuita: un ciclo de ~5 s cada 5 minutos, muy por debajo de los límites |
 | Modelo de IA del agente | Variable, bajo | Una llamada por ciclo con propuesta, no por ciclo. Se decide en el [06](./06_tecnologias.md) |
 | Nombre `salviega.eth` en ENSv2 Sepolia | 0 | Registro de prueba |
 | Ledger | Ya se tiene | Un dispositivo para la demo; Ledger Live en modo desarrollador |
