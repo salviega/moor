@@ -226,7 +226,7 @@ export function PositionPanel({ label, embedded = false }: { label: string; embe
 									agent: agentAddr.data ?? p.holder,
 								}),
 							];
-		const ok = await session.run(h.accountId, calls);
+		const ok = await session.run(h.accountId, calls, h.address);
 		const successor =
 			(kind === "accept" || kind === "move") && calls.some((c) => c.kind === "createPosition")
 				? nextLabel(p.label)

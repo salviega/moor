@@ -89,7 +89,10 @@ const t = {
 		"Moves your tokens anywhere. Aqua keeps a virtual balance; no Moor contract is ever the maker.",
 		"Transfers the name. It belongs to this account and expires with the order.",
 	],
-	signatures: (n: number) => `${n} signatures, in this order`,
+	signatures: (n: number) =>
+		n === 1
+			? "1 signature — your account runs every step at once"
+			: `${n} signatures, in this order`,
 	ledger: "On your Ledger",
 	blind: {
 		title: "Your Ledger will show raw data for these signatures",
@@ -442,7 +445,7 @@ function Review({
 
 	const sign = async () => {
 		if (!h.accountId) return;
-		const ok = await session.run(h.accountId, plan.calls);
+		const ok = await session.run(h.accountId, plan.calls, h.address);
 		if (ok) {
 			setDone(true);
 			toast("ok", `${plan.name} is open`);
@@ -516,7 +519,7 @@ function Review({
 			</Panel>
 
 			<Panel className="flex flex-col gap-4">
-				<span className="eyebrow">{t.signatures(plan.calls.length)}</span>
+				<span className="eyebrow">{t.signatures(steps.length || plan.calls.length)}</span>
 				<ol className="flex flex-col gap-3">
 					{steps.map((s, i) => (
 						<StepRow key={s.call.kind} i={i} step={s} />

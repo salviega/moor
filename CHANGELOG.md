@@ -82,6 +82,22 @@ Two things this project's entries carry that a web app's would not:
   registry, not on the device: `Simple7702Account.executeBatch` with nested
   `calldata` (the probe's descriptor) plus Moor's own, published, would make
   the one-signature session clear-signed for anyone.
+  **So both were submitted, and the Live App learnt the path (2026-09-07).**
+  Registry pull requests, one entity each as the registry requires, in its v2
+  schema with a `testsv2/` fixture per descriptor built from the same
+  transactions the Live App signs: [ethereum/clear-signing-erc7730-registry#2953](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2953)
+  (`MoorRegistrar` and the Sepolia Aqua) and [#2954](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954)
+  (`Simple7702Account`: `execute` and `executeBatch` with nested `calldata` —
+  the descriptor Ledger's own whitelisted delegate never had). In the Live
+  App, `sessionCalls` (`packages/core/src/batch.ts`, four tests written
+  first) decides per session: a holder whose account code is
+  `0xef0100‖Simple7702Account` signs a multi-call session as **one**
+  `executeBatch` to their own address, through the Wallet API as always; a
+  plain EOA, a foreign delegate or a single-call session sign exactly as
+  before. The app reads the account's code and never delegates anything —
+  the opt-in is the holder's, on chain, from `apps/probe-7702`. The batch's
+  descriptor moved from `descriptors/probe/` into the main set
+  (`calldata-Simple7702Account.json`); its captures stay under `--probe`.
 - **Opening a position looks like having one (2026-09-06).** The New form
   now sits in the same frame as an open position's page: the live chart with
   its history on the left (3/5), the numbers in the side panel on the right

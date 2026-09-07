@@ -33,6 +33,23 @@ export function delegateOf(code: Hex | undefined): Address | null {
 	return isAddress(delegate) ? getAddress(delegate) : null;
 }
 
+/**
+ * What the Live App signs: one batch when — and only when — the holder's account
+ * is delegated to the delegate the Ledger app accepts and the session has more
+ * than one call. Anything else signs exactly as before. The opt-in happened on
+ * chain (the holder delegated); the app only reads it.
+ */
+export function sessionCalls(input: {
+	holder: Address;
+	code: Hex | undefined;
+	calls: Call[];
+}): Call[] {
+	const { holder, code, calls } = input;
+	if (calls.length < 2) return calls;
+	if (delegateOf(code) !== SIMPLE_7702_ACCOUNT) return calls;
+	return [batchCall(holder, calls)];
+}
+
 /** Every call of a session as one `executeBatch` on the holder's own address: in order, all or nothing. */
 export function batchCall(holder: Address, calls: Call[]): Call {
 	if (calls.length === 0) throw new Error("batchCall: empty batch");

@@ -65,22 +65,29 @@ Ledger with the published descriptor would show ("Ledger shows: …").
 
 ## Probe: a whole session in one signature (EIP-7702)
 
-`pnpm ledger:screens -- --probe` renders two extra transactions that are **not** part of the
-flow and never touch its captures or `results.json` (08 roadmap §2.3; verdicts in
-`screens/results-probe.json`). Both carry `ship` + `createPosition` inside one
-`Simple7702Account.executeBatch` — the shape a holder's EOA would sign after delegating to
-the one 7702 account contract the Ledger Ethereum app whitelists:
+A holder whose account is delegated with EIP-7702 to `Simple7702Account` (the one 7702
+delegate the Ledger Ethereum app whitelists) signs a multi-call session as **one**
+`executeBatch` to their own address (`sessionCalls` in `@moor/core`; the opt-in is made on
+chain from `apps/probe-7702`). Its descriptor is `descriptors/calldata-Simple7702Account.json`:
+`calls.[].data` uses ERC-7730's nested `calldata` format (`calleePath: calls.[].target`), so
+each inner call renders with its own descriptor. `pnpm ledger:screens -- --probe` renders
+two extra transactions that never touch the flow's captures or `results.json` (verdicts in
+`screens/results-probe.json`), both carrying `ship` + `createPosition` inside one batch:
 
-| Probe | `to` | Descriptors | Result | Screens |
-| --- | --- | --- | --- | --- |
-| `batch7702Blind` | the holder's own address (the real 7702 shape) | the flow's four | blind-signed — no descriptor can be bound to an EOA | `screens/batch7702Blind/` |
-| `batch7702Nested` | `Simple7702Account` itself | the four + `descriptors/probe/calldata-Simple7702Account.json`, whose `calls.[].data` uses ERC-7730's nested `calldata` format (`calleePath: calls.[].target`) | the app enumerates **"Review transaction 1 of 2 / 2 of 2"** and renders each inner call with *our* `ship` and `createPosition` descriptors — every frame in the product's words; the tester's verdict is *partially clear-signed* (the `???` token amount, as in `ship` alone) | `screens/batch7702Nested/` |
+| Probe | `to` | Result | Screens |
+| --- | --- | --- | --- |
+| `batch7702Blind` | the holder's own address (the real 7702 shape) | blind-signed — no descriptor can be bound to an EOA | `screens/batch7702Blind/` |
+| `batch7702Nested` | `Simple7702Account` itself | the app enumerates **"Review transaction 1 of 2 / 2 of 2"** and renders each inner call with *our* `ship` and `createPosition` descriptors — every frame in the product's words; the tester's verdict is *partially clear-signed* (the `???` token amount, as in `ship` alone) | `screens/batch7702Nested/` |
 
-What the probe proves: app 1.22.3 + these descriptors render nested calls. What it cannot
-prove: whether a production device resolves the delegate's descriptor when `to` is a
-delegated EOA — that lookup is Ledger's, server-side and PKI-signed
-(`ProxyContextFieldLoader` in `device-sdk-ts`), so it is a question for Ledger or for the
-physical Flex (`apps/probe-7702`), not for Speculos.
+What Speculos proves: app 1.22.3 + these descriptors render nested calls. What the physical
+device showed (2026-09-06): blind — Ledger's servers had no descriptor for `Simple7702Account`
+on any network, nor for ours (`pnpm --filter @moor/probe-7702 cal`). Hence the registry
+pull requests, in the registry's v2 schema with `testsv2/` fixtures built from `demoFlow()`:
+[#2953](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2953) (Moor) and
+[#2954](https://github.com/ethereum/clear-signing-erc7730-registry/pull/2954)
+(`Simple7702Account`). Whether Ledger then resolves the delegate's descriptor when `to` is a
+delegated EOA (`ProxyContextFieldLoader`, server-side, PKI-signed) is the last open question,
+and it is Ledger's.
 
 `screens/phase0-ethereum-app-1.22.3-home-flex.png` is the phase-0 evidence that
 Speculos runs the prebuilt app: Flex, Ethereum 1.22.3, seed address

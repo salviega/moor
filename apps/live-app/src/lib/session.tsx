@@ -5,12 +5,19 @@
  * each confirmed on the Ledger by the holder (04 §4.1 step 3). The app never
  * sees a key; it sees a hash. Under the simulator the hash is made up, so the
  * receipt wait is skipped there.
+ *
+ * One exception the holder opts into on chain (08 §2.3): an account delegated
+ * with EIP-7702 to the account contract the Ledger app accepts signs a
+ * multi-call session as ONE ordinary transaction to itself — `executeBatch`,
+ * all or nothing, `msg.sender` still the holder inside every call. The app
+ * only reads the account's code; it never delegates anything.
  */
 import { useWalletAPIClient } from "@ledgerhq/wallet-api-client-react";
-import type { Call } from "@moor/core";
+import { type Call, sessionCalls } from "@moor/core";
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { useCallback, useState } from "react";
+import type { Address } from "viem";
 import { publicClient } from "./chain";
 import { useSimulator } from "./wallet-api";
 
@@ -32,8 +39,14 @@ export function useSignSession() {
 		setSteps((prev) => prev.map((s, j) => (j === i ? { ...s, ...patch } : s)));
 
 	const run = useCallback(
-		async (accountId: string, calls: Call[]): Promise<boolean> => {
+		async (accountId: string, requested: Call[], holder?: Address | null): Promise<boolean> => {
 			if (!client) throw new Error("Wallet API not connected");
+			// A delegated account (EIP-7702 → Simple7702Account) signs the session as one batch.
+			const code =
+				holder && !useSimulator
+					? await publicClient.getCode({ address: holder }).catch(() => undefined)
+					: undefined;
+			const calls = holder ? sessionCalls({ holder, code, calls: requested }) : requested;
 			setSteps(calls.map((call) => ({ call, status: "pending" })));
 			setRunning(true);
 			try {
